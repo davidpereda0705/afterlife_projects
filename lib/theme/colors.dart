@@ -13,6 +13,9 @@ class AfterlifeColors {
   static const Color neonOrange = Color(0xFFF59E0B);
   static const Color deepPurple = Color(0xFF8B5CF6);
   
+  // NUEVO: Tu lila eléctrico elegido
+  static const Color electricLilac = Color(0xFF7B1FA2);
+  
   // Texto
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFA0A0B0);
@@ -31,8 +34,11 @@ class AfterlifeColors {
       
   static Color cyanBlueWithOpacity(double opacity) => 
       cyanBlue.withOpacity(opacity);
+      
+  static Color electricLilacWithOpacity(double opacity) => 
+      electricLilac.withOpacity(opacity);
   
-  // Gradientes
+  // Gradientes (añadimos uno con tu nuevo color)
   static Gradient get purplePinkGradient => LinearGradient(
     colors: [electricPurple, neonPink],
     begin: Alignment.topLeft,
@@ -47,6 +53,13 @@ class AfterlifeColors {
   
   static Gradient get orangePurpleGradient => LinearGradient(
     colors: [neonOrange, deepPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
+  // NUEVO: Gradiente con tu lila eléctrico
+  static Gradient get electricLilacGradient => LinearGradient(
+    colors: [electricLilac, Color(0xFF9C27B0)], // Lila eléctrico a magenta
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
