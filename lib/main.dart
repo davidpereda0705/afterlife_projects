@@ -1,3 +1,4 @@
+import 'package:afterlife_projects/components/splash_loading.dart';
 import 'package:flutter/material.dart';
 import 'components/AfterButton.dart';
 import 'theme/colors.dart';
@@ -14,29 +15,9 @@ class AfterlifeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AfterlifeTheme.darkTheme, // Usa el tema que arreglamos
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        // Al dejar solo uno aquí, solo aparecerá uno en pantalla
-        child: AfterButton(
-          label: 'ENTRAR', // El texto que tú quieras
-          size: 100,       // El tamaño que tú quieras
-          color: AfterlifeColors.electricPurple, // El color que tú quieras
-          onPressed: () {
-            print('¡Botón reutilizable funcionando!');
-          },
-        ),
-      ),
+      title: 'Afterlife',
+      theme: AfterlifeTheme.darkTheme, // Usa el tema de tu archivo de colores
+      home: const SplashLoading(), // Arranca con la carga automática tipo Instagram
     );
   }
 }
