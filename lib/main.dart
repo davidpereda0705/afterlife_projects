@@ -1,4 +1,4 @@
-import 'package:afterlife_projects/components/welcome_screen.dart';
+import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
 import 'package:flutter/material.dart';
 import 'theme/colors.dart';
@@ -12,9 +12,8 @@ class AfterlifeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Afterlife',
-      theme: AfterlifeTheme.darkTheme, // Cargado desde colors.dart
-      home: const WelcomeScreen(), // Empezamos por la pantalla de "Clica para entrar"
+      theme: AfterlifeTheme.darkTheme, // Tu tema lila/negro
+      home: const GroupPage(), // Arranca directo en la lista de amigos
     );
   }
 }
