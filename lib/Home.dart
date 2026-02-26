@@ -5,11 +5,11 @@ import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
+import 'package:afterlife_projects/logros.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _selectedIndex = index;
           });
-          
+
           switch (index) {
             case 0:
               break;
@@ -192,12 +192,17 @@ class _HomeScreenState extends State<HomeScreen> {
             case 2:
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const NightSelectionScreen(),
+                ),
               );
               break;
             case 3:
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Pantalla de Logros - Próximamente')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AchievementsScreen(),
+                ),
               );
               break;
             case 4:
@@ -238,7 +243,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.electricLilac.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -385,7 +393,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 8),
         Column(
-          children: availableNights.map((night) => _buildPendingNightCard(night)).toList(),
+          children: availableNights
+              .map((night) => _buildPendingNightCard(night))
+              .toList(),
         ),
       ],
     );
@@ -393,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPendingNightCard(Map<String, dynamic> night) {
     final bool isFull = night['currentPlayers'] >= night['maxPlayers'];
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -495,7 +505,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (!isFull)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AfterlifeColors.acidGreen.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -518,7 +531,9 @@ class _HomeScreenState extends State<HomeScreen> {
               clipBehavior: Clip.none,
               children: [
                 ...List.generate(
-                  night['joinedFriends'].length > 5 ? 5 : night['joinedFriends'].length,
+                  night['joinedFriends'].length > 5
+                      ? 5
+                      : night['joinedFriends'].length,
                   (index) {
                     return Positioned(
                       left: index * 20.0,
@@ -575,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ElevatedButton(
               onPressed: isFull ? null : () => _joinNightFromHome(night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull 
+                backgroundColor: isFull
                     ? Colors.grey.withOpacity(0.3)
                     : AfterlifeColors.neonOrange,
                 foregroundColor: Colors.white,
@@ -599,11 +614,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _joinNightFromHome(Map<String, dynamic> night) {
     Map<String, dynamic> updatedNight = Map.from(night);
-    List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
+    List<Map<String, dynamic>> updatedPlayers = List.from(
+      night['players'] ?? [],
+    );
     updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
     updatedNight['players'] = updatedPlayers;
     updatedNight['currentPlayers'] = (night['currentPlayers'] ?? 0) + 1;
-    
+
     List<String> updatedJoined = List.from(night['joinedFriends'] ?? []);
     updatedJoined.add('TU');
     updatedNight['joinedFriends'] = updatedJoined;
@@ -615,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(milliseconds: 500),
       ),
     );
-    
+
     Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.push(
         context,
@@ -633,9 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CreateNightScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateNightScreen()),
           );
         },
         style: ElevatedButton.styleFrom(

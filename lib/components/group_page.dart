@@ -2,6 +2,7 @@
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/chat_page.dart';
+import 'package:afterlife_projects/logros.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:flutter/material.dart';
@@ -18,11 +19,31 @@ class _GroupPageState extends State<GroupPage> {
   int _selectedIndex = 1;
 
   final List<BottomNavItem> _navItems = const [
-    BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
-    BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
-    BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
-    BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
-    BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
+    BottomNavItem(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: 'Home',
+    ),
+    BottomNavItem(
+      icon: Icons.group_outlined,
+      selectedIcon: Icons.group,
+      label: 'Amigos',
+    ),
+    BottomNavItem(
+      icon: Icons.nightlight_outlined,
+      selectedIcon: Icons.nightlight_round,
+      label: 'Noches',
+    ),
+    BottomNavItem(
+      icon: Icons.emoji_events_outlined,
+      selectedIcon: Icons.emoji_events,
+      label: 'Logros',
+    ),
+    BottomNavItem(
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      label: 'Perfil',
+    ),
   ];
 
   @override
@@ -72,7 +93,9 @@ class _GroupPageState extends State<GroupPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const NightSelectionScreen(),
+                    ),
                   );
                 },
               ),
@@ -86,7 +109,7 @@ class _GroupPageState extends State<GroupPage> {
           setState(() {
             _selectedIndex = index;
           });
-          
+
           switch (index) {
             case 0:
               Navigator.pushReplacement(
@@ -99,12 +122,17 @@ class _GroupPageState extends State<GroupPage> {
             case 2:
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const NightSelectionScreen(),
+                ),
               );
               break;
             case 3:
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Pantalla de Logros - Próximamente')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AchievementsScreen(),
+                ),
               );
               break;
             case 4:
@@ -132,33 +160,33 @@ class _GroupPageState extends State<GroupPage> {
           color: AfterlifeColors.surfaceDark.withOpacity(0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: online 
-                ? AfterlifeColors.electricPurple.withOpacity(0.3) 
+            color: online
+                ? AfterlifeColors.electricPurple.withOpacity(0.3)
                 : Colors.transparent,
           ),
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: online 
-                  ? AfterlifeColors.electricPurple 
+              backgroundColor: online
+                  ? AfterlifeColors.electricPurple
                   : AfterlifeColors.textDisabled.withOpacity(0.2),
               child: const Icon(Icons.person, color: Colors.white),
             ),
             const SizedBox(width: 15),
             Text(
-              name, 
+              name,
               style: TextStyle(
-                color: AfterlifeColors.textPrimary, 
-                fontWeight: FontWeight.bold
-              )
+                color: AfterlifeColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const Spacer(),
-            if (online) 
+            if (online)
               Icon(
-                Icons.flash_on, 
-                color: AfterlifeColors.electricPurple, 
-                size: 18
+                Icons.flash_on,
+                color: AfterlifeColors.electricPurple,
+                size: 18,
               ),
           ],
         ),
