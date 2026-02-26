@@ -1,7 +1,10 @@
+// lib/main.dart
+import 'package:afterlife_projects/Home.dart';
 import 'package:flutter/material.dart';
 import 'components/AfterButton.dart';
 import 'theme/colors.dart';
 import 'theme/AfterlifeTheme.dart';
+
 
 void main() {
   runApp(const AfterlifeApp());
@@ -14,27 +17,51 @@ class AfterlifeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AfterlifeTheme.darkTheme, // Usa el tema que arreglamos
-      home: const HomePage(),
+      theme: AfterlifeTheme.darkTheme,
+      home: const WelcomePage(), // Primera pantalla: Bienvenida
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+// Pantalla de bienvenida (con el botón)
+class WelcomePage extends StatelessWidget {
+  const WelcomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AfterlifeColors.background,
       body: Center(
-        // Al dejar solo uno aquí, solo aparecerá uno en pantalla
-        child: AfterButton(
-          label: 'ENTRAR', // El texto que tú quieras
-          size: 100,       // El tamaño que tú quieras
-          color: AfterlifeColors.electricPurple, // El color que tú quieras
-          onPressed: () {
-            print('¡Botón reutilizable funcionando!');
-          },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo o título
+            Text(
+              'AFTERLIFE',
+              style: TextStyle(
+                color: AfterlifeColors.electricPurple,
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 4,
+              ),
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Tu botón
+            AfterButton(
+              label: 'ENTRAR',
+              size: 120,
+              color: AfterlifeColors.electricPurple,
+              onPressed: () {
+                // Navegar a HomeScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
