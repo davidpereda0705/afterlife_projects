@@ -1,6 +1,5 @@
-import 'package:afterlife_projects/main.dart';
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
+import 'welcome_screen.dart';
 
 class SplashLoading extends StatefulWidget {
   const SplashLoading({super.key});
@@ -13,12 +12,12 @@ class _SplashLoadingState extends State<SplashLoading> {
   @override
   void initState() {
     super.initState();
-    // Espera 3 segundos (identidad de marca) y salta sola
+    // Espera 3 segundos y salta a la siguiente
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const AfterlifeApp()),
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
         );
       }
     });
@@ -27,17 +26,30 @@ class _SplashLoadingState extends State<SplashLoading> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background, // Tu fondo negro
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1A0B2E), Color(0xFF4A148C), Color(0xFF880E4F)],
+          ),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Tu logo centrado
-            Image.asset('assets/imatges/logo.png', width: 150), 
-            const SizedBox(height: 30),
-            // Un pequeño indicador neón para que sepa que está cargando
+            // LOGO GIGANTE (380px)
+            Image.asset(
+              'assets/imatges/logo_afterlife.png',
+              width: 380,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 50),
+            // LA ANIMACIÓN DE CARGA (Lila neón brillante)
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AfterlifeColors.electricLilac),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE040FB)),
+              strokeWidth: 6,
             ),
           ],
         ),
