@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import '../theme/colors.dart'; //
 
 class AfterButton extends StatelessWidget {
-  final String label;         // El texto que tú quieras ponerle
-  final VoidCallback onPressed; // La acción que tú quieras que haga
-  final Color color;          // El color que tú elijas
-  final double size;           // El tamaño que decidas
+  final String label;
+  final VoidCallback onPressed;
+  final Color color;
+  final double size;
 
   const AfterButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.color = AfterlifeColors.electricPurple, // Color por defecto si no pones ninguno
-    this.size = 80.0, // Tamaño por defecto
+    required this.color,
+    required this.size,
   });
 
   @override
@@ -21,27 +20,24 @@ class AfterButton extends StatelessWidget {
       onTap: onPressed,
       child: Container(
         width: size,
-        height: size, // Lo mantenemos cuadrado como pediste
+        height: size,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(15), //
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 4), //
+              color: color.withOpacity(0.6),
+              blurRadius: 25,
             ),
           ],
         ),
         child: Center(
           child: Text(
-            label.toUpperCase(),
-            textAlign: TextAlign.center,
-            style: TextStyle(
+            label,
+            style: const TextStyle(
               fontFamily: 'Syne',
               fontWeight: FontWeight.w800,
               color: Colors.white,
-              fontSize: size * 0.2, // La fuente se adapta al tamaño del botón
             ),
           ),
         ),
