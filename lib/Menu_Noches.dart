@@ -1,4 +1,6 @@
 // lib/screens/night_selection_screen.dart
+import 'package:afterlife_projects/Home.dart';
+import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/create_night_screen.dart' hide BottomNavItem;
 import 'package:afterlife_projects/join_night_screen.dart';
 import 'package:flutter/material.dart';
@@ -15,10 +17,11 @@ class NightSelectionScreen extends StatefulWidget {
 }
 
 class _NightSelectionScreenState extends State<NightSelectionScreen> {
-  int _selectedIndex = 1; // 1 = Noches
+  int _selectedIndex = 2;
 
   final List<BottomNavItem> _navItems = const [
     BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
+    BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
     BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
     BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
     BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
@@ -56,7 +59,6 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
             ),
             const SizedBox(height: 40),
             
-            // Opción CREAR NOCHE
             AfterlifeCard(
               onTap: () {
                 Navigator.push(
@@ -92,7 +94,6 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
             
             const SizedBox(height: 16),
             
-            // Opción UNIRSE A NOCHE
             AfterlifeCard(
               onTap: () {
                 Navigator.push(
@@ -134,7 +135,33 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
           setState(() {
             _selectedIndex = index;
           });
-          // Aquí irá la navegación entre pantallas principales
+          
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const GroupPage()),
+              );
+              break;
+            case 2:
+              break;
+            case 3:
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Pantalla de Logros - Próximamente')),
+              );
+              break;
+            case 4:
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Pantalla de Perfil - Próximamente')),
+              );
+              break;
+          }
         },
         items: _navItems,
       ),

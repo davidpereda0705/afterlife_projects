@@ -1,39 +1,55 @@
+// lib/screens/group_page.dart
+import 'package:afterlife_projects/Home.dart';
+import 'package:afterlife_projects/Menu_Noches.dart';
+import 'package:afterlife_projects/components/chat_page.dart';
 import 'package:afterlife_projects/theme/colors.dart';
+import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:flutter/material.dart';
 import '../components/AfterButton.dart';
-import 'chat_page.dart';
 
-class GroupPage extends StatelessWidget {
+class GroupPage extends StatefulWidget {
   const GroupPage({super.key});
+
+  @override
+  State<GroupPage> createState() => _GroupPageState();
+}
+
+class _GroupPageState extends State<GroupPage> {
+  int _selectedIndex = 1;
+
+  final List<BottomNavItem> _navItems = const [
+    BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
+    BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
+    BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
+    BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
+    BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Aplicamos el fondo negro puro de tu paleta
       backgroundColor: AfterlifeColors.background,
+      appBar: AppBar(
+        backgroundColor: AfterlifeColors.background,
+        elevation: 0,
+        title: Text(
+          'AMIGOS',
+          style: TextStyle(
+            color: AfterlifeColors.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Usamos tu nuevo gradiente eléctrico oficial
         decoration: BoxDecoration(
           gradient: AfterlifeColors.electricLilacGradient,
         ),
         child: Column(
           children: [
-            const SizedBox(height: 70),
-            Text(
-              'AMIGOS',
-              style: TextStyle(
-                fontFamily: 'Syne',
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: AfterlifeColors.textPrimary, // Blanco oficial
-                letterSpacing: 4,
-              ),
-            ),
             const SizedBox(height: 30),
-            
-            // Lista de Amigos con efectos neón actualizados
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -42,22 +58,63 @@ class GroupPage extends StatelessWidget {
                   _friendItem(context, 'Elena_Night', true),
                   _friendItem(context, 'Pau_Vibes', false),
                   _friendItem(context, 'Alex_Party', true),
+                  _friendItem(context, 'Laura_Nox', true),
+                  _friendItem(context, 'David_Fiesta', false),
                 ],
               ),
             ),
-
-            // Botón inferior con tu nuevo Lila Eléctrico
             Padding(
-              padding: const EdgeInsets.only(bottom: 50),
+              padding: const EdgeInsets.only(bottom: 30),
               child: AfterButton(
                 label: 'CREAR NOCHE',
                 size: 160,
-                color: AfterlifeColors.electricLilac, // Usando tu lila 0xFF7B1FA2
-                onPressed: () => print("Nueva noche creada"),
+                color: AfterlifeColors.electricLilac,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
+                  );
+                },
               ),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: AfterlifeBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+          
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+              break;
+            case 1:
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
+              );
+              break;
+            case 3:
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Pantalla de Logros - Próximamente')),
+              );
+              break;
+            case 4:
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Pantalla de Perfil - Próximamente')),
+              );
+              break;
+          }
+        },
+        items: _navItems,
       ),
     );
   }
@@ -72,7 +129,6 @@ class GroupPage extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          // Usamos superficie oscura de tu paleta
           color: AfterlifeColors.surfaceDark.withOpacity(0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
