@@ -1,3 +1,4 @@
+import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'welcome_screen.dart';
 
@@ -26,15 +27,14 @@ class _SplashLoadingState extends State<SplashLoading> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Usamos el nuevo color de fondo negro puro
+      backgroundColor: AfterlifeColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A0B2E), Color(0xFF4A148C), Color(0xFF880E4F)],
-          ),
+        // Aplicamos tu nuevo gradiente de lila eléctrico
+        decoration: BoxDecoration(
+          gradient: AfterlifeColors.electricLilacGradient,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -46,9 +46,9 @@ class _SplashLoadingState extends State<SplashLoading> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 50),
-            // LA ANIMACIÓN DE CARGA (Lila neón brillante)
+            // LA ANIMACIÓN DE CARGA con tu nuevo Lila Eléctrico
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE040FB)),
+              valueColor: AlwaysStoppedAnimation<Color>(AfterlifeColors.electricLilac),
               strokeWidth: 6,
             ),
           ],

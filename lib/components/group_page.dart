@@ -1,7 +1,7 @@
-import 'package:afterlife_projects/components/AfterButton.dart';
+import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
-import 'chat_page.dart'; // <--- Importante para que funcione el salto al chat
+import '../components/AfterButton.dart';
+import 'chat_page.dart';
 
 class GroupPage extends StatelessWidget {
   const GroupPage({super.key});
@@ -9,33 +9,31 @@ class GroupPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Aplicamos el fondo negro puro de tu paleta
+      backgroundColor: AfterlifeColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Fondo degradado Afterlife
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A0B2E), Color(0xFF4A148C), Color(0xFF880E4F)],
-          ),
+        // Usamos tu nuevo gradiente eléctrico oficial
+        decoration: BoxDecoration(
+          gradient: AfterlifeColors.electricLilacGradient,
         ),
         child: Column(
           children: [
             const SizedBox(height: 70),
-            const Text(
+            Text(
               'AMIGOS',
               style: TextStyle(
                 fontFamily: 'Syne',
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: AfterlifeColors.textPrimary, // Blanco oficial
                 letterSpacing: 4,
               ),
             ),
             const SizedBox(height: 30),
             
-            // Lista de Amigos que ahora son botones para chatear
+            // Lista de Amigos con efectos neón actualizados
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -48,13 +46,13 @@ class GroupPage extends StatelessWidget {
               ),
             ),
 
-            // Botón inferior para crear la noche
+            // Botón inferior con tu nuevo Lila Eléctrico
             Padding(
               padding: const EdgeInsets.only(bottom: 50),
               child: AfterButton(
                 label: 'CREAR NOCHE',
                 size: 160,
-                color: AfterlifeColors.electricLilac,
+                color: AfterlifeColors.electricLilac, // Usando tu lila 0xFF7B1FA2
                 onPressed: () => print("Nueva noche creada"),
               ),
             ),
@@ -64,7 +62,6 @@ class GroupPage extends StatelessWidget {
     );
   }
 
-  // Widget de cada amigo con detector de toques para ir al chat
   Widget _friendItem(BuildContext context, String name, bool online) {
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -75,27 +72,38 @@ class GroupPage extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          // Usamos superficie oscura de tu paleta
+          color: AfterlifeColors.surfaceDark.withOpacity(0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: online ? const Color(0xFFE040FB).withOpacity(0.3) : Colors.transparent
+            color: online 
+                ? AfterlifeColors.electricPurple.withOpacity(0.3) 
+                : Colors.transparent,
           ),
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: online ? const Color(0xFFE040FB) : Colors.grey[900],
+              backgroundColor: online 
+                  ? AfterlifeColors.electricPurple 
+                  : AfterlifeColors.textDisabled.withOpacity(0.2),
               child: const Icon(Icons.person, color: Colors.white),
             ),
             const SizedBox(width: 15),
             Text(
               name, 
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+              style: TextStyle(
+                color: AfterlifeColors.textPrimary, 
+                fontWeight: FontWeight.bold
+              )
             ),
             const Spacer(),
-            // Indicador de "listo para la fiesta"
             if (online) 
-              const Icon(Icons.flash_on, color: Color(0xFFE040FB), size: 18),
+              Icon(
+                Icons.flash_on, 
+                color: AfterlifeColors.electricPurple, 
+                size: 18
+              ),
           ],
         ),
       ),
