@@ -1,4 +1,4 @@
-import 'package:afterlife_projects/components/welcome_screen.dart';
+import 'package:afterlife_projects/components/splash_loading.dart';
 import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
 import 'package:flutter/material.dart';
 import 'theme/colors.dart';
@@ -13,8 +13,10 @@ class AfterlifeApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Afterlife',
-      theme: AfterlifeTheme.darkTheme, // Cargado desde colors.dart
-      home: const WelcomeScreen(), // Empezamos por la pantalla de "Clica para entrar"
+      // Usamos el tema oscuro neón de tu archivo de colores
+      theme: AfterlifeTheme.darkTheme, 
+      // El punto de inicio de la app es la animación de carga
+      home: const SplashLoading(), 
     );
   }
 }
