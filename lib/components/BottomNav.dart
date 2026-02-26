@@ -2,7 +2,6 @@
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 
-
 class AfterlifeBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
