@@ -1,42 +1,22 @@
 // lib/screens/achievements_screen.dart
-import 'package:afterlife_projects/Home.dart';
-import 'package:afterlife_projects/Menu_Noches.dart';
-import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
-import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
 
-class AchievementsScreen extends StatefulWidget {
+class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key});
 
-  @override
-  State<AchievementsScreen> createState() => _AchievementsScreenState();
-}
+  // Datos de ejemplo (podrían moverse a una clase separada)
+  static const String userName = 'Carlos';
+  static const int userLevel = 12;
+  static const int totalPoints = 2450;
+  static const int nightsAttended = 18;
+  static const int challengesCompleted = 47;
 
-class _AchievementsScreenState extends State<AchievementsScreen> {
-  int _selectedIndex = 3; // 3 = Logros
-
-  final List<BottomNavItem> _navItems = const [
-    BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
-    BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
-    BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
-    BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
-    BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
-  ];
-
-  // Datos de ejemplo del usuario
-  final String userName = 'Carlos';
-  final int userLevel = 12;
-  final int totalPoints = 2450;
-  final int nightsAttended = 18;
-  final int challengesCompleted = 47;
-
-  // Logros del usuario
-  final List<Map<String, dynamic>> _achievements = [
+  static const List<Map<String, dynamic>> _achievements = [
     // DESBLOQUEADOS
     {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true, 'description': 'Únete a 5 noches', 'date': '15/03/2025'},
     {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true, 'description': 'Completa tu primera noche', 'date': '10/03/2025'},
@@ -79,57 +59,15 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       ),
       body: Column(
         children: [
-          // Resumen rápido
           _buildSummaryCard(),
-          
-          // Lista de logros (sin categorías)
           Expanded(
             child: _buildAchievementsList(),
           ),
         ],
       ),
-      bottomNavigationBar: AfterlifeBottomNav(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-          
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const GroupPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NightSelectionScreen()),
-              );
-              break;
-            case 3:
-              // Ya estamos aquí
-              break;
-            case 4:
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Pantalla de Perfil - Próximamente')),
-              );
-              break;
-          }
-        },
-        items: _navItems,
-      ),
     );
   }
 
-  // Tarjeta de resumen
   Widget _buildSummaryCard() {
     int unlockedCount = _achievements.where((a) => a['unlocked']).length;
     int totalCount = _achievements.length;
@@ -161,7 +99,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$userName',
+                    userName,
                     style: AfterlifeTextTheme.titleLarge.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -240,7 +178,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     );
   }
 
-  // Item de estadística
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
@@ -265,16 +202,13 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     );
   }
 
-  // Lista de logros (simplificada)
   Widget _buildAchievementsList() {
-    // Separar desbloqueados y bloqueados
     final unlocked = _achievements.where((a) => a['unlocked']).toList();
     final locked = _achievements.where((a) => !a['unlocked']).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Sección: RECIENTEMENTE DESBLOQUEADOS
         if (unlocked.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -310,7 +244,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           const SizedBox(height: 20),
         ],
 
-        // Sección: PRÓXIMOS LOGROS (con progreso)
         if (locked.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -332,7 +265,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     );
   }
 
-  // Logro bloqueado con barra de progreso
   Widget _buildLockedAchievement(Map<String, dynamic> achievement) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -346,7 +278,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       ),
       child: Row(
         children: [
-          // Icono del logro (versión pequeña)
           Container(
             width: 50,
             height: 50,
@@ -365,8 +296,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          
-          // Info y progreso
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
