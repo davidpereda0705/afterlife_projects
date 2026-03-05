@@ -2,6 +2,7 @@ import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/logros.dart';
+import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -31,16 +32,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     const GroupPage(),
     const NightSelectionScreen(),
     const AchievementsScreen(),
-    // Placeholder para Perfil (puedes reemplazar con tu pantalla de perfil más adelante)
-    Container(
-      color: AfterlifeColors.background,
-      child: const Center(
-        child: Text(
-          'Perfil',
-          style: TextStyle(color: Colors.white, fontSize: 24),
-        ),
-      ),
-    ),
+    const ProfileScreen(),
   ];
 
   @override
