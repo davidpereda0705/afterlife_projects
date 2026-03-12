@@ -40,19 +40,7 @@ class ProfileScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.settings_outlined,
-              color: AfterlifeColors.textPrimary,
-            ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Configuración - Próximamente')),
-              );
-            },
-          ),
-        ],
+        // Eliminada la acción de configuración
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
