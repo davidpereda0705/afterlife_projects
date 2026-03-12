@@ -146,7 +146,6 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               // Botón para pasar (usando tu AfterButton circular)
               AfterButton(
                 label: 'SIGUIENTE',
-                size: 140,
                 color: const Color(0xFFEC4899),
                 onPressed: _nextFrase,
               ),

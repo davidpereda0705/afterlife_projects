@@ -193,14 +193,12 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                   if (!_isTimerRunning)
                     AfterButton(
                       label: '¡DALE!',
-                      size: 140,
                       color: const Color(0xFF06B6D4),
                       onPressed: _startTimer,
                     ),
                   if (_isTimerRunning || _secondsLeft == 0)
                     AfterButton(
                       label: 'SIGUIENTE',
-                      size: 140,
                       color: AfterlifeColors.electricPurple,
                       onPressed: _nextReto,
                     ),
