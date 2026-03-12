@@ -60,91 +60,90 @@ class MinigamesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Cabecera
-            AfterlifeCard(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'PREVIA MODE',
-                      style: AfterlifeTextTheme.titleSmall.copyWith(
-                        color: AfterlifeColors.electricLilac,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
+        children: [
+          // Cabecera
+          AfterlifeCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PREVIA MODE',
+                    style: AfterlifeTextTheme.titleSmall.copyWith(
+                      color: AfterlifeColors.electricLilac,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Elige un juego y que empiece el caos',
-                      style: AfterlifeTextTheme.bodyLarge.copyWith(
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Elige un juego y que empiece el caos',
+                    style: AfterlifeTextTheme.bodyLarge.copyWith(
+                      color: AfterlifeColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Grid de juegos
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: _games.length,
+            itemBuilder: (context, index) {
+              final game = _games[index];
+              return _buildGameCard(
+                title: game['title'],
+                description: game['description'],
+                icon: game['icon'],
+                color: game['color'],
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Mensaje de responsabilidad
+          AfterlifeCard(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AfterlifeColors.neonOrange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Bebe con responsabilidad. Conoce tus límites y cuida de tus amigos.',
+                      style: AfterlifeTextTheme.bodySmall.copyWith(
                         color: AfterlifeColors.textSecondary,
+                        fontSize: 11,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // Grid de juegos (sin acción al pulsar)
-            Expanded(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                ),
-                itemCount: _games.length,
-                itemBuilder: (context, index) {
-                  final game = _games[index];
-                  return _buildGameCard(
-                    title: game['title'],
-                    description: game['description'],
-                    icon: game['icon'],
-                    color: game['color'],
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Mensaje de responsabilidad
-            AfterlifeCard(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AfterlifeColors.neonOrange,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Bebe con responsabilidad. Conoce tus límites y cuida de tus amigos.',
-                        style: AfterlifeTextTheme.bodySmall.copyWith(
-                          color: AfterlifeColors.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
