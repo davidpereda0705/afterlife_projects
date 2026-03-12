@@ -83,7 +83,6 @@ class GroupPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 30, top: 10),
               child: AfterButton(
                 label: 'CREAR NOCHE',
-                size: 160,
                 color: AfterlifeColors.electricLilac,
                 onPressed: () {
                   Navigator.push(

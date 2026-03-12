@@ -1,4 +1,5 @@
 // lib/screens/minigames_screen.dart
+import 'package:afterlife_projects/games/truth_or_drinks_game.dart' hide AvatarStatus;
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
@@ -92,7 +93,7 @@ class MinigamesScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Grid de juegos
+          // Grid de juegos cliqueable
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -105,11 +106,23 @@ class MinigamesScreen extends StatelessWidget {
             itemCount: _games.length,
             itemBuilder: (context, index) {
               final game = _games[index];
-              return _buildGameCard(
-                title: game['title'],
-                description: game['description'],
-                icon: game['icon'],
-                color: game['color'],
+              return GestureDetector(
+                onTap: () {
+                  // Solo navegamos a Verdad o Bebida, los demás no hacen nada
+                  if (game['title'] == 'VERDAD O BEBIDA') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TruthOrDrinkGame()),
+                    );
+                  }
+                  // Los otros juegos no tienen acción por ahora
+                },
+                child: _buildGameCard(
+                  title: game['title'],
+                  description: game['description'],
+                  icon: game['icon'],
+                  color: game['color'],
+                ),
               );
             },
           ),
