@@ -4,14 +4,12 @@ class AfterButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final Color color;
-  final double size;
 
   const AfterButton({
     super.key,
     required this.label,
     required this.onPressed,
     required this.color,
-    required this.size,
   });
 
   @override
@@ -19,11 +17,10 @@ class AfterButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: size,
-        height: size,
+        height: 60,
         decoration: BoxDecoration(
           color: color,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.6),
@@ -38,6 +35,7 @@ class AfterButton extends StatelessWidget {
               fontFamily: 'Syne',
               fontWeight: FontWeight.w800,
               color: Colors.white,
+              fontSize: 16,
             ),
           ),
         ),

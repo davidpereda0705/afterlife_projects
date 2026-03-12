@@ -140,7 +140,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 AfterButton(
                   label: isLogin ? 'ENTRAR' : 'REGISTRAR',
-                  size: 130,
                   color: AfterlifeColors.electricLilac,
                   onPressed: _intentarAcceder, // Ejecuta la validación
                 ),
