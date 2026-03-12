@@ -1,9 +1,11 @@
 // lib/screens/minigames_screen.dart
+import 'package:afterlife_projects/games/yo_nunca_nunca.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
+// IMPORTANTE: Asegúrate de crear este archivo para el juego
 
 class MinigamesScreen extends StatelessWidget {
   const MinigamesScreen({super.key});
@@ -13,25 +15,25 @@ class MinigamesScreen extends StatelessWidget {
       'title': 'VERDAD O BEBIDA',
       'description': 'Responde con honestidad… o bebe',
       'icon': Icons.psychology_alt_outlined,
-      'color': Color(0xFFA855F7), // electricPurple
+      'color': Color(0xFFA855F7),
     },
     {
       'title': 'YO NUNCA',
       'description': 'El juego que destruye amistades',
       'icon': Icons.water_drop_outlined,
-      'color': Color(0xFFEC4899), // neonPink
+      'color': Color(0xFFEC4899),
     },
     {
       'title': 'RETO RÁPIDO',
       'description': '30 segundos para hacer el ridículo',
       'icon': Icons.timer_outlined,
-      'color': Color(0xFF06B6D4), // cyanBlue
+      'color': Color(0xFF06B6D4),
     },
     {
       'title': '¿QUÉ PREFIERES?',
       'description': 'El dilema donde todos pierden',
       'icon': Icons.balance_outlined,
-      'color': Color(0xFF84CC16), // acidGreen
+      'color': Color(0xFF84CC16),
     },
   ];
 
@@ -44,6 +46,7 @@ class MinigamesScreen extends StatelessWidget {
         elevation: 0,
         title: Text(
           'Minijuegos',
+          // Usamos copyWith sobre headlineMedium que sí lo tienes en tu código
           style: AfterlifeTextTheme.headlineMedium.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -64,7 +67,6 @@ class MinigamesScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Cabecera
             AfterlifeCard(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -93,7 +95,6 @@ class MinigamesScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Grid de juegos (sin acción al pulsar)
             Expanded(
               child: GridView.builder(
                 physics: const NeverScrollableScrollPhysics(),
@@ -106,11 +107,32 @@ class MinigamesScreen extends StatelessWidget {
                 itemCount: _games.length,
                 itemBuilder: (context, index) {
                   final game = _games[index];
-                  return _buildGameCard(
-                    title: game['title'],
-                    description: game['description'],
-                    icon: game['icon'],
-                    color: game['color'],
+                  // Añadimos la navegación al pulsar la tarjeta
+                  return GestureDetector(
+                    onTap: () {
+                      if (game['title'] == 'YO NUNCA') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const YoNuncaGame(),
+                          ),
+                        );
+                      } else {
+                        // Feedback visual para juegos no implementados
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${game['title']} llegará pronto...'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
+                    child: _buildGameCard(
+                      title: game['title'],
+                      description: game['description'],
+                      icon: game['icon'],
+                      color: game['color'],
+                    ),
                   );
                 },
               ),
@@ -118,7 +140,6 @@ class MinigamesScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Mensaje de responsabilidad
             AfterlifeCard(
               child: Padding(
                 padding: const EdgeInsets.all(12),
