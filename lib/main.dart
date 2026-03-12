@@ -2,6 +2,7 @@ import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/logros.dart';
+import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
@@ -19,20 +20,24 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   late PageController _pageController;
   int _currentIndex = 0;
 
+  // AHORA CON 6 ITEMS (Minijuegos entre Noches y Logros)
   final List<BottomNavItem> _navItems = const [
     BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
     BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
     BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
+    BottomNavItem(icon: Icons.sports_esports_outlined, selectedIcon: Icons.sports_esports, label: 'Minijuegos'), // 👈 NUEVO
     BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
     BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
   ];
 
+  // Páginas en el mismo orden que los items
   late final List<Widget> _pages = [
     const HomeScreen(),
     const GroupPage(),
     const NightSelectionScreen(),
+    const MinigamesScreen(), 
     const AchievementsScreen(),
-    const ProfileScreen(),
+    const ProfileScreen(), 
   ];
 
   @override
