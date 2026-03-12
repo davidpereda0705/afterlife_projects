@@ -63,7 +63,7 @@ class MinigamesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -81,19 +81,20 @@ class MinigamesScreen extends StatelessWidget {
                         letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Elige un juego y que empiece el caos',
-                      style: AfterlifeTextTheme.bodyLarge.copyWith(
-                        color: AfterlifeColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Elige un juego y que empiece el caos',
+                    style: AfterlifeTextTheme.bodyLarge.copyWith(
+                      color: AfterlifeColors.textSecondary,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
             Expanded(
               child: GridView.builder(
@@ -137,8 +138,19 @@ class MinigamesScreen extends StatelessWidget {
                 },
               ),
             ),
+            itemCount: _games.length,
+            itemBuilder: (context, index) {
+              final game = _games[index];
+              return _buildGameCard(
+                title: game['title'],
+                description: game['description'],
+                icon: game['icon'],
+                color: game['color'],
+              );
+            },
+          ),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
             AfterlifeCard(
               child: Padding(
@@ -160,12 +172,14 @@ class MinigamesScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
