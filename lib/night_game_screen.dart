@@ -1,7 +1,7 @@
 // lib/screens/night_game_screen.dart
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../theme/colors.dart';
 import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
@@ -12,10 +12,7 @@ enum AvatarStatus { online, offline, inNight }
 class NightGameScreen extends StatefulWidget {
   final Map<String, dynamic> nightData;
 
-  const NightGameScreen({
-    super.key,
-    required this.nightData,
-  });
+  const NightGameScreen({super.key, required this.nightData});
 
   @override
   State<NightGameScreen> createState() => _NightGameScreenState();
@@ -31,6 +28,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
     _nightData = widget.nightData.isNotEmpty
         ? widget.nightData
         : _getMockNightData();
+    // Asegurar que exista la lista de fotos de la noche
+    if (_nightData['nightPhotos'] == null) {
+      _nightData['nightPhotos'] = <Uint8List>[];
+    }
   }
 
   Map<String, dynamic> _getMockNightData() {
@@ -55,7 +56,29 @@ class _NightGameScreenState extends State<NightGameScreen> {
         {'name': 'Canta una canción', 'points': 200, 'completed': false},
         {'name': 'Haz reír a todos', 'points': 130, 'completed': false},
       ],
+      'nightPhotos': <Uint8List>[], // lista de bytes de imágenes
     };
+  }
+
+  // Método para añadir foto de la noche
+  Future<void> _addNightPhoto() async {
+    final picker = ImagePicker();
+    try {
+      final XFile? pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          (_nightData['nightPhotos'] as List).add(bytes);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -90,6 +113,12 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ],
         ),
         actions: [
+          // Botón para añadir foto de la noche
+          IconButton(
+            icon: const Icon(Icons.add_a_photo, color: Colors.white),
+            onPressed: _addNightPhoto,
+          ),
+          // Puntuación total
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -127,6 +156,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 const SizedBox(height: 20),
                 _buildCurrentChallenge(),
                 const SizedBox(height: 20),
+                _buildNightPhotos(), // Sección de fotos de la noche
+                const SizedBox(height: 20),
                 _buildPlayersRanking(),
                 const SizedBox(height: 20),
                 _buildChallengesList(),
@@ -136,8 +167,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ),
         ],
       ),
-      floatingActionButton: _buildCompleteChallengeButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      // El botón flotante ha sido eliminado
     );
   }
 
@@ -182,9 +212,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF7B1FA2).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -307,7 +335,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -324,6 +355,56 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Widget para mostrar las fotos de la noche (ListView horizontal)
+  Widget _buildNightPhotos() {
+    final photos = _nightData['nightPhotos'] as List? ?? [];
+    if (photos.isEmpty) return const SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'FOTOS DE LA NOCHE',
+            style: TextStyle(
+              color: Color(0xFF06B6D4),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: photos.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  // Aquí podrías abrir la imagen a pantalla completa más adelante
+                },
+                child: Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: MemoryImage(photos[index]),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -422,7 +503,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF7B1FA2).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
@@ -441,7 +524,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF59E0B).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -486,9 +572,12 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
           return GestureDetector(
             onTap: () {
+              // Actualizar el índice actual para que el reto destacado sea este
               setState(() {
                 _currentChallengeIndex = index;
               });
+              // Navegar directamente a la pantalla de completar reto
+              _navigateToCompleteChallenge(challenge);
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -500,8 +589,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   color: isCurrent
                       ? const Color(0xFF06B6D4)
                       : isCompleted
-                          ? const Color(0xFF84CC16).withOpacity(0.3)
-                          : Colors.transparent,
+                      ? const Color(0xFF84CC16).withOpacity(0.3)
+                      : Colors.transparent,
                   width: isCurrent ? 2 : 1,
                 ),
               ),
@@ -532,22 +621,22 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         color: isCompleted
                             ? Colors.white.withOpacity(0.6)
                             : Colors.white,
-                        fontWeight:
-                            isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
                   if (challenge['proof'] != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: Icon(
-                        Icons.image,
-                        color: Colors.white54,
-                        size: 16,
-                      ),
+                      child: Icon(Icons.image, color: Colors.white54, size: 16),
                     ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: isCompleted
                           ? const Color(0xFF84CC16).withOpacity(0.2)
@@ -574,73 +663,63 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  Widget _buildCompleteChallengeButton() {
-    final challenges = _nightData['challenges'] ?? [];
-    if (_currentChallengeIndex >= challenges.length) {
-      return const SizedBox();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: FloatingActionButton.extended(
-        onPressed: _navigateToCompleteChallenge,
-        backgroundColor: const Color(0xFF7B1FA2),
-        icon: const Icon(Icons.add_photo_alternate, color: Colors.white),
-        label: const Text(
-          'COMPLETAR RETO',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToCompleteChallenge() async {
-    final challenge = _nightData['challenges'][_currentChallengeIndex];
-    await Navigator.push(
+  // Navegar a la pantalla de completar reto con el reto específico
+  void _navigateToCompleteChallenge(Map<String, dynamic> challenge) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CompleteChallengeScreen(
           challenge: challenge,
           players: _nightData['players'],
-          onConfirm: _completeChallengeWithData,
         ),
       ),
     );
+
+    if (result != null) {
+      _completeChallengeWithData(result['player'], result['image']);
+
+      // 🚫 NO HACEMOS NADA SI ES EL ÚLTIMO RETO
+    }
   }
 
   void _completeChallengeWithData(String playerName, Uint8List? imageBytes) {
-  setState(() {
-    final challenge = _nightData['challenges'][_currentChallengeIndex];
-    challenge['completed'] = true;
-    challenge['completedBy'] = playerName;
-    if (imageBytes != null) {
-      challenge['proof'] = 'image'; // O podrías guardar los bytes como base64, pero para la demo basta con marcar que hay prueba
-      // Si quieres guardar los bytes, puedes hacer challenge['proofBytes'] = imageBytes;
-    }
+    setState(() {
+      final challenge = _nightData['challenges'][_currentChallengeIndex];
 
-    int points = challenge['points'] ?? 0;
-    for (var player in _nightData['players']) {
-      if (player['name'] == playerName) {
-        player['points'] = (player['points'] ?? 0) + points;
-        break;
+      challenge['completed'] = true;
+      challenge['completedBy'] = playerName;
+
+      if (imageBytes != null) {
+        challenge['proof'] = 'image';
       }
-    }
 
-    int nextIndex = _currentChallengeIndex + 1;
-    while (nextIndex < _nightData['challenges'].length &&
-        _nightData['challenges'][nextIndex]['completed'] == true) {
-      nextIndex++;
-    }
-    if (nextIndex < _nightData['challenges'].length) {
-      _currentChallengeIndex = nextIndex;
-    } else {
-      _showNightCompleteDialog();
-    }
-  });
-}
+      int points = challenge['points'] ?? 0;
+
+      for (var player in _nightData['players']) {
+        if (player['name'] == playerName) {
+          player['points'] = (player['points'] ?? 0) + points;
+          break;
+        }
+      }
+
+      int nextIndex = _currentChallengeIndex + 1;
+
+      while (nextIndex < _nightData['challenges'].length &&
+          _nightData['challenges'][nextIndex]['completed'] == true) {
+        nextIndex++;
+      }
+
+      if (nextIndex < _nightData['challenges'].length) {
+        _currentChallengeIndex = nextIndex;
+      }
+
+      // 🚫 Si no hay más retos → no hacemos nada
+    });
+  }
+
+  bool _allChallengesCompleted() {
+    return _nightData['challenges'].every((c) => c['completed'] == true);
+  }
 
   void _showNightCompleteDialog() {
     showDialog(
@@ -698,9 +777,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('SALIR'),
           ),
         ],

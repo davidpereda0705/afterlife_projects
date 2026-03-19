@@ -1,4 +1,3 @@
-// lib/screens/complete_challenge_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,13 +9,11 @@ import '../components/AfterLife_Avatar.dart';
 class CompleteChallengeScreen extends StatefulWidget {
   final Map<String, dynamic> challenge;
   final List<Map<String, dynamic>> players;
-  final Function(String playerName, Uint8List? imageBytes) onConfirm; // Cambiado a bytes
 
   const CompleteChallengeScreen({
     super.key,
     required this.challenge,
     required this.players,
-    required this.onConfirm,
   });
 
   @override
@@ -25,19 +22,20 @@ class CompleteChallengeScreen extends StatefulWidget {
 
 class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   String? _selectedPlayer;
-  Uint8List? _imageBytes; // Guardamos los bytes de la imagen
+  Uint8List? _imageBytes;
   bool _uploadingMedia = false;
 
   Future<void> _pickMedia(ImageSource source) async {
     setState(() => _uploadingMedia = true);
     final picker = ImagePicker();
+
     try {
       final XFile? pickedFile = await picker.pickImage(
         source: source,
         imageQuality: 80,
       );
+
       if (pickedFile != null) {
-        // Leer los bytes de la imagen
         final bytes = await pickedFile.readAsBytes();
         setState(() {
           _imageBytes = bytes;
@@ -53,6 +51,16 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   }
 
   bool get _canConfirm => _selectedPlayer != null && _imageBytes != null;
+
+  void _confirm() {
+    if (!_canConfirm) return;
+
+    // Devolvemos datos y cerramos pantalla
+    Navigator.pop(context, {
+      'player': _selectedPlayer,
+      'image': _imageBytes,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +84,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Tarjeta del reto (igual)
+          // Tarjeta del reto
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -86,7 +94,13 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                )
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,8 +112,14 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                  child: Text('${challenge['points'] ?? 0} pts', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${challenge['points'] ?? 0} pts',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -107,9 +127,19 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
 
           const SizedBox(height: 24),
 
-          // Selector de jugador
-          Text('¿QUIÉN COMPLETA EL RETO?', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+          // Texto selector de jugador
+          Text(
+            '¿QUIÉN COMPLETA EL RETO?',
+            style: TextStyle(
+              color: AfterlifeColors.electricLilac,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 8),
+
+          // Selector de jugador con estilo original
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
@@ -147,10 +177,19 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
 
           const SizedBox(height: 24),
 
-          // Sección de prueba multimedia (OBLIGATORIA)
-          Text('PRUEBA (OBLIGATORIA)', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+          // Texto de prueba multimedia
+          Text(
+            'PRUEBA (OBLIGATORIA)',
+            style: TextStyle(
+              color: AfterlifeColors.cyanBlue,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 8),
 
+          // Sección de imagen con estilo original
           if (_imageBytes != null)
             Container(
               height: 200,
@@ -214,7 +253,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _uploadingMedia ? null : () => _pickMedia(ImageSource.camera),
-                        icon: Icon(Icons.camera_alt),
+                        icon: const Icon(Icons.camera_alt),
                         label: const Text('Cámara'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AfterlifeColors.cyanBlue,
@@ -227,7 +266,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _uploadingMedia ? null : () => _pickMedia(ImageSource.gallery),
-                        icon: Icon(Icons.photo_library),
+                        icon: const Icon(Icons.photo_library),
                         label: const Text('Galería'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AfterlifeColors.neonPink,
@@ -248,16 +287,11 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
 
           const SizedBox(height: 32),
 
-          // Botón confirmar (solo activo si hay jugador e imagen)
+          // Botón confirmar
           AfterButton(
             label: 'CONFIRMAR',
             color: _canConfirm ? AfterlifeColors.acidGreen : Colors.grey,
-            onPressed: _canConfirm
-                ? () {
-                    widget.onConfirm(_selectedPlayer!, _imageBytes);
-                    Navigator.pop(context);
-                  }
-                : () {},
+            onPressed: _canConfirm ? _confirm : null,
           ),
         ],
       ),

@@ -2,31 +2,34 @@ import 'package:flutter/material.dart';
 
 class AfterButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed; // Cambiado a opcional
   final Color color;
 
   const AfterButton({
     super.key,
     required this.label,
-    required this.onPressed,
+    this.onPressed, // Ya no es required, puede ser null
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool isDisabled = onPressed == null;
     return GestureDetector(
-      onTap: onPressed,
+      onTap: isDisabled ? null : onPressed,
       child: Container(
         height: 60,
         decoration: BoxDecoration(
-          color: color,
+          color: isDisabled ? color.withOpacity(0.3) : color,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.6),
-              blurRadius: 25,
-            ),
-          ],
+          boxShadow: isDisabled
+              ? []
+              : [
+                  BoxShadow(
+                    color: color.withOpacity(0.6),
+                    blurRadius: 25,
+                  ),
+                ],
         ),
         child: Center(
           child: Text(
