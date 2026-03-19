@@ -1,6 +1,6 @@
 // lib/features/home/home_screen.dart
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
+import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -118,9 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: AfterlifeAvatar(
+            child: avatar.AfterlifeAvatar(
               initials: 'CR',
-              status: AvatarStatus.online,
+              status: avatar.AvatarStatus.online,
               size: 40,
               showStatusIndicator: true,
             ),
@@ -148,9 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              AfterlifeAvatar(
+              avatar.AfterlifeAvatar(
                 initials: 'CR',
-                status: AvatarStatus.online,
+                status: avatar.AvatarStatus.online,
                 size: 70,
                 showStatusIndicator: true,
               ),
@@ -459,9 +459,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: AfterlifeAvatar(
+                        child: avatar.AfterlifeAvatar(
                           initials: night['joinedFriends'][index],
-                          status: AvatarStatus.online,
+                          status: avatar.AvatarStatus.online,
                           size: 28,
                           showStatusIndicator: true,
                         ),
