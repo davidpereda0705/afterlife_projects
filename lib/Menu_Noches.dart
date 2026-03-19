@@ -1,52 +1,12 @@
 // lib/screens/night_selection_screen.dart
-import 'package:afterlife_projects/Home.dart';
-import 'package:afterlife_projects/components/group_page.dart';
-import 'package:afterlife_projects/create_night_screen.dart' hide BottomNavItem;
+import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/join_night_screen.dart';
-import 'package:afterlife_projects/logros.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import '../theme/AfterlifeTheme.dart';
 import '../components/AfterLifeCard.dart';
-import '../components/BottomNav.dart';
 
-class NightSelectionScreen extends StatefulWidget {
+class NightSelectionScreen extends StatelessWidget {
   const NightSelectionScreen({super.key});
-
-  @override
-  State<NightSelectionScreen> createState() => _NightSelectionScreenState();
-}
-
-class _NightSelectionScreenState extends State<NightSelectionScreen> {
-  int _selectedIndex = 2;
-
-  final List<BottomNavItem> _navItems = const [
-    BottomNavItem(
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home,
-      label: 'Home',
-    ),
-    BottomNavItem(
-      icon: Icons.group_outlined,
-      selectedIcon: Icons.group,
-      label: 'Amigos',
-    ),
-    BottomNavItem(
-      icon: Icons.nightlight_outlined,
-      selectedIcon: Icons.nightlight_round,
-      label: 'Noches',
-    ),
-    BottomNavItem(
-      icon: Icons.emoji_events_outlined,
-      selectedIcon: Icons.emoji_events,
-      label: 'Logros',
-    ),
-    BottomNavItem(
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person,
-      label: 'Perfil',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -79,14 +39,13 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
               ),
             ),
             const SizedBox(height: 40),
-
+            
+            // Opción CREAR NOCHE
             AfterlifeCard(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateNightScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const CreateNightScreen()),
                 );
               },
               child: Row(
@@ -98,51 +57,31 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
                       color: AfterlifeColors.electricLilac.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.add_circle_outline,
-                      color: AfterlifeColors.electricLilac,
-                      size: 30,
-                    ),
+                    child: Icon(Icons.add_circle_outline, color: AfterlifeColors.electricLilac, size: 30),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'CREAR NOCHE',
-                          style: TextStyle(
-                            color: AfterlifeColors.electricLilac,
-                            fontSize: 18,
-                          ),
-                        ),
-                        Text(
-                          'Organiza una nueva noche',
-                          style: TextStyle(
-                            color: AfterlifeColors.textSecondary,
-                          ),
-                        ),
+                        Text('CREAR NOCHE', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 18)),
+                        Text('Organiza una nueva noche', style: TextStyle(color: AfterlifeColors.textSecondary)),
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: AfterlifeColors.electricLilac,
-                    size: 16,
-                  ),
+                  Icon(Icons.arrow_forward_ios, color: AfterlifeColors.electricLilac, size: 16),
                 ],
               ),
             ),
-
+            
             const SizedBox(height: 16),
-
+            
+            // Opción UNIRSE A NOCHE
             AfterlifeCard(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const JoinNightScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const JoinNightScreen()),
                 );
               },
               child: Row(
@@ -154,82 +93,24 @@ class _NightSelectionScreenState extends State<NightSelectionScreen> {
                       color: AfterlifeColors.neonPink.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.group_add_outlined,
-                      color: AfterlifeColors.neonPink,
-                      size: 30,
-                    ),
+                    child: Icon(Icons.group_add_outlined, color: AfterlifeColors.neonPink, size: 30),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'UNIRSE A NOCHE',
-                          style: TextStyle(
-                            color: AfterlifeColors.neonPink,
-                            fontSize: 18,
-                          ),
-                        ),
-                        Text(
-                          'Únete a una noche en espera',
-                          style: TextStyle(
-                            color: AfterlifeColors.textSecondary,
-                          ),
-                        ),
+                        Text('UNIRSE A NOCHE', style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 18)),
+                        Text('Únete a una noche en espera', style: TextStyle(color: AfterlifeColors.textSecondary)),
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: AfterlifeColors.neonPink,
-                    size: 16,
-                  ),
+                  Icon(Icons.arrow_forward_ios, color: AfterlifeColors.neonPink, size: 16),
                 ],
               ),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: AfterlifeBottomNav(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-              );
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const GroupPage()),
-              );
-              break;
-            case 2:
-              break;
-            case 3:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AchievementsScreen(),
-                ),
-              );
-              break;
-            case 4:
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Pantalla de Perfil - Próximamente')),
-              );
-              break;
-          }
-        },
-        items: _navItems,
       ),
     );
   }
