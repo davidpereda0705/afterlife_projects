@@ -4,7 +4,7 @@ import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/join_night_screen.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import '../components/AfterLifeCard.dart'; // 👈 Importamos el gestor
+import '../components/AfterLifeCard.dart';
 
 class NightSelectionScreen extends StatelessWidget {
   const NightSelectionScreen({super.key});
