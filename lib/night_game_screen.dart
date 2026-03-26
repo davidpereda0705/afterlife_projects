@@ -1,12 +1,13 @@
 // lib/screens/night_game_screen.dart
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/colors.dart';
 import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
+import 'night_summary_screen.dart';
 
-// Definición local de AvatarStatus por si no está exportada
 enum AvatarStatus { online, offline, inNight }
 
 class NightGameScreen extends StatefulWidget {
@@ -22,16 +23,69 @@ class _NightGameScreenState extends State<NightGameScreen> {
   int _currentChallengeIndex = 0;
   late Map<String, dynamic> _nightData;
 
+  // Temporizador hasta las 6:00 AM
+  late DateTime _startTime;
+  late DateTime _endTime;
+  Duration _timeLeft = Duration.zero;
+  Timer? _timer;
+  bool _canFinish = false;
+
   @override
   void initState() {
     super.initState();
     _nightData = widget.nightData.isNotEmpty
         ? widget.nightData
         : _getMockNightData();
-    // Asegurar que exista la lista de fotos de la noche
+
     if (_nightData['nightPhotos'] == null) {
       _nightData['nightPhotos'] = <Uint8List>[];
     }
+
+    // Calcular hora de inicio a partir de los datos de la noche
+    _startTime = _parseStartTime();
+    _endTime = _calculateEndTime(_startTime);
+    _updateTimeLeft();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateTimeLeft();
+    });
+  }
+
+  DateTime _parseStartTime() {
+    final now = DateTime.now();
+    final timeStr = _nightData['time'] ?? '22:30';
+    final parts = timeStr.split(':');
+    int hour = int.parse(parts[0]);
+    int minute = int.parse(parts[1]);
+    return DateTime(now.year, now.month, now.day, hour, minute);
+  }
+
+  DateTime _calculateEndTime(DateTime start) {
+    DateTime end = DateTime(start.year, start.month, start.day, 6, 0);
+    if (start.hour >= 6) {
+      end = end.add(const Duration(days: 1));
+    }
+    return end;
+  }
+
+  void _updateTimeLeft() {
+    final now = DateTime.now();
+    if (now.isAfter(_endTime)) {
+      setState(() {
+        _timeLeft = Duration.zero;
+        _canFinish = true;
+      });
+      _timer?.cancel();
+    } else {
+      setState(() {
+        _timeLeft = _endTime.difference(now);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Map<String, dynamic> _getMockNightData() {
@@ -56,11 +110,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
         {'name': 'Canta una canción', 'points': 200, 'completed': false},
         {'name': 'Haz reír a todos', 'points': 130, 'completed': false},
       ],
-      'nightPhotos': <Uint8List>[], // lista de bytes de imágenes
+      'nightPhotos': <Uint8List>[],
     };
   }
 
-  // Método para añadir foto de la noche
   Future<void> _addNightPhoto() async {
     final picker = ImagePicker();
     try {
@@ -79,6 +132,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
+  }
+
+  String _formatDuration(Duration d) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(d.inHours);
+    final minutes = twoDigits(d.inMinutes.remainder(60));
+    final seconds = twoDigits(d.inSeconds.remainder(60));
+    return "$hours:$minutes:$seconds";
   }
 
   @override
@@ -113,6 +174,30 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ],
         ),
         actions: [
+          // Temporizador (siempre visible)
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B1FA2).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF7B1FA2).withOpacity(0.3),
+              ),
+            ),
+            child: Text(
+              _formatDuration(_timeLeft),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          // Botón finalizar (siempre visible para testing)
+          IconButton(
+            icon: const Icon(Icons.flag, color: Color(0xFF84CC16)),
+            onPressed: _finishNight,
+          ),
           // Botón para añadir foto de la noche
           IconButton(
             icon: const Icon(Icons.add_a_photo, color: Colors.white),
@@ -156,7 +241,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 const SizedBox(height: 20),
                 _buildCurrentChallenge(),
                 const SizedBox(height: 20),
-                _buildNightPhotos(), // Sección de fotos de la noche
+                _buildNightPhotos(),
                 const SizedBox(height: 20),
                 _buildPlayersRanking(),
                 const SizedBox(height: 20),
@@ -167,9 +252,19 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ),
         ],
       ),
-      // El botón flotante ha sido eliminado
     );
   }
+
+  void _finishNight() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NightSummaryScreen(nightData: _nightData),
+      ),
+    );
+  }
+
+  // ... resto de funciones (_buildProgressBar, _buildHostInfo, etc.) se mantienen igual ...
 
   Widget _buildProgressBar() {
     final challenges = _nightData['challenges'] ?? [];
@@ -281,19 +376,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   Widget _buildCurrentChallenge() {
     final challenges = _nightData['challenges'] ?? [];
-    if (challenges.isEmpty || _currentChallengeIndex >= challenges.length) {
+    if (challenges.isEmpty || _currentChallengeIndex >= challenges.length)
       return const SizedBox();
-    }
-
-    final currentChallenge = challenges[_currentChallengeIndex];
-
+    final current = challenges[_currentChallengeIndex];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -324,7 +414,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            currentChallenge['name'] ?? 'Reto',
+            current['name'] ?? 'Reto',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -344,7 +434,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${currentChallenge['points'] ?? 0} pts',
+                  '${current['points'] ?? 0} pts',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -358,7 +448,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  // Widget para mostrar las fotos de la noche (ListView horizontal)
   Widget _buildNightPhotos() {
     final photos = _nightData['nightPhotos'] as List? ?? [];
     if (photos.isEmpty) return const SizedBox();
@@ -385,9 +474,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
             itemCount: photos.length,
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () {
-                  // Aquí podrías abrir la imagen a pantalla completa más adelante
-                },
+                onTap: () {},
                 child: Container(
                   width: 100,
                   margin: const EdgeInsets.only(right: 8),
@@ -410,11 +497,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   Widget _buildPlayersRanking() {
     final players = List<Map<String, dynamic>>.from(_nightData['players'] ?? [])
-      ..sort((a, b) {
-        int pointsA = a['points'] ?? 0;
-        int pointsB = b['points'] ?? 0;
-        return pointsB.compareTo(pointsA);
-      });
+      ..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
 
     if (players.isEmpty) return const SizedBox();
 
@@ -433,8 +516,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         const SizedBox(height: 12),
         ...List.generate(players.length, (index) {
           final player = players[index];
-          final bool isHost = player['name'] == _nightData['hostName'];
-
+          final isHost = player['name'] == _nightData['hostName'];
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
@@ -572,11 +654,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
           return GestureDetector(
             onTap: () {
-              // Actualizar el índice actual para que el reto destacado sea este
-              setState(() {
-                _currentChallengeIndex = index;
-              });
-              // Navegar directamente a la pantalla de completar reto
+              setState(() => _currentChallengeIndex = index);
               _navigateToCompleteChallenge(challenge);
             },
             child: Container(
@@ -663,7 +741,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  // Navegar a la pantalla de completar reto con el reto específico
   void _navigateToCompleteChallenge(Map<String, dynamic> challenge) async {
     final result = await Navigator.push(
       context,
@@ -674,81 +751,35 @@ class _NightGameScreenState extends State<NightGameScreen> {
         ),
       ),
     );
-
     if (result != null) {
       _completeChallengeWithData(result['player'], result['image']);
-
-      // 🚫 NO HACEMOS NADA SI ES EL ÚLTIMO RETO
     }
   }
 
   void _completeChallengeWithData(String playerName, Uint8List? imageBytes) {
     setState(() {
       final challenge = _nightData['challenges'][_currentChallengeIndex];
-
       challenge['completed'] = true;
       challenge['completedBy'] = playerName;
-
       if (imageBytes != null) {
-        challenge['proof'] = 'image';
+        challenge['proofBytes'] = imageBytes; // 👈 Guardamos los bytes
       }
-
       int points = challenge['points'] ?? 0;
-
       for (var player in _nightData['players']) {
         if (player['name'] == playerName) {
           player['points'] = (player['points'] ?? 0) + points;
           break;
         }
       }
-
       int nextIndex = _currentChallengeIndex + 1;
-
       while (nextIndex < _nightData['challenges'].length &&
           _nightData['challenges'][nextIndex]['completed'] == true) {
         nextIndex++;
       }
-
       if (nextIndex < _nightData['challenges'].length) {
         _currentChallengeIndex = nextIndex;
       }
-
-      // 🚫 Si no hay más retos → no hacemos nada
     });
-  }
-
-  bool _allChallengesCompleted() {
-    return _nightData['challenges'].every((c) => c['completed'] == true);
-  }
-
-  void _showNightCompleteDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          '🎉 NOCHE COMPLETADA 🎉',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          '¡Felicidades! Habéis completado todos los retos.\n\nPuntuación total: ${_getTotalPoints()} pts',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7B1FA2),
-            ),
-            child: const Text('VOLVER'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showExitConfirmation(BuildContext context) {
