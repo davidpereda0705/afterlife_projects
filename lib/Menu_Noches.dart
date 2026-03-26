@@ -1,12 +1,26 @@
 // lib/screens/night_selection_screen.dart
+import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/join_night_screen.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import '../components/AfterLifeCard.dart';
+import '../components/AfterLifeCard.dart'; // 👈 Importamos el gestor
 
 class NightSelectionScreen extends StatelessWidget {
   const NightSelectionScreen({super.key});
+
+  void _checkAndNavigate(BuildContext context, Widget destination) {
+    if (ActiveNightManager().isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya tienes una noche activa. Finalízala antes de crear o unirte a otra.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +56,7 @@ class NightSelectionScreen extends StatelessWidget {
             
             // Opción CREAR NOCHE
             AfterlifeCard(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CreateNightScreen()),
-                );
-              },
+              onTap: () => _checkAndNavigate(context, const CreateNightScreen()),
               child: Row(
                 children: [
                   Container(
@@ -78,12 +87,7 @@ class NightSelectionScreen extends StatelessWidget {
             
             // Opción UNIRSE A NOCHE
             AfterlifeCard(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const JoinNightScreen()),
-                );
-              },
+              onTap: () => _checkAndNavigate(context, const JoinNightScreen()),
               child: Row(
                 children: [
                   Container(

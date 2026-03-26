@@ -7,6 +7,7 @@ import '../theme/colors.dart';
 import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
+import 'ActiveNightManager.dart';
 
 enum AvatarStatus { online, offline, inNight }
 
@@ -40,6 +41,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
     if (_nightData['nightPhotos'] == null) {
       _nightData['nightPhotos'] = <Uint8List>[];
     }
+
+    ActiveNightManager().setActiveNight(_nightData);
 
     // Calcular hora de inicio a partir de los datos de la noche
     _startTime = _parseStartTime();
@@ -82,11 +85,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   Map<String, dynamic> _getMockNightData() {
     return {
@@ -256,6 +254,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   void _finishNight() {
+    ActiveNightManager().clearActiveNight();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -805,6 +804,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              ActiveNightManager().clearActiveNight();
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
@@ -816,6 +816,15 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    // Si la noche no se ha limpiado antes (por si se cierra la app sin finalizar)
+    ActiveNightManager().clearActiveNight();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+
   int _getTotalPoints() {
     int total = 0;
     for (var player in _nightData['players'] ?? []) {
@@ -826,4 +835,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
     return total;
   }
+  
 }
+

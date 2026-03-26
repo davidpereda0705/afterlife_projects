@@ -1,4 +1,5 @@
 // lib/features/home/home_screen.dart
+import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
@@ -6,6 +7,7 @@ import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -527,6 +529,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _joinNightFromHome(Map<String, dynamic> night) {
+    // Verificar si ya hay una noche activa
+    if (ActiveNightManager().isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     Map<String, dynamic> updatedNight = Map.from(night);
     List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
     updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
@@ -537,7 +550,6 @@ class _HomeScreenState extends State<HomeScreen> {
     updatedJoined.add('TU');
     updatedNight['joinedFriends'] = updatedJoined;
 
-    
     Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.push(
         context,
@@ -553,6 +565,16 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
+          // Verificar si ya hay una noche activa
+          if (ActiveNightManager().isActive) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
           Navigator.push(
             context,
             MaterialPageRoute(
