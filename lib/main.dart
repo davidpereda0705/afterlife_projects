@@ -1,3 +1,5 @@
+//&Sd6jQ3&KUam5/f Contraseña supabase
+//@iDLvfRPT7T-Et6
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
