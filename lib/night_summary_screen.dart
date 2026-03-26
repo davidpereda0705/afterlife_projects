@@ -87,8 +87,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     if (_podiumIndex < _podiumPlayers.length) {
       // Mostrar el jugador actual
       setState(() {});
-      // Esperar 1.2 segundos antes de mostrar el siguiente
-      Future.delayed(const Duration(milliseconds: 1200), () {
+      // Tiempo más largo para que se vea bien
+      Future.delayed(const Duration(milliseconds: 2500), () {
         if (mounted) {
           _podiumIndex++;
           _showNextPodium();
@@ -178,14 +178,11 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     final nightPhotos = widget.nightData['nightPhotos'] ?? [];
     List<Map<String, dynamic>> photos = [];
     for (var item in nightPhotos) {
-      // La estructura puede ser bytes directo o mapa {bytes, uploadedBy}
+      // La estructura puede ser bytes directo o mapa {bytes}
       if (item is Uint8List) {
-        photos.add({'bytes': item, 'uploadedBy': 'Alguien'});
+        photos.add({'bytes': item});
       } else if (item is Map && item.containsKey('bytes')) {
-        photos.add({
-          'bytes': item['bytes'],
-          'uploadedBy': item['uploadedBy'] ?? 'Alguien',
-        });
+        photos.add({'bytes': item['bytes']});
       }
     }
     return photos;
@@ -420,7 +417,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 2: TABLA DE CLASIFICACIÓN ----
+  // ---- PASO 2: TABLA DE CLASIFICACIÓN (sin botón) ----
   Widget _buildRanking() {
     final players = _getSortedPlayers();
     return Center(
@@ -495,14 +492,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
               );
             }),
             const SizedBox(height: 30),
-            OutlinedButton(
-              onPressed: _nextStep,
-              child: const Text('SIGUIENTE'),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AfterlifeColors.cyanBlue),
-                foregroundColor: AfterlifeColors.cyanBlue,
-              ),
-            ),
+            // Botón eliminado (se avanza con tap)
           ],
         ),
       ),
@@ -589,7 +579,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 4: FOTOS DE LA NOCHE (carrusel con quién subió) ----
+  // ---- PASO 4: FOTOS DE LA NOCHE (sin texto de subida) ----
   Widget _buildNightPhotos() {
     final photos = _getNightPhotos();
     if (photos.isEmpty) {
@@ -647,10 +637,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Subida por: ${item['uploadedBy']}',
-                      style: TextStyle(color: AfterlifeColors.textSecondary),
-                    ),
+                    // Se ha eliminado el texto "Subida por: ..."
                   ],
                 ),
               );
@@ -661,7 +648,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 5: RESUMEN FINAL (todo junto) ----
+  // ---- PASO 5: RESUMEN FINAL (con zoom y cierre tocando fuera) ----
   Widget _buildFinalSummary() {
     final players = _getSortedPlayers();
     final challengePhotos = _getChallengePhotos();
@@ -747,7 +734,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
 
           const SizedBox(height: 20),
 
-          // Fotos (grid de 2 columnas)
+          // Fotos (grid de 2 columnas) con zoom y cierre tocando fuera
           if (allPhotos.isNotEmpty) ...[
             const Text(
               '📸 FOTOS',
@@ -770,22 +757,25 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
               itemCount: allPhotos.length,
               itemBuilder: (context, index) {
                 final item = allPhotos[index];
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(
-                    item['bytes'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[900],
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.white54,
+                return GestureDetector(
+                  onTap: () => _showFullscreenImage(context, item['bytes']),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      item['bytes'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[900],
+                          child: const Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Colors.white54,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 );
               },
@@ -800,12 +790,50 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             color: AfterlifeColors.electricLilac,
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen ()),
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
                 (route) => false,
               );
             },
           ),
           const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  void _showFullscreenImage(BuildContext context, Uint8List imageBytes) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Para que no se cierre con el botón atrás
+      builder: (context) => Stack(
+        children: [
+          // Fondo semitransparente que cierra al tocarlo
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              color: Colors.black.withOpacity(0.9),
+            ),
+          ),
+          // Imagen centrada y que no cierra al tocarla
+          Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.memory(
+                imageBytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          // Botón de cierre opcional (también cierra)
+          Positioned(
+            top: 40,
+            right: 20,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ],
       ),
     );

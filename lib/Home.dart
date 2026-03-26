@@ -537,13 +537,6 @@ class _HomeScreenState extends State<HomeScreen> {
     updatedJoined.add('TU');
     updatedNight['joinedFriends'] = updatedJoined;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Te has unido a ${night['nightName']}'),
-        backgroundColor: AfterlifeColors.acidGreen,
-        duration: const Duration(milliseconds: 500),
-      ),
-    );
     
     Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.push(
