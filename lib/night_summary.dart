@@ -1,3 +1,4 @@
+// lib/models/night_summary.dart
 import 'dart:typed_data';
 
 class NightSummary {
@@ -45,21 +46,21 @@ class NightSummary {
 
   factory NightSummary.fromJson(Map<String, dynamic> json) {
     return NightSummary(
-      id: json['id'],
-      name: json['name'],
-      day: json['day'],
-      time: json['time'],
-      groupName: json['groupName'],
-      players: List<Map<String, dynamic>>.from(json['players']),
-      challenges: (json['challenges'] as List).map((c) {
+      id: json['id'] ?? '',
+      name: json['name'] ?? 'Noche sin nombre',
+      day: json['day'] ?? '',
+      time: json['time'] ?? '',
+      groupName: json['groupName'] ?? '',
+      players: List<Map<String, dynamic>>.from(json['players'] ?? []),
+      challenges: (json['challenges'] as List? ?? []).map((c) {
         final challenge = Map<String, dynamic>.from(c);
         if (challenge['proofBytes'] != null) {
           challenge['proofBytes'] = Uint8List.fromList(challenge['proofBytes']);
         }
         return challenge;
       }).toList(),
-      nightPhotos: (json['nightPhotos'] as List).map((b) => Uint8List.fromList(b)).toList(),
-      timestamp: DateTime.parse(json['timestamp']),
+      nightPhotos: (json['nightPhotos'] as List? ?? []).map((b) => Uint8List.fromList(b)).toList(),
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
     );
   }
 }

@@ -9,7 +9,7 @@ import '../theme/colors.dart';
 import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
-import 'ActiveNightManager.dart';            // 👈 añadido
+import 'ActiveNightManager.dart';
 
 enum AvatarStatus { online, offline, inNight }
 
@@ -31,6 +31,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   Duration _timeLeft = Duration.zero;
   Timer? _timer;
   bool _canFinish = false;
+  bool _isFinishing = false; // 👈 Evita múltiples finalizaciones
 
   @override
   void initState() {
@@ -73,11 +74,15 @@ class _NightGameScreenState extends State<NightGameScreen> {
   void _updateTimeLeft() {
     final now = DateTime.now();
     if (now.isAfter(_endTime)) {
-      setState(() {
-        _timeLeft = Duration.zero;
-        _canFinish = true;
-      });
-      _timer?.cancel();
+      if (!_isFinishing) {
+        setState(() {
+          _timeLeft = Duration.zero;
+          _canFinish = true;
+        });
+        _timer?.cancel();
+        // 👈 Finalizar automáticamente al llegar la hora
+        _finishNight();
+      }
     } else {
       setState(() {
         _timeLeft = _endTime.difference(now);
@@ -139,20 +144,53 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return "$hours:$minutes:$seconds";
   }
 
-  // 👇 NUEVO: guardar en el diario
   void _saveToJournal() {
-    final entry = NightSummary(
-      id: _nightData['id'],
-      name: _nightData['name'],
-      day: _nightData['day'],
-      time: _nightData['time'],
-      groupName: _nightData['groupName'],
-      players: List<Map<String, dynamic>>.from(_nightData['players']),
-      challenges: List<Map<String, dynamic>>.from(_nightData['challenges']),
-      nightPhotos: List<Uint8List>.from(_nightData['nightPhotos']),
-      timestamp: DateTime.now(),
+    try {
+      final id = _nightData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+      final name = _nightData['name'] ?? 'Noche sin nombre';
+      final day = _nightData['day'] ?? '';
+      final time = _nightData['time'] ?? '';
+      final groupName = _nightData['groupName'] ?? '';
+
+      final playersCopy = List<Map<String, dynamic>>.from(_nightData['players'] ?? []);
+      final challengesCopy = (_nightData['challenges'] as List? ?? []).map((c) {
+        final copy = Map<String, dynamic>.from(c);
+        if (copy['proofBytes'] != null) {
+          copy['proofBytes'] = Uint8List.fromList(copy['proofBytes']);
+        }
+        return copy;
+      }).toList();
+      final nightPhotosCopy = List<Uint8List>.from(_nightData['nightPhotos'] ?? []);
+
+      final entry = NightSummary(
+        id: id,
+        name: name,
+        day: day,
+        time: time,
+        groupName: groupName,
+        players: playersCopy,
+        challenges: challengesCopy,
+        nightPhotos: nightPhotosCopy,
+        timestamp: DateTime.now(),
+      );
+      JournalStorage().saveEntry(entry);
+      print('Resumen guardado correctamente');
+    } catch (e) {
+      print('Error guardando resumen: $e');
+    }
+  }
+
+  void _finishNight() {
+    if (_isFinishing) return;
+    _isFinishing = true;
+    _saveToJournal();
+    ActiveNightManager().clearActiveNight();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NightSummaryScreen(nightData: _nightData),
+      ),
     );
-    JournalStorage().saveEntry(entry);
   }
 
   @override
@@ -264,53 +302,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  void _finishNight() {
-    _saveToJournal();                           // 👈 guardar antes de limpiar
-    ActiveNightManager().clearActiveNight();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NightSummaryScreen(nightData: _nightData),
-      ),
-    );
-  }
-
-  void _showNightCompleteDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          '🎉 NOCHE COMPLETADA 🎉',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          '¡Felicidades! Habéis completado todos los retos.\n\nPuntuación total: ${_getTotalPoints()} pts',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              _saveToJournal();                 // 👈 guardar antes de limpiar
-              ActiveNightManager().clearActiveNight();
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7B1FA2),
-            ),
-            child: const Text('VOLVER'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- El resto de métodos (buildProgressBar, buildHostInfo, etc.) se mantienen igual
-  // (incluidos todos los que ya tenías) ---
-  // Incluyo aquí los métodos que ya estaban en tu código para que el archivo sea completo.
-
   Widget _buildProgressBar() {
     final challenges = _nightData['challenges'] ?? [];
     int total = challenges.length;
@@ -381,6 +372,35 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   Widget _buildCurrentChallenge() {
     final challenges = _nightData['challenges'] ?? [];
+    final bool allCompleted = _currentChallengeIndex >= challenges.length || challenges.every((c) => c['completed'] == true);
+    if (allCompleted) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.celebration, color: Colors.white, size: 48),
+            const SizedBox(height: 16),
+            const Text(
+              '¡RETOS COMPLETADOS!',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Puedes finalizar la noche cuando quieras',
+              style: TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
     if (challenges.isEmpty || _currentChallengeIndex >= challenges.length) return const SizedBox();
     final current = challenges[_currentChallengeIndex];
     return Container(
@@ -508,6 +528,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   Widget _buildChallengesList() {
     final challenges = _nightData['challenges'] ?? [];
     if (challenges.isEmpty) return const SizedBox();
+    final allCompleted = challenges.every((c) => c['completed'] == true);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -515,10 +536,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
         const SizedBox(height: 12),
         ...List.generate(challenges.length, (index) {
           final challenge = challenges[index];
-          final isCurrent = index == _currentChallengeIndex;
+          final isCurrent = index == _currentChallengeIndex && !allCompleted;
           final isCompleted = challenge['completed'] == true;
           return GestureDetector(
-            onTap: () {
+            onTap: allCompleted ? null : () {
               setState(() => _currentChallengeIndex = index);
               _navigateToCompleteChallenge(challenge);
             },
@@ -582,11 +603,19 @@ class _NightGameScreenState extends State<NightGameScreen> {
         }
       }
       int nextIndex = _currentChallengeIndex + 1;
-      while (nextIndex < _nightData['challenges'].length && _nightData['challenges'][nextIndex]['completed'] == true) nextIndex++;
+      while (nextIndex < _nightData['challenges'].length && _nightData['challenges'][nextIndex]['completed'] == true) {
+        nextIndex++;
+      }
       if (nextIndex < _nightData['challenges'].length) {
         _currentChallengeIndex = nextIndex;
       } else {
-        _showNightCompleteDialog();
+        _currentChallengeIndex = _nightData['challenges'].length;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Has completado todos los retos! Finaliza la noche cuando quieras.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     });
   }
