@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "79023947203",
+    "project_id": "afterlife-project-d912e",
+    "storage_bucket": "afterlife-project-d912e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79023947203:android:63063e7e5e1103fac09176",
+        "android_client_info": {
+          "package_name": "com.example.afterlifeProjects"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgj4tcc4JJo_mdd_-IDQhD7QxgP7MIHuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79023947203:android:7aa9b4cd898d61a3c09176",
+        "android_client_info": {
+          "package_name": "com.example.afterlife_projects"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgj4tcc4JJo_mdd_-IDQhD7QxgP7MIHuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
