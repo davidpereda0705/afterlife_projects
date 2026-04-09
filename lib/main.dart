@@ -2,6 +2,7 @@
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
+import 'package:afterlife_projects/journal_screen.dart';
 import 'package:afterlife_projects/logros.dart';
 import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/profile_screen.dart';
@@ -24,21 +25,25 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   late PageController _pageController;
   int _currentIndex = 0;
 
+  // AÑADIMOS EL ÍTEM "DIARIO" ENTRE LOGROS Y PERFIL
   final List<BottomNavItem> _navItems = const [
     BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
     BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
     BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
     BottomNavItem(icon: Icons.sports_esports_outlined, selectedIcon: Icons.sports_esports, label: 'Minijuegos'),
     BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
+    BottomNavItem(icon: Icons.book_outlined, selectedIcon: Icons.book, label: 'Diario'), // 👈 NUEVO
     BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
   ];
 
+  // AÑADIMOS LA PÁGINA DEL DIARIO EN EL MISMO ORDEN
   late final List<Widget> _pages = [
     const HomeScreen(),
     const GroupPage(),
     const NightSelectionScreen(),
     const MinigamesScreen(),
     const AchievementsScreen(),
+    const JournalScreen(), // 👈 NUEVA PÁGINA
     const ProfileScreen(),
   ];
 
@@ -73,12 +78,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       appBar: AppBar(
         backgroundColor: AfterlifeColors.background,
         elevation: 0,
-        automaticallyImplyLeading: false, // Elimina la flecha atrás
+        automaticallyImplyLeading: false,
         title: ValueListenableBuilder<Map<String, dynamic>?>(
           valueListenable: ActiveNightManager().activeNight,
           builder: (context, activeNight, child) {
             if (activeNight != null) {
-              // Si hay noche activa, mostramos solo el badge (clicable)
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -109,7 +113,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               );
             } else {
-              // Sin noche activa, mostramos el título normal
               return Text(
                 'Afterlife',
                 style: AfterlifeTextTheme.headlineMedium.copyWith(
@@ -119,7 +122,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             }
           },
         ),
-        // Las acciones (avatar, etc.) se mantienen igual
       ),
       body: PageView(
         controller: _pageController,
