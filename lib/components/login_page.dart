@@ -4,8 +4,7 @@ import 'package:afterlife_projects/main_screen.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Para capturar excepciones específicas
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,13 +15,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool isLogin = true;
-  bool isLoading = false; // 👈 Estado de carga
+  bool isLoading = false;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _confirmPassController = TextEditingController();
   final TextEditingController _emailController = TextEditingController(); // Para registro (email)
-  final TextEditingController _userController = TextEditingController();   // En login será email, en registro será nombre de usuario
+  final TextEditingController _userController = TextEditingController();   // En login: email, en registro: nombre de usuario
 
   final AuthService _auth = AuthService();
 
@@ -45,14 +44,14 @@ class _LoginPageState extends State<LoginPage> {
         final email = _userController.text.trim();
         final password = _passController.text.trim();
         await _auth.signInWithEmail(email, password);
-        // El StreamBuilder en main.dart redirigirá automáticamente a MainScreen
+        // El StreamBuilder en main.dart redirige automáticamente a MainScreen
       } else {
-        // Registro: necesitamos email, contraseña y nombre de usuario
+        // Registro: email, contraseña y nombre de usuario
         final email = _emailController.text.trim();
         final password = _passController.text.trim();
         final username = _userController.text.trim();
-        await _auth.registerWithEmail(email, password, username); // Ajustamos el método para guardar nombre
-        // También se redirige automáticamente
+        await _auth.registerWithEmail(email, password, username);
+        // Tras registrarse, el usuario queda autenticado y se redirige
       }
     } on FirebaseAuthException catch (e) {
       String mensaje;
@@ -198,7 +197,6 @@ class _LoginPageState extends State<LoginPage> {
                 TextButton(
                   onPressed: () {
                     _formKey.currentState?.reset();
-                    // Limpiamos controladores para evitar validaciones cruzadas
                     _passController.clear();
                     _confirmPassController.clear();
                     _emailController.clear();
