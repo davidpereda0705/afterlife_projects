@@ -1,6 +1,6 @@
-// lib/screens/profile_screen.dart
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/edit_profile.dart';
+import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
@@ -40,7 +40,6 @@ class ProfileScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        // Eliminada la acción de configuración
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -91,10 +90,7 @@ class ProfileScreen extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.electricLilac.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -112,21 +108,14 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.neonOrange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.star,
-                            color: AfterlifeColors.neonOrange,
-                            size: 14,
-                          ),
+                          Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '$totalPoints pts',
@@ -158,61 +147,23 @@ class ProfileScreen extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(
-          'Noches',
-          nightsAttended.toString(),
-          Icons.nightlight_round,
-          AfterlifeColors.neonPink,
-        ),
-        _buildStatCard(
-          'Retos',
-          challengesCompleted.toString(),
-          Icons.emoji_events,
-          AfterlifeColors.cyanBlue,
-        ),
-        _buildStatCard(
-          'Amigos',
-          friendsCount.toString(),
-          Icons.group,
-          AfterlifeColors.acidGreen,
-        ),
-        _buildStatCard(
-          'Logros',
-          achievementsCount.toString(),
-          Icons.military_tech,
-          AfterlifeColors.electricPurple,
-        ),
+        _buildStatCard('Noches', nightsAttended.toString(), Icons.nightlight_round, AfterlifeColors.neonPink),
+        _buildStatCard('Retos', challengesCompleted.toString(), Icons.emoji_events, AfterlifeColors.cyanBlue),
+        _buildStatCard('Amigos', friendsCount.toString(), Icons.group, AfterlifeColors.acidGreen),
+        _buildStatCard('Logros', achievementsCount.toString(), Icons.military_tech, AfterlifeColors.electricPurple),
       ],
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return AfterlifeCard(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 28),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: AfterlifeColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
+          Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -257,85 +208,68 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final authService = AuthService(); // 👈 Instanciar servicio
+
     return Column(
       children: [
         OutlinedButton.icon(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const EditProfileScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
             );
           },
           icon: Icon(Icons.edit, color: AfterlifeColors.cyanBlue),
-          label: Text(
-            'EDITAR PERFIL',
-            style: TextStyle(color: AfterlifeColors.cyanBlue),
-          ),
+          label: Text('EDITAR PERFIL', style: TextStyle(color: AfterlifeColors.cyanBlue)),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: AfterlifeColors.cyanBlue.withOpacity(0.5)),
             minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () {
-            _showLogoutDialog(context);
+            _showLogoutDialog(context, authService);
           },
           icon: Icon(Icons.logout, color: AfterlifeColors.neonPink),
-          label: Text(
-            'CERRAR SESIÓN',
-            style: TextStyle(color: AfterlifeColors.neonPink),
-          ),
+          label: Text('CERRAR SESIÓN', style: TextStyle(color: AfterlifeColors.neonPink)),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: AfterlifeColors.neonPink.withOpacity(0.5)),
             minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ],
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AuthService authService) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text(
-          'Cerrar sesión',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          '¿Seguro que quieres salir?',
-          style: TextStyle(color: Colors.white70),
-        ),
+        title: const Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Seguro que quieres salir?', style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: AfterlifeColors.textSecondary),
-            ),
+            child: Text('Cancelar', style: TextStyle(color: AfterlifeColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx); // Cierra el diálogo
-              // Navegar a LoginPage reemplazando toda la pila
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
+              try {
+                await authService.signOut(); // 👈 Cierra sesión en Firebase
+                // El StreamBuilder en main.dart redirigirá automáticamente a LoginPage
+              } catch (e) {
+                // Si hay error, mostramos un mensaje
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error al cerrar sesión: $e'), backgroundColor: Colors.red),
+                );
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AfterlifeColors.neonPink,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AfterlifeColors.neonPink),
             child: const Text('SALIR'),
           ),
         ],
