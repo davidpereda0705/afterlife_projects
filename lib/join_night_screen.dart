@@ -1,7 +1,8 @@
 // lib/screens/join_night_screen.dart
+import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import 'night_game_screen.dart'; // 👈 IMPORTANTE: importar la pantalla de juego
+import 'night_game_screen.dart';
 
 class JoinNightScreen extends StatefulWidget {
   const JoinNightScreen({super.key});
@@ -312,8 +313,19 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
     );
   }
 
-  // Función para unirse a la noche (MODIFICADA)
+  // Función para unirse a la noche con comprobación de noche activa
   void _joinNight(Map<String, dynamic> night) {
+    // Verificar si ya hay una noche activa
+    if (ActiveNightManager().isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     // Añadir al usuario actual a la lista de jugadores
     List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
     updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
