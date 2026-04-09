@@ -1,7 +1,9 @@
 // lib/screens/create_night_screen.dart
+import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import 'night_game_screen.dart'; // 👈 IMPORTANTE: importar la pantalla de juego
+import 'night_game_screen.dart';
+
 
 class CreateNightScreen extends StatefulWidget {
   const CreateNightScreen({super.key});
@@ -521,7 +523,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     });
   }
 
-  // Función para crear la noche (MODIFICADA)
+  // Función para crear la noche (con comprobación de noche activa)
   void _createNight() {
     if (_nightNameController.text.isEmpty) {
       _showMessage('Pon un nombre a la noche', const Color(0xFFF59E0B));
@@ -540,6 +542,17 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
 
     if (_customChallenges.isEmpty) {
       _showMessage('Crea al menos 1 reto personalizado', const Color(0xFFF59E0B));
+      return;
+    }
+
+    // 👇 COMPROBACIÓN DE NOCHE ACTIVA
+    if (ActiveNightManager().isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
