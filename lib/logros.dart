@@ -1,4 +1,3 @@
-// lib/screens/achievements_screen.dart
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
@@ -9,7 +8,6 @@ import 'package:flutter/material.dart';
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key});
 
-  // Datos de ejemplo (podrían moverse a una clase separada)
   static const String userName = 'Carlos';
   static const int userLevel = 12;
   static const int totalPoints = 2450;
@@ -17,13 +15,10 @@ class AchievementsScreen extends StatelessWidget {
   static const int challengesCompleted = 47;
 
   static const List<Map<String, dynamic>> _achievements = [
-    // DESBLOQUEADOS
     {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true, 'description': 'Únete a 5 noches', 'date': '15/03/2025'},
     {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true, 'description': 'Completa tu primera noche', 'date': '10/03/2025'},
     {'title': 'FIESTERO', 'icon': Icons.nightlife, 'unlocked': true, 'description': 'Asiste a 10 noches', 'date': '20/03/2025'},
     {'title': 'INFLUENCER', 'icon': Icons.camera_alt, 'unlocked': true, 'description': 'Sube 5 fotos de retos', 'date': '18/03/2025'},
-    
-    // BLOQUEADOS
     {'title': 'LEYENDA', 'icon': Icons.stars, 'unlocked': false, 'description': 'Completa 50 retos', 'progress': 0.47},
     {'title': 'MAESTRO', 'icon': Icons.school, 'unlocked': false, 'description': 'Crea 10 noches', 'progress': 0.3},
     {'title': 'INQUEBRANTABLE', 'icon': Icons.verified, 'unlocked': false, 'description': 'Nivel 25', 'progress': 0.48},
@@ -34,30 +29,10 @@ class AchievementsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Text(
-          'Logros',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: AfterlifeAvatar(
-              initials: 'CR',
-              status: AvatarStatus.online,
-              size: 40,
-              showStatusIndicator: true,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+    // ✅ CORREGIDO: usar Column en lugar de Container con children
+    return Container(
+      color: AfterlifeColors.background,
+      child: Column(
         children: [
           _buildSummaryCard(),
           Expanded(
@@ -243,7 +218,6 @@ class AchievementsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
-
         if (locked.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -259,7 +233,6 @@ class AchievementsScreen extends StatelessWidget {
           ),
           ...locked.map((achievement) => _buildLockedAchievement(achievement)).toList(),
         ],
-
         const SizedBox(height: 20),
       ],
     );

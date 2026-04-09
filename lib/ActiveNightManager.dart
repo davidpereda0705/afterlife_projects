@@ -14,9 +14,13 @@ class ActiveNightManager {
 
   void setActiveNight(Map<String, dynamic> nightData) {
     _activeNightNotifier.value = nightData;
+    print('✅ Noche activa establecida: ${nightData['name']}');
   }
 
   void clearActiveNight() {
+    if (_activeNightNotifier.value != null) {
+      print('✅ Noche activa limpiada: ${_activeNightNotifier.value!['name']}');
+    }
     _activeNightNotifier.value = null;
   }
 }

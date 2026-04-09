@@ -328,10 +328,9 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 1: PODIO (3º, 2º, 1º secuencial) ----
+  // ---- PASO 1: PODIO (3º, 2º, 1º secuencial) MEJORADO ----
   Widget _buildPodium() {
     if (_podiumPlayers.isEmpty) {
-      // Si no hay jugadores, mostrar un mensaje y pasar
       return Center(
         child: Text(
           'No hay participantes',
@@ -343,11 +342,12 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     // Mostrar el jugador actual del podio
     final player = _podiumPlayers[_podiumIndex];
     final int position = _podiumPlayers.length - _podiumIndex; // 3,2,1
+    final String positionText = position == 1 ? '🏆 GANADOR 🏆' : '${position}º LUGAR';
     final Color color = position == 1
         ? const Color(0xFFF59E0B)
         : position == 2
-        ? Colors.grey[400]!
-        : Colors.brown[300]!;
+            ? Colors.grey[400]!
+            : Colors.brown[300]!;
 
     return Center(
       child: Column(
@@ -378,7 +378,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
           FadeTransition(
             opacity: _fadeAnimation,
             child: Text(
-              '${position}º LUGAR',
+              positionText,
               style: TextStyle(
                 color: color,
                 fontSize: 24,
@@ -492,7 +492,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
               );
             }),
             const SizedBox(height: 30),
-            // Botón eliminado (se avanza con tap)
           ],
         ),
       ),
@@ -637,7 +636,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Se ha eliminado el texto "Subida por: ..."
                   ],
                 ),
               );
@@ -804,7 +802,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   void _showFullscreenImage(BuildContext context, Uint8List imageBytes) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Para que no se cierre con el botón atrás
+      barrierDismissible: false,
       builder: (context) => Stack(
         children: [
           // Fondo semitransparente que cierra al tocarlo
