@@ -1,3 +1,4 @@
+// lib/features/home/home_screen.dart
 import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
@@ -5,6 +6,7 @@ import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
+import 'package:afterlife_projects/services/user_service.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,16 +17,85 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String userName = 'Carlos';
-  final int userLevel = 12;
-  final int nightsCompleted = 8;
-  final int challengesCompleted = 47;
-  final int groupsCount = 12;
+  // Datos del usuario (se cargarán desde Firestore)
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+  String? _error;
 
+  // NOCHES EN ESPERA (LOBBY) - TUS DATOS ORIGINALES
   final List<Map<String, dynamic>> _pendingNights = [
-    // Tus datos de noches en espera (mantenlos igual)
+    {
+      'id': '1',
+      'groupName': 'Los Desvelados',
+      'hostName': 'Ana',
+      'hostInitials': 'AN',
+      'nightName': 'Viernes de Locura',
+      'day': 'Viernes',
+      'time': '22:30',
+      'currentPlayers': 3,
+      'maxPlayers': 8,
+      'groupMembers': ['AN', 'CR', 'MJ', 'JP', 'LM', 'PA', 'SS', 'DL'],
+      'joinedFriends': ['AN', 'MJ', 'LM'],
+      'players': [
+        {'name': 'Ana', 'initials': 'AN', 'points': 0},
+        {'name': 'María', 'initials': 'MJ', 'points': 0},
+        {'name': 'Luis', 'initials': 'LM', 'points': 0},
+      ],
+      'challenges': [
+        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
+        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
+        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
+      ],
+    },
+    {
+      'id': '2',
+      'groupName': 'Fiesteros Nocturnos',
+      'hostName': 'Luis',
+      'hostInitials': 'LP',
+      'nightName': 'Sábado Nocturno',
+      'day': 'Sábado',
+      'time': '23:00',
+      'currentPlayers': 2,
+      'maxPlayers': 6,
+      'groupMembers': ['LM', 'PA', 'SS', 'RC', 'MV'],
+      'joinedFriends': ['LM', 'PA'],
+      'players': [
+        {'name': 'Luis', 'initials': 'LP', 'points': 0},
+        {'name': 'Pablo', 'initials': 'PA', 'points': 0},
+      ],
+      'challenges': [
+        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
+        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
+      ],
+    },
+    {
+      'id': '3',
+      'groupName': 'Party Animals',
+      'hostName': 'Pedro',
+      'hostInitials': 'PD',
+      'nightName': 'Previa Viernes',
+      'day': 'Viernes',
+      'time': '21:00',
+      'currentPlayers': 4,
+      'maxPlayers': 4,
+      'groupMembers': ['PG', 'LT', 'MS', 'JV'],
+      'joinedFriends': ['PG', 'LT', 'MS', 'JV'],
+      'players': [
+        {'name': 'Pedro', 'initials': 'PD', 'points': 0},
+        {'name': 'Luis', 'initials': 'LT', 'points': 0},
+        {'name': 'Marta', 'initials': 'MS', 'points': 0},
+        {'name': 'Javier', 'initials': 'JV', 'points': 0},
+      ],
+      'challenges': [
+        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
+        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
+        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
+        {'name': 'Canta una canción', 'points': 200, 'completed': false},
+      ],
+    },
   ];
 
+  // Logros próximos (simplificado)
   final List<Map<String, dynamic>> _upcomingAchievements = [
     {'title': 'SOCIAL', 'icon': Icons.people, 'progress': 0.8},
     {'title': 'LEYENDA', 'icon': Icons.stars, 'progress': 0.3},
@@ -32,13 +103,75 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final userData = await UserService().getUserData();
+      if (mounted) {
+        setState(() {
+          _userData = userData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AfterlifeColors.background,
-      child: ListView(
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AfterlifeColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AfterlifeColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text('Error al cargar perfil: $_error', style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadUserData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final userName = _userData?['username'] ?? 'Usuario';
+    final userLevel = _userData?['level'] ?? 1;
+    final nightsCompleted = _userData?['nightsCompleted'] ?? 0;
+    final challengesCompleted = _userData?['challengesCompleted'] ?? 0;
+    final groupsCount = _userData?['friendsCount'] ?? 0; // O usa otro campo si prefieres
+
+    return Scaffold(
+      backgroundColor: AfterlifeColors.background,
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildProfileCard(),
+          _buildProfileCard(userName, userLevel, nightsCompleted, challengesCompleted, groupsCount),
           const SizedBox(height: 24),
           _buildPendingNightsSection(),
           const SizedBox(height: 16),
@@ -49,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProfileCard() {
+  Widget _buildProfileCard(String userName, int userLevel, int nightsCompleted, int challengesCompleted, int groupsCount) {
     return AfterlifeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               avatar.AfterlifeAvatar(
-                initials: 'CR',
+                initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                 status: avatar.AvatarStatus.online,
                 size: 70,
                 showStatusIndicator: true,
@@ -144,6 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ===== SECCIÓN DE NOCHES EN ESPERA (TUS FUNCIONES ORIGINALES) =====
   Widget _buildPendingNightsSection() {
     final availableNights = _pendingNights.where((night) {
       final isNotFull = night['currentPlayers'] < night['maxPlayers'];

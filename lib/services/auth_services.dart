@@ -1,6 +1,5 @@
 // lib/services/auth_service.dart
 import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -10,6 +9,7 @@ class AuthService {
 
   Stream<User?> get userState => _auth.authStateChanges();
 
+  // Registro con email, contraseña y nombre de usuario
   Future<User?> registerWithEmail(
     String email,
     String password,
@@ -21,25 +21,25 @@ class AuthService {
         password: password,
       );
 
-      // Guardar en Firestore de forma asíncrona (no bloquea el registro)
-      _firestore
-          .collection('users')
-          .doc(result.user!.uid)
-          .set({
-            'username': username,
-            'email': email,
-            'createdAt': FieldValue.serverTimestamp(),
-          })
-          .then((_) {
-            print('Guardado exitoso en Firestore');
-          })
-          .catchError((error) {
-            print('Error guardando en Firestore: $error');
-          });
+      // Datos iniciales del usuario con todos los campos que usará la app
+      final userData = {
+        'username': username,
+        'email': email,
+        'level': 1,
+        'points': 0,
+        'nightsCompleted': 0,
+        'challengesCompleted': 0,
+        'friendsCount': 0,
+        'achievementsCount': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      // Guardar en Firestore (esperamos a que termine para asegurar consistencia)
+      await _firestore.collection('users').doc(result.user!.uid).set(userData);
+      print('✅ Usuario guardado en Firestore con datos iniciales');
 
       return result.user;
     } on FirebaseAuthException catch (e) {
-      // Manejo de errores de autenticación
       String message;
       switch (e.code) {
         case 'weak-password':
@@ -91,6 +91,7 @@ class AuthService {
     await _auth.signOut();
   }
 
+  // Obtener el usuario actual (solo Authentication)
   User? getCurrentUser() {
     return _auth.currentUser;
   }
