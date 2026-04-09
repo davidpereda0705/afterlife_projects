@@ -42,6 +42,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       _nightData['nightPhotos'] = <Uint8List>[];
     }
 
+    // Registrar la noche activa (sobrescribe si ya había una)
     ActiveNightManager().setActiveNight(_nightData);
 
     // Calcular hora de inicio a partir de los datos de la noche
@@ -84,7 +85,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
       });
     }
   }
-
 
   Map<String, dynamic> _getMockNightData() {
     return {
@@ -149,7 +149,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => _showExitConfirmation(context),
+          // Al pulsar atrás, simplemente salimos SIN limpiar la noche activa
+          onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,6 +255,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   void _finishNight() {
+    // Finalizar la noche explícitamente: limpiamos la noche activa y navegamos al resumen
     ActiveNightManager().clearActiveNight();
     Navigator.push(
       context,
@@ -263,7 +265,42 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  // ... resto de funciones (_buildProgressBar, _buildHostInfo, etc.) se mantienen igual ...
+  void _showNightCompleteDialog() {
+    // Diálogo que aparece cuando se completan todos los retos
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text(
+          '🎉 NOCHE COMPLETADA 🎉',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          '¡Felicidades! Habéis completado todos los retos.\n\nPuntuación total: ${_getTotalPoints()} pts',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              // Limpiar noche activa y cerrar todo
+              ActiveNightManager().clearActiveNight();
+              Navigator.pop(context); // cierra diálogo
+              Navigator.pop(context); // cierra pantalla de juego
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7B1FA2),
+            ),
+            child: const Text('VOLVER'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- El resto de métodos se mantienen igual (buildProgressBar, buildHostInfo, etc.)
+  // Incluyo los que ya tenías para que el archivo sea completo, pero sin el diálogo de salida
+  // ni la limpieza en dispose.
 
   Widget _buildProgressBar() {
     final challenges = _nightData['challenges'] ?? [];
@@ -761,7 +798,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       challenge['completed'] = true;
       challenge['completedBy'] = playerName;
       if (imageBytes != null) {
-        challenge['proofBytes'] = imageBytes; // 👈 Guardamos los bytes
+        challenge['proofBytes'] = imageBytes;
       }
       int points = challenge['points'] ?? 0;
       for (var player in _nightData['players']) {
@@ -777,53 +814,19 @@ class _NightGameScreenState extends State<NightGameScreen> {
       }
       if (nextIndex < _nightData['challenges'].length) {
         _currentChallengeIndex = nextIndex;
+      } else {
+        // Si no quedan más retos, mostrar diálogo de noche completada
+        _showNightCompleteDialog();
       }
     });
   }
 
-  void _showExitConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          '¿Salir de la noche?',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Si sales, perderás el progreso de esta noche',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: Colors.white54),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ActiveNightManager().clearActiveNight();
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('SALIR'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void dispose() {
-    // Si la noche no se ha limpiado antes (por si se cierra la app sin finalizar)
-    ActiveNightManager().clearActiveNight();
+    // NO limpiar la noche activa al salir, para que persista al minimizar
     _timer?.cancel();
     super.dispose();
   }
-
 
   int _getTotalPoints() {
     int total = 0;
@@ -835,6 +838,4 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
     return total;
   }
-  
 }
-

@@ -8,7 +8,7 @@ import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart'; // Asegúrate de importar esto
+import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/splash_loading.dart';
 import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
@@ -73,55 +73,53 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       appBar: AppBar(
         backgroundColor: AfterlifeColors.background,
         elevation: 0,
-        title: Row(
-          children: [
-            // Indicador de noche activa
-            ValueListenableBuilder<Map<String, dynamic>?>(
-              valueListenable: ActiveNightManager().activeNight,
-              builder: (context, activeNight, child) {
-                if (activeNight == null) return const SizedBox();
-                return GestureDetector(
-                  onTap: () {
-                    // Navegar a la noche activa
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NightGameScreen(nightData: activeNight),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AfterlifeColors.acidGreen.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AfterlifeColors.acidGreen),
+        automaticallyImplyLeading: false, // Elimina la flecha atrás
+        title: ValueListenableBuilder<Map<String, dynamic>?>(
+          valueListenable: ActiveNightManager().activeNight,
+          builder: (context, activeNight, child) {
+            if (activeNight != null) {
+              // Si hay noche activa, mostramos solo el badge (clicable)
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NightGameScreen(nightData: activeNight),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.nightlight_round, size: 16, color: Color(0xFF84CC16)),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Noche activa',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ],
-                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AfterlifeColors.acidGreen.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AfterlifeColors.acidGreen),
                   ),
-                );
-              },
-            ),
-            Text(
-              'Afterlife',
-              style: AfterlifeTextTheme.headlineMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.nightlight_round, size: 20, color: Color(0xFF84CC16)),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Noche activa',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              // Sin noche activa, mostramos el título normal
+              return Text(
+                'Afterlife',
+                style: AfterlifeTextTheme.headlineMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            }
+          },
         ),
-        // Puedes añadir acciones si lo deseas
+        // Las acciones (avatar, etc.) se mantienen igual
       ),
       body: PageView(
         controller: _pageController,
