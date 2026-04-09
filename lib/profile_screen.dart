@@ -1,5 +1,6 @@
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/edit_profile.dart';
+import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
@@ -103,11 +104,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.star,
-                            color: AfterlifeColors.neonOrange,
-                            size: 14,
-                          ),
+                          Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '$totalPoints pts',
@@ -154,21 +151,8 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 28),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: AfterlifeColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
+          Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -213,6 +197,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final authService = AuthService(); // 👈 Instanciar servicio
+
     return Column(
       children: [
         OutlinedButton.icon(
@@ -232,7 +218,9 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () => _showLogoutDialog(context),
+          onPressed: () {
+            _showLogoutDialog(context);
+          },
           icon: Icon(Icons.logout, color: AfterlifeColors.neonPink),
           label: Text('CERRAR SESIÓN', style: TextStyle(color: AfterlifeColors.neonPink)),
           style: OutlinedButton.styleFrom(
@@ -245,7 +233,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AuthService authService) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -259,7 +247,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(ctx); // Cierra el diálogo
+              // Navegar a LoginPage reemplazando toda la pila
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginPage()),
