@@ -1,4 +1,3 @@
-// lib/screens/profile_screen.dart
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/edit_profile.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,6 @@ import 'package:afterlife_projects/theme/text_theme.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  // Datos de ejemplo (cámbialos por los reales cuando tengas backend)
   static const String userName = 'Carlos';
   static const String userHandle = '@carlos_after';
   static const int userLevel = 12;
@@ -29,20 +27,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Text(
-          'Perfil',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        // Eliminada la acción de configuración
-      ),
-      body: ListView(
+    return Container(
+      color: AfterlifeColors.background,
+      child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildProfileHeader(),
@@ -91,10 +78,7 @@ class ProfileScreen extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.electricLilac.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -112,10 +96,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.neonOrange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -158,40 +139,15 @@ class ProfileScreen extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(
-          'Noches',
-          nightsAttended.toString(),
-          Icons.nightlight_round,
-          AfterlifeColors.neonPink,
-        ),
-        _buildStatCard(
-          'Retos',
-          challengesCompleted.toString(),
-          Icons.emoji_events,
-          AfterlifeColors.cyanBlue,
-        ),
-        _buildStatCard(
-          'Amigos',
-          friendsCount.toString(),
-          Icons.group,
-          AfterlifeColors.acidGreen,
-        ),
-        _buildStatCard(
-          'Logros',
-          achievementsCount.toString(),
-          Icons.military_tech,
-          AfterlifeColors.electricPurple,
-        ),
+        _buildStatCard('Noches', nightsAttended.toString(), Icons.nightlight_round, AfterlifeColors.neonPink),
+        _buildStatCard('Retos', challengesCompleted.toString(), Icons.emoji_events, AfterlifeColors.cyanBlue),
+        _buildStatCard('Amigos', friendsCount.toString(), Icons.group, AfterlifeColors.acidGreen),
+        _buildStatCard('Logros', achievementsCount.toString(), Icons.military_tech, AfterlifeColors.electricPurple),
       ],
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return AfterlifeCard(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -263,40 +219,26 @@ class ProfileScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const EditProfileScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
             );
           },
           icon: Icon(Icons.edit, color: AfterlifeColors.cyanBlue),
-          label: Text(
-            'EDITAR PERFIL',
-            style: TextStyle(color: AfterlifeColors.cyanBlue),
-          ),
+          label: Text('EDITAR PERFIL', style: TextStyle(color: AfterlifeColors.cyanBlue)),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: AfterlifeColors.cyanBlue.withOpacity(0.5)),
             minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () {
-            _showLogoutDialog(context);
-          },
+          onPressed: () => _showLogoutDialog(context),
           icon: Icon(Icons.logout, color: AfterlifeColors.neonPink),
-          label: Text(
-            'CERRAR SESIÓN',
-            style: TextStyle(color: AfterlifeColors.neonPink),
-          ),
+          label: Text('CERRAR SESIÓN', style: TextStyle(color: AfterlifeColors.neonPink)),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: AfterlifeColors.neonPink.withOpacity(0.5)),
             minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ],
@@ -308,34 +250,22 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text(
-          'Cerrar sesión',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          '¿Seguro que quieres salir?',
-          style: TextStyle(color: Colors.white70),
-        ),
+        title: const Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Seguro que quieres salir?', style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: AfterlifeColors.textSecondary),
-            ),
+            child: Text('Cancelar', style: TextStyle(color: AfterlifeColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx); // Cierra el diálogo
-              // Navegar a LoginPage reemplazando toda la pila
+              Navigator.pop(ctx);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginPage()),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AfterlifeColors.neonPink,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AfterlifeColors.neonPink),
             child: const Text('SALIR'),
           ),
         ],

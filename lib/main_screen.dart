@@ -1,4 +1,3 @@
-// lib/screens/main_screen.dart (solo la clase MainScreen)
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
@@ -80,6 +79,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           valueListenable: ActiveNightManager().activeNight,
           builder: (context, activeNight, child) {
             if (activeNight != null) {
+              // Solo mostrar el badge, nada más
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -110,6 +110,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               );
             } else {
+              // Solo el título, sin badge
               return Text(
                 'Afterlife',
                 style: AfterlifeTextTheme.headlineMedium.copyWith(
