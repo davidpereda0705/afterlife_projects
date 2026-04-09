@@ -1,13 +1,15 @@
 // lib/screens/night_game_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:afterlife_projects/journal_storage.dart';
+import 'package:afterlife_projects/night_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/colors.dart';
 import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
-import 'ActiveNightManager.dart';
+import 'ActiveNightManager.dart';            // 👈 añadido
 
 enum AvatarStatus { online, offline, inNight }
 
@@ -24,7 +26,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
   int _currentChallengeIndex = 0;
   late Map<String, dynamic> _nightData;
 
-  // Temporizador hasta las 6:00 AM
   late DateTime _startTime;
   late DateTime _endTime;
   Duration _timeLeft = Duration.zero;
@@ -42,10 +43,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
       _nightData['nightPhotos'] = <Uint8List>[];
     }
 
-    // Registrar la noche activa (sobrescribe si ya había una)
     ActiveNightManager().setActiveNight(_nightData);
 
-    // Calcular hora de inicio a partir de los datos de la noche
     _startTime = _parseStartTime();
     _endTime = _calculateEndTime(_startTime);
     _updateTimeLeft();
@@ -140,6 +139,22 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return "$hours:$minutes:$seconds";
   }
 
+  // 👇 NUEVO: guardar en el diario
+  void _saveToJournal() {
+    final entry = NightSummary(
+      id: _nightData['id'],
+      name: _nightData['name'],
+      day: _nightData['day'],
+      time: _nightData['time'],
+      groupName: _nightData['groupName'],
+      players: List<Map<String, dynamic>>.from(_nightData['players']),
+      challenges: List<Map<String, dynamic>>.from(_nightData['challenges']),
+      nightPhotos: List<Uint8List>.from(_nightData['nightPhotos']),
+      timestamp: DateTime.now(),
+    );
+    JournalStorage().saveEntry(entry);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,7 +164,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          // Al pulsar atrás, simplemente salimos SIN limpiar la noche activa
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -173,7 +187,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
           ],
         ),
         actions: [
-          // Temporizador (siempre visible)
           Container(
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -192,17 +205,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
               ),
             ),
           ),
-          // Botón finalizar (siempre visible para testing)
           IconButton(
             icon: const Icon(Icons.flag, color: Color(0xFF84CC16)),
             onPressed: _finishNight,
           ),
-          // Botón para añadir foto de la noche
           IconButton(
             icon: const Icon(Icons.add_a_photo, color: Colors.white),
             onPressed: _addNightPhoto,
           ),
-          // Puntuación total
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -255,7 +265,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   void _finishNight() {
-    // Finalizar la noche explícitamente: limpiamos la noche activa y navegamos al resumen
+    _saveToJournal();                           // 👈 guardar antes de limpiar
     ActiveNightManager().clearActiveNight();
     Navigator.push(
       context,
@@ -266,7 +276,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   void _showNightCompleteDialog() {
-    // Diálogo que aparece cuando se completan todos los retos
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -283,10 +292,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              // Limpiar noche activa y cerrar todo
+              _saveToJournal();                 // 👈 guardar antes de limpiar
               ActiveNightManager().clearActiveNight();
-              Navigator.pop(context); // cierra diálogo
-              Navigator.pop(context); // cierra pantalla de juego
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B1FA2),
@@ -298,9 +307,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  // --- El resto de métodos se mantienen igual (buildProgressBar, buildHostInfo, etc.)
-  // Incluyo los que ya tenías para que el archivo sea completo, pero sin el diálogo de salida
-  // ni la limpieza en dispose.
+  // --- El resto de métodos (buildProgressBar, buildHostInfo, etc.) se mantienen igual
+  // (incluidos todos los que ya tenías) ---
+  // Incluyo aquí los métodos que ya estaban en tu código para que el archivo sea completo.
 
   Widget _buildProgressBar() {
     final challenges = _nightData['challenges'] ?? [];
@@ -313,13 +322,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       color: const Color(0xFF1A1A1A),
       child: Row(
         children: [
-          Text(
-            '$completed/$total',
-            style: const TextStyle(
-              color: Color(0xFFEC4899),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('$completed/$total', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold)),
           const SizedBox(width: 12),
           Expanded(
             child: ClipRRect(
@@ -351,59 +354,25 @@ class _NightGameScreenState extends State<NightGameScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-              ),
+              gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(
-              child: Text(
-                _nightData['hostInitials'] ?? '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: Center(child: Text(_nightData['hostInitials'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ANFITRIÓN',
-                  style: TextStyle(
-                    color: Color(0xFF7B1FA2),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  _nightData['hostName'] ?? 'Anfitrión',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text('ANFITRIÓN', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(_nightData['hostName'] ?? 'Anfitrión', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF84CC16).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'EN CURSO',
-              style: TextStyle(
-                color: Color(0xFF84CC16),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF84CC16).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+            child: const Text('EN CURSO', style: TextStyle(color: Color(0xFF84CC16), fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -412,23 +381,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   Widget _buildCurrentChallenge() {
     final challenges = _nightData['challenges'] ?? [];
-    if (challenges.isEmpty || _currentChallengeIndex >= challenges.length)
-      return const SizedBox();
+    if (challenges.isEmpty || _currentChallengeIndex >= challenges.length) return const SizedBox();
     final current = challenges[_currentChallengeIndex];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-        ),
+        gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF7B1FA2).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,45 +397,18 @@ class _NightGameScreenState extends State<NightGameScreen> {
             children: [
               Icon(Icons.emoji_events, color: Colors.white, size: 24),
               SizedBox(width: 8),
-              Text(
-                'RETO ACTUAL',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+              Text('RETO ACTUAL', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            current['name'] ?? 'Reto',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(current['name'] ?? 'Reto', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${current['points'] ?? 0} pts',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                child: Text('${current['points'] ?? 0} pts', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -487,43 +420,23 @@ class _NightGameScreenState extends State<NightGameScreen> {
   Widget _buildNightPhotos() {
     final photos = _nightData['nightPhotos'] as List? ?? [];
     if (photos.isEmpty) return const SizedBox();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            'FOTOS DE LA NOCHE',
-            style: TextStyle(
-              color: Color(0xFF06B6D4),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
         SizedBox(
           height: 100,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: photos.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 100,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
-                      image: MemoryImage(photos[index]),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              );
-            },
+            itemBuilder: (context, index) => Container(
+              width: 100,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(image: MemoryImage(photos[index]), fit: BoxFit.cover),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -532,23 +445,12 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   Widget _buildPlayersRanking() {
-    final players = List<Map<String, dynamic>>.from(_nightData['players'] ?? [])
-      ..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
-
+    final players = List<Map<String, dynamic>>.from(_nightData['players'] ?? [])..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
     if (players.isEmpty) return const SizedBox();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'CLASIFICACIÓN',
-          style: TextStyle(
-            color: Color(0xFFEC4899),
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
+        const Text('CLASIFICACIÓN', style: TextStyle(color: Color(0xFFEC4899), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(players.length, (index) {
           final player = players[index];
@@ -559,104 +461,41 @@ class _NightGameScreenState extends State<NightGameScreen> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: index == 0
-                    ? const Color(0xFFF59E0B).withOpacity(0.5)
-                    : Colors.transparent,
-              ),
+              border: Border.all(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.5) : Colors.transparent),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: index == 0
-                        ? const Color(0xFFF59E0B).withOpacity(0.2)
-                        : Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        color: index == 0
-                            ? const Color(0xFFF59E0B)
-                            : Colors.white54,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.2) : Colors.white.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Center(child: Text('${index + 1}', style: TextStyle(color: index == 0 ? const Color(0xFFF59E0B) : Colors.white54, fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF06B6D4).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      player['initials'] ?? '?',
-                      style: const TextStyle(
-                        color: Color(0xFF06B6D4),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(color: const Color(0xFF06B6D4).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                  child: Center(child: Text(player['initials'] ?? '?', style: const TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        player['name'] ?? 'Jugador',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text(player['name'] ?? 'Jugador', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                       if (isHost) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF7B1FA2).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'HOST',
-                            style: TextStyle(
-                              color: Color(0xFF7B1FA2),
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFF7B1FA2).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                          child: const Text('HOST', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${player['points'] ?? 0} pts',
-                    style: const TextStyle(
-                      color: Color(0xFFF59E0B),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: Text('${player['points'] ?? 0} pts', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -669,25 +508,15 @@ class _NightGameScreenState extends State<NightGameScreen> {
   Widget _buildChallengesList() {
     final challenges = _nightData['challenges'] ?? [];
     if (challenges.isEmpty) return const SizedBox();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'RETOS',
-          style: TextStyle(
-            color: Color(0xFF06B6D4),
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
+        const Text('RETOS', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(challenges.length, (index) {
           final challenge = challenges[index];
           final isCurrent = index == _currentChallengeIndex;
           final isCompleted = challenge['completed'] == true;
-
           return GestureDetector(
             onTap: () {
               setState(() => _currentChallengeIndex = index);
@@ -700,73 +529,27 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isCurrent
-                      ? const Color(0xFF06B6D4)
-                      : isCompleted
-                      ? const Color(0xFF84CC16).withOpacity(0.3)
-                      : Colors.transparent,
+                  color: isCurrent ? const Color(0xFF06B6D4) : isCompleted ? const Color(0xFF84CC16).withOpacity(0.3) : Colors.transparent,
                   width: isCurrent ? 2 : 1,
                 ),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? const Color(0xFF84CC16).withOpacity(0.2)
-                          : Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      isCompleted ? Icons.check_circle : Icons.emoji_events,
-                      color: isCompleted
-                          ? const Color(0xFF84CC16)
-                          : Colors.white54,
-                      size: 20,
-                    ),
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(isCompleted ? Icons.check_circle : Icons.emoji_events, color: isCompleted ? const Color(0xFF84CC16) : Colors.white54, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      challenge['name'] ?? 'Reto',
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Colors.white.withOpacity(0.6)
-                            : Colors.white,
-                        fontWeight: isCurrent
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
+                    child: Text(challenge['name'] ?? 'Reto',
+                        style: TextStyle(color: isCompleted ? Colors.white.withOpacity(0.6) : Colors.white, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
                   ),
-                  if (challenge['proof'] != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Icon(Icons.image, color: Colors.white54, size: 16),
-                    ),
+                  if (challenge['proof'] != null) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Colors.white54, size: 16)),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? const Color(0xFF84CC16).withOpacity(0.2)
-                          : const Color(0xFFF59E0B).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${challenge['points'] ?? 0} pts',
-                      style: TextStyle(
-                        color: isCompleted
-                            ? const Color(0xFF84CC16)
-                            : const Color(0xFFF59E0B),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                    child: Text('${challenge['points'] ?? 0} pts', style: TextStyle(color: isCompleted ? const Color(0xFF84CC16) : const Color(0xFFF59E0B), fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -780,16 +563,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
   void _navigateToCompleteChallenge(Map<String, dynamic> challenge) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CompleteChallengeScreen(
-          challenge: challenge,
-          players: _nightData['players'],
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => CompleteChallengeScreen(challenge: challenge, players: _nightData['players'])),
     );
-    if (result != null) {
-      _completeChallengeWithData(result['player'], result['image']);
-    }
+    if (result != null) _completeChallengeWithData(result['player'], result['image']);
   }
 
   void _completeChallengeWithData(String playerName, Uint8List? imageBytes) {
@@ -797,9 +573,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       final challenge = _nightData['challenges'][_currentChallengeIndex];
       challenge['completed'] = true;
       challenge['completedBy'] = playerName;
-      if (imageBytes != null) {
-        challenge['proofBytes'] = imageBytes;
-      }
+      if (imageBytes != null) challenge['proofBytes'] = imageBytes;
       int points = challenge['points'] ?? 0;
       for (var player in _nightData['players']) {
         if (player['name'] == playerName) {
@@ -808,14 +582,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
         }
       }
       int nextIndex = _currentChallengeIndex + 1;
-      while (nextIndex < _nightData['challenges'].length &&
-          _nightData['challenges'][nextIndex]['completed'] == true) {
-        nextIndex++;
-      }
+      while (nextIndex < _nightData['challenges'].length && _nightData['challenges'][nextIndex]['completed'] == true) nextIndex++;
       if (nextIndex < _nightData['challenges'].length) {
         _currentChallengeIndex = nextIndex;
       } else {
-        // Si no quedan más retos, mostrar diálogo de noche completada
         _showNightCompleteDialog();
       }
     });
@@ -823,7 +593,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   @override
   void dispose() {
-    // NO limpiar la noche activa al salir, para que persista al minimizar
     _timer?.cancel();
     super.dispose();
   }
@@ -831,10 +600,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   int _getTotalPoints() {
     int total = 0;
     for (var player in _nightData['players'] ?? []) {
-      int points = player['points'] is int
-          ? player['points'] as int
-          : int.tryParse(player['points'].toString()) ?? 0;
-      total += points;
+      total += (player['points'] is int ? player['points'] as int : int.tryParse(player['points'].toString()) ?? 0);
     }
     return total;
   }
