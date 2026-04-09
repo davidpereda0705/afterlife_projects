@@ -13,9 +13,15 @@ class WelcomeScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Aplicamos el nuevo gradiente eléctrico oficial
+        // Aplicamos el nuevo gradiente eléctrico oficial + palmeras
         decoration: BoxDecoration(
           gradient: AfterlifeColors.electricLilacGradient,
+          image: const DecorationImage(
+            image: AssetImage('assets/imatges/palmeras.png'),
+            fit: BoxFit.contain,
+            alignment: Alignment.bottomCenter, // 🌴 abajo estilo GTA
+            opacity: 0.25,
+          ),
         ),
         child: Center(
           child: GestureDetector(

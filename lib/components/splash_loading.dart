@@ -32,9 +32,15 @@ class _SplashLoadingState extends State<SplashLoading> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Aplicamos tu nuevo gradiente de lila eléctrico
+        // Aplicamos tu nuevo gradiente de lila eléctrico + palmeras
         decoration: BoxDecoration(
           gradient: AfterlifeColors.electricLilacGradient,
+          image: const DecorationImage(
+            image: AssetImage('assets/imatges/palmeras.png'),
+            fit: BoxFit.contain,
+            alignment: Alignment.bottomCenter, // 🌴 abajo
+            opacity: 0.25, // 🔥 ajustable
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
