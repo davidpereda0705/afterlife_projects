@@ -1,8 +1,8 @@
 // lib/screens/profile_screen.dart
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/edit_profile.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
-import 'package:afterlife_projects/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
@@ -10,97 +10,72 @@ import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  final UserService _userService = UserService();
-  final AuthService _authService = AuthService();
-  late Future<Map<String, dynamic>?> _userDataFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  void _loadUserData() {
-    setState(() {
-      _userDataFuture = _userService.getUserData();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Verificar si hay usuario autenticado
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      // No debería ocurrir porque el StreamBuilder de main.dart ya redirige, pero por seguridad:
-      return const Scaffold(
-        backgroundColor: AfterlifeColors.background,
-        body: Center(child: Text('Usuario no autenticado', style: TextStyle(color: Colors.white))),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Text(
-          'Perfil',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: _userDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (userProvider.error != null) {
+          return Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
-                  Text('Error al cargar perfil: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
+                  Text('Error al cargar perfil: ${userProvider.error}',
+                      style: const TextStyle(color: Colors.white)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadUserData,
+                    onPressed: () => userProvider.refresh(),
                     child: const Text('Reintentar'),
                   ),
                 ],
               ),
-            );
-          }
+            ),
+          );
+        }
 
-          final userData = snapshot.data;
-          // Si no hay datos en Firestore, mostrar valores por defecto pero con email real
-          final email = currentUser.email ?? 'sin email';
-          final userName = userData?['username'] ?? email.split('@').first; // Usar parte del email como nombre
-          final userHandle = '@${userName.toLowerCase().replaceAll(' ', '')}';
-          final userLevel = userData?['level'] ?? 1;
-          final totalPoints = userData?['points'] ?? 0;
-          final nightsAttended = userData?['nightsCompleted'] ?? 0;
-          final challengesCompleted = userData?['challengesCompleted'] ?? 0;
-          final friendsCount = userData?['friendsCount'] ?? 0;
-          final achievementsCount = userData?['achievementsCount'] ?? 0;
+        final userData = userProvider.userData;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final email = currentUser?.email ?? 'sin email';
+        final userName = userData?['username'] ?? email.split('@').first;
+        final userHandle = '@${userName.toLowerCase().replaceAll(' ', '')}';
+        final userLevel = userData?['level'] ?? 1;
+        final totalPoints = userData?['points'] ?? 0;
+        final nightsAttended = userData?['nightsCompleted'] ?? 0;
+        final challengesCompleted = userData?['challengesCompleted'] ?? 0;
+        final friendsCount = userData?['friendsCount'] ?? 0;
+        final achievementsCount = userData?['achievementsCount'] ?? 0;
 
-          // Logros recientes (estáticos por ahora)
-          final recentAchievements = const [
-            {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true},
-            {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true},
-            {'title': 'FIESTERO', 'icon': Icons.nightlife, 'unlocked': true},
-          ];
+        final recentAchievements = const [
+          {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true},
+          {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true},
+          {'title': 'FIESTERO', 'icon': Icons.nightlife, 'unlocked': true},
+        ];
 
-          return ListView(
+        return Scaffold(
+          backgroundColor: AfterlifeColors.background,
+          appBar: AppBar(
+            backgroundColor: AfterlifeColors.background,
+            elevation: 0,
+            title: Text(
+              'Perfil',
+              style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _buildProfileHeader(userName, userHandle, userLevel, totalPoints),
@@ -112,9 +87,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildActionButtons(context),
               const SizedBox(height: 20),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -241,6 +216,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final authService = AuthService();
+
     return Column(
       children: [
         OutlinedButton.icon(
@@ -257,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () => _showLogoutDialog(context),
+          onPressed: () => _showLogoutDialog(context, authService),
           icon: Icon(Icons.logout, color: AfterlifeColors.neonPink),
           label: Text('CERRAR SESIÓN', style: TextStyle(color: AfterlifeColors.neonPink)),
           style: OutlinedButton.styleFrom(
@@ -270,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AuthService authService) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -286,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                await _authService.signOut();
+                await authService.signOut();
                 // El StreamBuilder en main.dart redirigirá a LoginPage
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
