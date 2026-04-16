@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,6 +9,7 @@ class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? _userData;
   bool _isLoading = false;
   String? _error;
+  StreamSubscription<User?>? _authSubscription;
 
   Map<String, dynamic>? get userData => _userData;
   bool get isLoading => _isLoading;
@@ -16,35 +19,55 @@ class UserProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   UserProvider() {
-    _loadUserData();
+    // Escuchar cambios en la autenticación (login/logout)
+    _authSubscription = _auth.authStateChanges().listen((User? user) {
+      if (user == null) {
+        // Usuario cerró sesión: limpiar datos
+        _clearUserData();
+      } else {
+        // Usuario inició sesión (o cambió): cargar nuevos datos
+        _loadUserData();
+      }
+    });
+  }
+
+  void _clearUserData() {
+    _userData = null;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> _loadUserData() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      _clearUserData();
+      return;
+    }
+
     _isLoading = true;
+    _error = null;
     notifyListeners();
+
     try {
-      final userId = _auth.currentUser?.uid;
-      if (userId == null) {
-        _userData = null;
-        _error = 'No hay usuario autenticado';
-        return;
-      }
       final doc = await _firestore.collection('users').doc(userId).get();
       if (doc.exists) {
         _userData = doc.data();
+        _error = null;
       } else {
         _userData = null;
         _error = 'Usuario no encontrado en Firestore';
       }
-      _error = null;
     } catch (e) {
       _error = e.toString();
+      _userData = null;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  // Método público para forzar una recarga manual (útil si se edita el perfil)
   Future<void> refresh() async {
     await _loadUserData();
   }
@@ -53,8 +76,8 @@ class UserProvider extends ChangeNotifier {
   Future<void> updateUserProfile({
     required String username,
     required String handle,
-    File? avatarFile,      // Si quieres subir el avatar, implementa la subida a Storage
-    String? avatarUrl,     // Alternativa: pasar directamente la URL del avatar
+    File? avatarFile,
+    String? avatarUrl,
   }) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
@@ -77,29 +100,15 @@ class UserProvider extends ChangeNotifier {
       updateData['avatarUrl'] = avatarUrl;
     }
 
-    // Si tienes Firebase Storage, puedes implementar la subida aquí:
-    // if (avatarFile != null) {
-    //   final storageRef = FirebaseStorage.instance
-    //       .ref()
-    //       .child('avatars')
-    //       .child('$userId.jpg');
-    //   await storageRef.putFile(avatarFile);
-    //   final downloadUrl = await storageRef.getDownloadURL();
-    //   updateData['avatarUrl'] = downloadUrl;
-    // }
-
     try {
       await _firestore.collection('users').doc(userId).update(updateData);
-      await refresh();
+      await refresh(); // Recargar los datos después de actualizar
     } catch (e) {
       throw Exception('Error al actualizar perfil: $e');
     }
   }
 
   /// Actualiza las estadísticas del usuario después de finalizar una noche.
-  /// [pointsEarned] : puntos obtenidos por el usuario en la noche.
-  /// [nightsCompletedIncrement] : normalmente 1.
-  /// [challengesCompletedIncrement] : número de retos completados en la noche.
   Future<void> updateAfterNight({
     required int pointsEarned,
     required int nightsCompletedIncrement,
@@ -135,5 +144,11 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       throw Exception('Error al actualizar estadísticas: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 }
