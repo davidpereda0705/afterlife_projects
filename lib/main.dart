@@ -5,8 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
-import 'package:afterlife_projects/providers/user_provider.dart'; // 👈 Importamos el provider
-import 'package:provider/provider.dart'; // 👈 Importamos provider
+import 'package:afterlife_projects/providers/user_provider.dart';
+import 'package:afterlife_projects/services/achievement_service.dart'; // 👈 Importar el servicio
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -14,7 +15,11 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  print('✅ Firebase inicializado correctamente en $defaultTargetPlatform');
+  // Inicializar logros por defecto (solo la primera vez)
+  final achievementService = AchievementService();
+  await achievementService.initializeDefaultAchievements();
+
+  print('✅ Firebase inicializado correctamente en ${defaultTargetPlatform}');
 
   runApp(const MyApp());
 }
@@ -26,7 +31,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // El provider se crea una sola vez y se mantiene durante toda la app
         ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
@@ -43,9 +47,7 @@ class MyApp extends StatelessWidget {
             }
             if (snapshot.hasData) {
               print('✅ Usuario autenticado: ${snapshot.data!.email}');
-              final userProvider = Provider.of<UserProvider>(context);
-              final userName =
-                  userProvider.userData?['username'] ?? 'Cargando...';
+              // El UserProvider ya está en el árbol, no es necesario leerlo aquí
               return const MainScreen();
             }
             print('❌ Usuario no autenticado, mostrando login');
@@ -56,4 +58,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

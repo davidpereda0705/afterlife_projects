@@ -6,10 +6,11 @@ import 'package:afterlife_projects/logros.dart';
 import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/ActiveNightManager.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   ];
 
   late final List<Widget> _pages = [
-     HomeScreen(),
+    HomeScreen(),
     const GroupPage(),
     const NightSelectionScreen(),
     const MinigamesScreen(),
@@ -75,17 +76,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         backgroundColor: AfterlifeColors.background,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: ValueListenableBuilder<Map<String, dynamic>?>(
-          valueListenable: ActiveNightManager().activeNight,
-          builder: (context, activeNight, child) {
-            if (activeNight != null) {
-              // Solo mostrar el badge, nada más
+        title: Consumer<UserProvider>(
+          builder: (context, userProvider, child) {
+            final activeNightId = userProvider.activeNightId;
+            if (activeNightId != null) {
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => NightGameScreen(nightData: activeNight),
+                      builder: (context) => NightGameScreen(nightId: activeNightId),
                     ),
                   );
                 },
@@ -110,7 +110,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               );
             } else {
-              // Solo el título, sin badge
               return Text(
                 'Afterlife',
                 style: AfterlifeTextTheme.headlineMedium.copyWith(
