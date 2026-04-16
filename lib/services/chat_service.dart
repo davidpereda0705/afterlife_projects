@@ -18,7 +18,7 @@ class ChatService {
     if (!chatDoc.exists) {
       // Obtener nombre del usuario actual
       final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
-      final currentUserName = currentUserDoc.data()?['name'] ?? 'Usuario';
+      final currentUserName = currentUserDoc.data()?['username'] ?? 'Usuario';
       
       await chatRef.set({
         'participants': [currentUserId, otherUserId],
@@ -126,20 +126,32 @@ class ChatService {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-          .where((doc) => doc.data()['deleted'] != true)
-          .map((doc) {
-            return {
-              'id': doc.id,
-              'text': doc.data()['text'],
-              'senderId': doc.data()['senderId'],
-              'timestamp': doc.data()['timestamp'],
-              'read': doc.data()['read'] ?? false,
-              'isMe': doc.data()['senderId'] == currentUserId,
-            };
-          }).toList());
+        .map((snapshot) {
+      final messages = snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                'text': doc.data()['text'] ?? '',
+                'senderId': doc.data()['senderId'] ?? '',
+                'timestamp': doc.data()['timestamp'],
+                'read': doc.data()['read'] ?? false,
+                'deleted': doc.data()['deleted'] ?? false,
+                'isMe': doc.data()['senderId'] == currentUserId,
+              })
+          .where((msg) => msg['deleted'] == false)
+          .toList();
+
+      // Ordenar por timestamp (descendente) en Dart
+      messages.sort((a, b) {
+        final t1 = a['timestamp'] as Timestamp?;
+        final t2 = b['timestamp'] as Timestamp?;
+        if (t1 == null) return -1; // Los nuevos arriba
+        if (t2 == null) return 1;
+        return t2.compareTo(t1);
+      });
+
+      return messages;
+    });
   }
 
   // Buscar mensajes en un chat

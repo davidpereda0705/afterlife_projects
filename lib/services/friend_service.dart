@@ -21,7 +21,7 @@ class FriendService {
     final results = await _firestore
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: query)
-        .where('username', isLessThanOrEqualTo: '$query\uf8ff')
+        .where('username', isLessThanOrEqualTo: query + '\uf8ff')
         .limit(20)
         .get();
     
@@ -31,7 +31,7 @@ class FriendService {
               'uid': doc.id,
               'name': doc.data()['username'] ?? 'Sin nombre',
               'email': doc.data()['email'] ?? '',
-              'initials': _getInitials(doc.data()['username'] ?? 'Sin nombre'),
+              'initials': _getInitials(doc.data()['username'] ?? ''),
             }))
         .toList();
   }
@@ -155,7 +155,7 @@ class FriendService {
               'uid': friendUid,
               'name': userDoc.data()?['username'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['username'] ?? 'Sin nombre'),
+              'initials': _getInitials(userDoc.data()?['username'] ?? ''),
               'status': 'online',
               'message': '¡Conectado!',
               'time': _formatTime(doc.data()['since']),
@@ -184,7 +184,7 @@ class FriendService {
               'uid': requesterUid,
               'name': userDoc.data()?['username'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['username'] ?? 'Sin nombre'),
+              'initials': _getInitials(userDoc.data()?['username'] ?? ''),
             });
           }
           return requests;
