@@ -1,6 +1,7 @@
 // lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/chat_screen.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/chat_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
@@ -8,6 +9,9 @@ import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/services/friend_service.dart';
 import 'package:afterlife_projects/components/friend_profile_screen.dart';
+import 'package:afterlife_projects/services/achievement_service.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class GroupPage extends StatefulWidget {
@@ -20,6 +24,7 @@ class GroupPage extends StatefulWidget {
 class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   final FriendService _friendService = FriendService();
   final ChatService _chatService = ChatService();
+  final AchievementService _achievementService = AchievementService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int _selectedTab = 0; // 0: amigos, 1: solicitudes, 2: buscar
@@ -97,17 +102,60 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   }
 
   void _acceptRequest(String uid, String name) async {
-    await _friendService.acceptFriendRequest(uid);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: Colors.green),
-    );
+    try {
+      await _friendService.acceptFriendRequest(uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: Colors.green),
+      );
+      
+      // Verificar logros después de aceptar
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      // Esperar un poco para que Firestore actualice el documento
+      await Future.delayed(const Duration(milliseconds: 500));
+      await userProvider.refresh();
+      final userData = userProvider.userData;
+      final friendsCount = userData?['friendsCount'] ?? 0;
+      
+      final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+        userId: userId,
+        nightsCompleted: userData?['nightsCompleted'] ?? 0,
+        challengesCompleted: userData?['challengesCompleted'] ?? 0,
+        level: userData?['level'] ?? 0,
+        friendsCount: friendsCount,
+        photosUploaded: userData?['photosUploaded'] ?? 0,
+        nightsCreated: userData?['nightsCreated'] ?? 0,
+      );
+      
+      if (newlyUnlocked.isNotEmpty && mounted) {
+        final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+            backgroundColor: AfterlifeColors.acidGreen,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await userProvider.refresh();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   void _rejectRequest(String uid, String name) async {
-    await _friendService.rejectFriendRequest(uid);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Colors.orange),
-    );
+    try {
+      await _friendService.rejectFriendRequest(uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Colors.orange),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   void _removeFriend(String uid, String name) async {
@@ -121,11 +169,47 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              await _friendService.removeFriend(uid);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Colors.orange),
-              );
+              try {
+                await _friendService.removeFriend(uid);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Colors.orange),
+                );
+                
+                // Verificar logros después de eliminar (opcional, pero útil para actualizar progreso)
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final userId = FirebaseAuth.instance.currentUser!.uid;
+                await Future.delayed(const Duration(milliseconds: 500));
+                await userProvider.refresh();
+                final userData = userProvider.userData;
+                final friendsCount = userData?['friendsCount'] ?? 0;
+                
+                final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+                  userId: userId,
+                  nightsCompleted: userData?['nightsCompleted'] ?? 0,
+                  challengesCompleted: userData?['challengesCompleted'] ?? 0,
+                  level: userData?['level'] ?? 0,
+                  friendsCount: friendsCount,
+                  photosUploaded: userData?['photosUploaded'] ?? 0,
+                  nightsCreated: userData?['nightsCreated'] ?? 0,
+                );
+                
+                if (newlyUnlocked.isNotEmpty && mounted) {
+                  final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+                      backgroundColor: AfterlifeColors.acidGreen,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  await userProvider.refresh();
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('Eliminar'),
@@ -624,14 +708,5 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         );
       },
     );
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    List<String> parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.substring(0, 1).toUpperCase();
   }
 }

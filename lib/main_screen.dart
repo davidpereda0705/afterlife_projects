@@ -2,7 +2,7 @@ import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/journal_screen.dart';
-import 'package:afterlife_projects/logros.dart';
+import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';

@@ -1,6 +1,7 @@
 // lib/screens/night_game_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';

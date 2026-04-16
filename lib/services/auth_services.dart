@@ -31,6 +31,8 @@ class AuthService {
         'challengesCompleted': 0,
         'friendsCount': 0,
         'achievementsCount': 0,
+        'photosUploaded': 0, // Añadir
+        'nightsCreated': 0, // Añadir
         'createdAt': FieldValue.serverTimestamp(),
       };
 
@@ -99,7 +101,10 @@ class AuthService {
   /// Cambia la contraseña del usuario actual.
   /// Requiere la contraseña actual para reautenticar.
   /// Lanza una excepción si la reautenticación falla o si hay otro error.
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     final user = _auth.currentUser;
     if (user == null || user.email == null) {
       throw Exception('No hay usuario autenticado');
