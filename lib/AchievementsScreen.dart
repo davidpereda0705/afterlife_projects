@@ -1,41 +1,64 @@
-import 'package:afterlife_projects/components/AfterLifeCard.dart';
-import 'package:afterlife_projects/components/AchievementBadge.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
-import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/providers/user_provider.dart';
+// lib/screens/achievements_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/achievement.dart';
+import '../services/achievement_service.dart';
+import '../providers/user_provider.dart';
+import '../theme/colors.dart';
+import '../theme/text_theme.dart';
+import '../components/AfterLifeCard.dart';
+import '../components/AchievementBadge.dart';
 
-class AchievementsScreen extends StatelessWidget {
+class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
 
-  // Lista estática de logros (puede venir del provider más adelante)
-  static const List<Map<String, dynamic>> _achievements = [
-    {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true, 'description': 'Únete a 5 noches', 'date': '15/03/2025'},
-    {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true, 'description': 'Completa tu primera noche', 'date': '10/03/2025'},
-    {'title': 'FIESTERO', 'icon': Icons.nightlife, 'unlocked': true, 'description': 'Asiste a 10 noches', 'date': '20/03/2025'},
-    {'title': 'INFLUENCER', 'icon': Icons.camera_alt, 'unlocked': true, 'description': 'Sube 5 fotos de retos', 'date': '18/03/2025'},
-    {'title': 'LEYENDA', 'icon': Icons.stars, 'unlocked': false, 'description': 'Completa 50 retos', 'progress': 0.47},
-    {'title': 'MAESTRO', 'icon': Icons.school, 'unlocked': false, 'description': 'Crea 10 noches', 'progress': 0.3},
-    {'title': 'INQUEBRANTABLE', 'icon': Icons.verified, 'unlocked': false, 'description': 'Nivel 25', 'progress': 0.48},
-    {'title': 'SOCIALITE', 'icon': Icons.diversity_3, 'unlocked': false, 'description': 'Ten 20 amigos', 'progress': 0.6},
-    {'title': 'NOCTÁMBULO', 'icon': Icons.nights_stay, 'unlocked': false, 'description': '100 noches', 'progress': 0.18},
-    {'title': 'LEYENDA VIVA', 'icon': Icons.auto_awesome, 'unlocked': false, 'description': 'Completa todos los logros', 'progress': 0.35},
-  ];
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  final AchievementService _achievementService = AchievementService();
+  List<Achievement> _allAchievements = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAchievements();
+  }
+
+  Future<void> _loadAchievements() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final achievements = await _achievementService.getAllAchievements();
+      setState(() {
+        _allAchievements = achievements;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        if (userProvider.isLoading) {
+        if (userProvider.isLoading || _isLoading) {
           return const Scaffold(
             backgroundColor: AfterlifeColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (userProvider.error != null) {
+        if (userProvider.error != null || _error != null) {
           return Scaffold(
             backgroundColor: AfterlifeColors.background,
             body: Center(
@@ -44,11 +67,16 @@ class AchievementsScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.error_outline, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
-                  Text('Error al cargar perfil: ${userProvider.error}',
-                      style: const TextStyle(color: Colors.white)),
+                  Text(
+                    userProvider.error ?? _error ?? 'Error desconocido',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => userProvider.refresh(),
+                    onPressed: () {
+                      userProvider.refresh();
+                      _loadAchievements();
+                    },
                     child: const Text('Reintentar'),
                   ),
                 ],
@@ -65,10 +93,13 @@ class AchievementsScreen extends StatelessWidget {
         final totalPoints = userData?['points'] ?? 0;
         final nightsAttended = userData?['nightsCompleted'] ?? 0;
         final challengesCompleted = userData?['challengesCompleted'] ?? 0;
+        final friendsCount = userData?['friendsCount'] ?? 0;
+        final photosUploaded = userData?['photosUploaded'] ?? 0;
+        final nightsCreated = userData?['nightsCreated'] ?? 0;
 
-        // Calcular logros desbloqueados (aún de lista estática)
-        final unlockedCount = _achievements.where((a) => a['unlocked']).length;
-        final totalCount = _achievements.length;
+        final unlockedIds = userProvider.unlockedAchievements.map((e) => e['achievementId'] as String).toList();
+        final unlockedCount = unlockedIds.length;
+        final totalCount = _allAchievements.length;
 
         return Scaffold(
           backgroundColor: AfterlifeColors.background,
@@ -84,7 +115,15 @@ class AchievementsScreen extends StatelessWidget {
                 totalCount: totalCount,
               ),
               Expanded(
-                child: _buildAchievementsList(),
+                child: _buildAchievementsList(
+                  unlockedIds,
+                  nightsAttended,
+                  challengesCompleted,
+                  userLevel,
+                  friendsCount,
+                  photosUploaded,
+                  nightsCreated,
+                ),
               ),
             ],
           ),
@@ -102,7 +141,7 @@ class AchievementsScreen extends StatelessWidget {
     required int unlockedCount,
     required int totalCount,
   }) {
-    double progress = unlockedCount / totalCount;
+    double progress = totalCount > 0 ? unlockedCount / totalCount : 0;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -117,9 +156,7 @@ class AchievementsScreen extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AfterlifeColors.electricLilac.withOpacity(0.3),
-        ),
+        border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -131,17 +168,12 @@ class AchievementsScreen extends StatelessWidget {
                 children: [
                   Text(
                     userName,
-                    style: AfterlifeTextTheme.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AfterlifeTextTheme.titleLarge.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'NIVEL $userLevel',
-                    style: TextStyle(
-                      color: AfterlifeColors.electricLilac,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -155,10 +187,7 @@ class AchievementsScreen extends StatelessWidget {
                   children: [
                     Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 16),
                     const SizedBox(width: 4),
-                    Text(
-                      '$totalPoints pts',
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                    Text('$totalPoints pts', style: const TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
@@ -170,19 +199,9 @@ class AchievementsScreen extends StatelessWidget {
             children: [
               Text(
                 'PROGRESO GENERAL',
-                style: TextStyle(
-                  color: AfterlifeColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
               ),
-              Text(
-                '$unlockedCount/$totalCount',
-                style: TextStyle(
-                  color: AfterlifeColors.electricLilac,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text('$unlockedCount/$totalCount', style: TextStyle(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 8),
@@ -191,7 +210,7 @@ class AchievementsScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.white.withOpacity(0.1),
-              valueColor: AlwaysStoppedAnimation(AfterlifeColors.electricLilac),
+              valueColor: const AlwaysStoppedAnimation(AfterlifeColors.electricLilac),
               minHeight: 8,
             ),
           ),
@@ -214,28 +233,23 @@ class AchievementsScreen extends StatelessWidget {
       children: [
         Icon(icon, color: AfterlifeColors.neonPink, size: 20),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: AfterlifeColors.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: AfterlifeColors.textSecondary,
-            fontSize: 10,
-          ),
-        ),
+        Text(value, style: TextStyle(color: AfterlifeColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(label, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 10)),
       ],
     );
   }
 
-  Widget _buildAchievementsList() {
-    final unlocked = _achievements.where((a) => a['unlocked']).toList();
-    final locked = _achievements.where((a) => !a['unlocked']).toList();
+  Widget _buildAchievementsList(
+    List<String> unlockedIds,
+    int nightsAttended,
+    int challengesCompleted,
+    int level,
+    int friendsCount,
+    int photosUploaded,
+    int nightsCreated,
+  ) {
+    final unlocked = _allAchievements.where((a) => unlockedIds.contains(a.id)).toList();
+    final locked = _allAchievements.where((a) => !unlockedIds.contains(a.id)).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -245,12 +259,7 @@ class AchievementsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'RECIENTEMENTE DESBLOQUEADOS',
-              style: TextStyle(
-                color: AfterlifeColors.acidGreen,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-              ),
+              style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
             ),
           ),
           SizedBox(
@@ -264,8 +273,8 @@ class AchievementsScreen extends StatelessWidget {
                   width: 100,
                   margin: const EdgeInsets.only(right: 12),
                   child: AchievementBadge(
-                    title: achievement['title'],
-                    icon: achievement['icon'],
+                    title: achievement.title,
+                    icon: achievement.icon,
                     isUnlocked: true,
                   ),
                 );
@@ -279,31 +288,50 @@ class AchievementsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'PRÓXIMOS LOGROS',
-              style: TextStyle(
-                color: AfterlifeColors.neonOrange,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-              ),
+              style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
             ),
           ),
-          ...locked.map((achievement) => _buildLockedAchievement(achievement)).toList(),
+          ...locked.map((achievement) => _buildLockedAchievement(
+                achievement,
+                nightsAttended,
+                challengesCompleted,
+                level,
+                friendsCount,
+                photosUploaded,
+                nightsCreated,
+              )),
         ],
         const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildLockedAchievement(Map<String, dynamic> achievement) {
+  Widget _buildLockedAchievement(
+    Achievement achievement,
+    int nightsAttended,
+    int challengesCompleted,
+    int level,
+    int friendsCount,
+    int photosUploaded,
+    int nightsCreated,
+  ) {
+    final progress = _achievementService.getProgress(
+      achievement,
+      nightsCompleted: nightsAttended,
+      challengesCompleted: challengesCompleted,
+      level: level,
+      friendsCount: friendsCount,
+      photosUploaded: photosUploaded,
+      nightsCreated: nightsCreated,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AfterlifeColors.neonOrange.withOpacity(0.2),
-        ),
+        border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.2)),
       ),
       child: Row(
         children: [
@@ -313,37 +341,18 @@ class AchievementsScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AfterlifeColors.electricPurple.withOpacity(0.1),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AfterlifeColors.neonOrange.withOpacity(0.3),
-                width: 1,
-              ),
+              border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1),
             ),
-            child: Icon(
-              achievement['icon'],
-              color: AfterlifeColors.neonOrange.withOpacity(0.5),
-              size: 24,
-            ),
+            child: Icon(achievement.icon, color: AfterlifeColors.neonOrange.withOpacity(0.5), size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  achievement['title'],
-                  style: TextStyle(
-                    color: AfterlifeColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(achievement.title, style: TextStyle(color: AfterlifeColors.textPrimary, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  achievement['description'],
-                  style: TextStyle(
-                    color: AfterlifeColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(achievement.description, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -351,22 +360,15 @@ class AchievementsScreen extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
-                          value: achievement['progress'],
+                          value: progress,
                           backgroundColor: Colors.white.withOpacity(0.1),
-                          valueColor: AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
+                          valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
                           minHeight: 4,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      '${(achievement['progress'] * 100).toInt()}%',
-                      style: TextStyle(
-                        color: AfterlifeColors.neonOrange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text('${(progress * 100).toInt()}%', style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],

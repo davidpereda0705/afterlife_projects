@@ -3,94 +3,121 @@ import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
+import 'package:afterlife_projects/services/night_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-  // NOCHES EN ESPERA (LOBBY) - ESTOS DATOS SON MOCK, DESPUÉS LOS REEMPLAZAREMOS POR FIRESTORE
-  final List<Map<String, dynamic>> _pendingNights = [
-    {
-      'id': '1',
-      'groupName': 'Los Desvelados',
-      'hostName': 'Ana',
-      'hostInitials': 'AN',
-      'nightName': 'Viernes de Locura',
-      'day': 'Viernes',
-      'time': '22:30',
-      'currentPlayers': 3,
-      'maxPlayers': 8,
-      'groupMembers': ['AN', 'CR', 'MJ', 'JP', 'LM', 'PA', 'SS', 'DL'],
-      'joinedFriends': ['AN', 'MJ', 'LM'],
-      'players': [
-        {'name': 'Ana', 'initials': 'AN', 'points': 0},
-        {'name': 'María', 'initials': 'MJ', 'points': 0},
-        {'name': 'Luis', 'initials': 'LM', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-      ],
-    },
-    {
-      'id': '2',
-      'groupName': 'Fiesteros Nocturnos',
-      'hostName': 'Luis',
-      'hostInitials': 'LP',
-      'nightName': 'Sábado Nocturno',
-      'day': 'Sábado',
-      'time': '23:00',
-      'currentPlayers': 2,
-      'maxPlayers': 6,
-      'groupMembers': ['LM', 'PA', 'SS', 'RC', 'MV'],
-      'joinedFriends': ['LM', 'PA'],
-      'players': [
-        {'name': 'Luis', 'initials': 'LP', 'points': 0},
-        {'name': 'Pablo', 'initials': 'PA', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-      ],
-    },
-    {
-      'id': '3',
-      'groupName': 'Party Animals',
-      'hostName': 'Pedro',
-      'hostInitials': 'PD',
-      'nightName': 'Previa Viernes',
-      'day': 'Viernes',
-      'time': '21:00',
-      'currentPlayers': 4,
-      'maxPlayers': 4,
-      'groupMembers': ['PG', 'LT', 'MS', 'JV'],
-      'joinedFriends': ['PG', 'LT', 'MS', 'JV'],
-      'players': [
-        {'name': 'Pedro', 'initials': 'PD', 'points': 0},
-        {'name': 'Luis', 'initials': 'LT', 'points': 0},
-        {'name': 'Marta', 'initials': 'MS', 'points': 0},
-        {'name': 'Javier', 'initials': 'JV', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-        {'name': 'Canta una canción', 'points': 200, 'completed': false},
-      ],
-    },
-  ];
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
-  // Logros próximos
+class _HomeScreenState extends State<HomeScreen> {
+  final NightService _nightService = NightService();
+  List<Map<String, dynamic>> _availableNights = [];
+  bool _isLoadingNights = true;
+  String? _errorNights;
+
+  // Logros próximos (estáticos, luego los migraremos)
   final List<Map<String, dynamic>> _upcomingAchievements = [
     {'title': 'SOCIAL', 'icon': Icons.people, 'progress': 0.8},
     {'title': 'LEYENDA', 'icon': Icons.stars, 'progress': 0.3},
     {'title': 'FIESTERO', 'icon': Icons.nightlife, 'progress': 0.6},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableNights();
+  }
+
+  Future<void> _loadAvailableNights() async {
+    setState(() {
+      _isLoadingNights = true;
+      _errorNights = null;
+    });
+    try {
+      final nights = await _nightService.getAvailableNights();
+      setState(() {
+        _availableNights = nights;
+        _isLoadingNights = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorNights = e.toString();
+        _isLoadingNights = false;
+      });
+    }
+  }
+
+  Future<void> _joinNight(Map<String, dynamic> night) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      _showSnackBar('Debes iniciar sesión', Colors.red);
+      return;
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.activeNightId != null) {
+      _showSnackBar('Ya tienes una noche activa', Colors.orange);
+      return;
+    }
+
+    final username = userProvider.userData?['username'] ?? 'Usuario';
+    final initials = username.length >= 2
+        ? username.substring(0, 2).toUpperCase()
+        : username.substring(0, 1).toUpperCase();
+
+    try {
+      // Verificar que la noche aún existe y no está llena
+      final nightDoc = await _nightService.getNightById(night['id']);
+      if (nightDoc == null) {
+        _showSnackBar('La noche ya no existe', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      final currentPlayers = (nightDoc['players'] as List? ?? []).length;
+      final maxPlayers = nightDoc['maxPlayers'] ?? 0;
+      if (currentPlayers >= maxPlayers) {
+        _showSnackBar('La noche está llena', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      // Unirse a la noche
+      await _nightService.joinNight(night['id'], userId, username, initials);
+      // Marcar noche activa para el usuario
+      await _nightService.setActiveNightForUser(userId, night['id']);
+      // Refrescar UserProvider para actualizar el badge
+      await userProvider.refresh();
+
+      _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NightGameScreen(nightId: night['id']),
+          ),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Error al unirse: $e', Colors.red);
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,22 +162,25 @@ class HomeScreen extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AfterlifeColors.background,
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildProfileCard(
-                userName,
-                userLevel,
-                nightsCompleted,
-                challengesCompleted,
-                groupsCount,
-              ),
-              const SizedBox(height: 24),
-              _buildPendingNightsSection(context),
-              const SizedBox(height: 16),
-              _buildCreateNightButton(context, userProvider),
-              const SizedBox(height: 20),
-            ],
+          body: RefreshIndicator(
+            onRefresh: _loadAvailableNights,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildProfileCard(
+                  userName,
+                  userLevel,
+                  nightsCompleted,
+                  challengesCompleted,
+                  groupsCount,
+                ),
+                const SizedBox(height: 24),
+                _buildPendingNightsSection(context),
+                const SizedBox(height: 16),
+                _buildCreateNightButton(context, userProvider),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         );
       },
@@ -261,15 +291,40 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ===== SECCIÓN DE NOCHES EN ESPERA =====
+  // ===== SECCIÓN DE NOCHES EN ESPERA (DESDE FIRESTORE) =====
   Widget _buildPendingNightsSection(BuildContext context) {
-    final availableNights = _pendingNights.where((night) {
-      final isNotFull = night['currentPlayers'] < night['maxPlayers'];
-      final userNotJoined = !night['joinedFriends'].contains('CR');
-      return isNotFull && userNotJoined;
-    }).toList();
-
-    if (availableNights.isEmpty) {
+    if (_isLoadingNights) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorNights != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AfterlifeColors.surfaceDark,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AfterlifeColors.electricLilac.withOpacity(0.2),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              'Error al cargar noches: $_errorNights',
+              style: const TextStyle(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadAvailableNights,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_availableNights.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -328,7 +383,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'NOCHES EN ESPERA (${availableNights.length})',
+                'NOCHES EN ESPERA (${_availableNights.length})',
                 style: AfterlifeTextTheme.titleLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1,
@@ -340,19 +395,19 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Column(
-          children: availableNights
-              .map((night) => _buildPendingNightCard(context, night))
+          children: _availableNights
+              .map((night) => _buildNightCard(context, night))
               .toList(),
         ),
       ],
     );
   }
 
-  Widget _buildPendingNightCard(
-    BuildContext context,
-    Map<String, dynamic> night,
-  ) {
-    final bool isFull = night['currentPlayers'] >= night['maxPlayers'];
+  Widget _buildNightCard(BuildContext context, Map<String, dynamic> night) {
+    final players = night['players'] as List? ?? [];
+    final currentPlayers = players.length;
+    final maxPlayers = night['maxPlayers'] ?? 0;
+    final bool isFull = currentPlayers >= maxPlayers;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -385,7 +440,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      night['groupName'],
+                      night['groupName'] ?? 'Grupo',
                       style: AfterlifeTextTheme.titleMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -400,7 +455,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Anfitrión: ${night['hostName']}',
+                          'Anfitrión: ${night['hostName'] ?? ''}',
                           style: AfterlifeTextTheme.bodySmall.copyWith(
                             color: AfterlifeColors.neonOrange,
                           ),
@@ -417,7 +472,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  night['time'],
+                  night['time'] ?? '',
                   style: AfterlifeTextTheme.labelSmall.copyWith(
                     color: AfterlifeColors.neonOrange,
                     fontWeight: FontWeight.bold,
@@ -436,7 +491,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                night['nightName'],
+                night['name'] ?? 'Noche sin nombre',
                 style: AfterlifeTextTheme.bodyLarge.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -448,7 +503,7 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Jugadores: ${night['currentPlayers']}/${night['maxPlayers']}',
+                'Jugadores: $currentPlayers/$maxPlayers',
                 style: AfterlifeTextTheme.bodySmall.copyWith(
                   color: AfterlifeColors.textSecondary,
                 ),
@@ -474,73 +529,13 @@ class HomeScreen extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 32,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                ...List.generate(
-                  night['joinedFriends'].length > 5
-                      ? 5
-                      : night['joinedFriends'].length,
-                  (index) {
-                    return Positioned(
-                      left: index * 20.0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AfterlifeColors.background,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: avatar.AfterlifeAvatar(
-                          initials: night['joinedFriends'][index],
-                          status: avatar.AvatarStatus.online,
-                          size: 28,
-                          showStatusIndicator: true,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                if (night['joinedFriends'].length > 5)
-                  Positioned(
-                    left: 5 * 20.0,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AfterlifeColors.electricLilac.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AfterlifeColors.background,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '+${night['joinedFriends'].length - 5}',
-                          style: AfterlifeTextTheme.labelSmall.copyWith(
-                            color: AfterlifeColors.electricLilac,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: isFull
                   ? null
-                  : () => _joinNightFromHome(context, night),
+                  : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFull
                     ? Colors.grey.withOpacity(0.3)
@@ -564,28 +559,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Método para unirse a una noche desde Home
-  void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (userProvider.activeNightId != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NightGameScreen(nightId: night['id']),
-      ),
-    );
-  }
-
-  // Botón para crear nueva noche
   Widget _buildCreateNightButton(BuildContext context, UserProvider userProvider) {
     return Container(
       width: double.infinity,

@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/night_service.dart';
+import '../services/achievement_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/colors.dart';
 import 'night_game_screen.dart';
@@ -16,6 +18,7 @@ class CreateNightScreen extends StatefulWidget {
 
 class _CreateNightScreenState extends State<CreateNightScreen> {
   final NightService _nightService = NightService();
+  final AchievementService _achievementService = AchievementService();
 
   final TextEditingController _nightNameController = TextEditingController();
   final TextEditingController _challengeNameController = TextEditingController();
@@ -450,8 +453,46 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
 
       // Marcar la noche como activa para el usuario
       await _nightService.setActiveNightForUser(userId, nightId);
-      // También actualizamos el UserProvider localmente para que el badge se muestre
+
+      // ✅ INCREMENTAR NIGHTS CREATED Y VERIFICAR LOGROS
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      final userDoc = await userDocRef.get();
+      final currentNightsCreated = userDoc.data()?['nightsCreated'] ?? 0;
+      await userDocRef.update({'nightsCreated': currentNightsCreated + 1});
+
+      // Refrescar UserProvider para tener los datos actualizados
       await userProvider.refresh();
+
+      // Obtener estadísticas actualizadas para verificar logros
+      final updatedData = userProvider.userData;
+      final nightsCompleted = updatedData?['nightsCompleted'] ?? 0;
+      final challengesCompleted = updatedData?['challengesCompleted'] ?? 0;
+      final level = updatedData?['level'] ?? 1;
+      final friendsCount = updatedData?['friendsCount'] ?? 0;
+      final photosUploaded = updatedData?['photosUploaded'] ?? 0;
+      final newNightsCreated = currentNightsCreated + 1;
+
+      final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+        userId: userId,
+        nightsCompleted: nightsCompleted,
+        challengesCompleted: challengesCompleted,
+        level: level,
+        friendsCount: friendsCount,
+        photosUploaded: photosUploaded,
+        nightsCreated: newNightsCreated,
+      );
+
+      if (newlyUnlocked.isNotEmpty && mounted) {
+        final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+            backgroundColor: const Color(0xFF84CC16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await userProvider.refresh(); // Refrescar de nuevo para mostrar los nuevos logros
+      }
 
       _showMessage('¡Noche creada con éxito!', const Color(0xFF84CC16));
 

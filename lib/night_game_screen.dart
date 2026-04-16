@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/night_service.dart';
+import '../services/achievement_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/colors.dart';
 import 'complete_challenge_screen.dart';
@@ -22,6 +24,7 @@ class NightGameScreen extends StatefulWidget {
 
 class _NightGameScreenState extends State<NightGameScreen> {
   final NightService _nightService = NightService();
+  final AchievementService _achievementService = AchievementService();
   late Stream<Map<String, dynamic>?> _nightStream;
   int _currentChallengeIndex = 0;
   bool _isFinishing = false;
@@ -106,18 +109,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
     _isFinishing = true;
 
     try {
-      // Marcar la noche como finalizada en Firestore
       await _nightService.finishNight(nightId);
 
-      // Limpiar noche activa del usuario
       if (_currentUserId != null) {
         await _nightService.clearActiveNightForUser(_currentUserId!);
-        // Actualizar UserProvider para que el badge desaparezca
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         await userProvider.refresh();
       }
 
-      // Actualizar estadísticas del usuario
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final pointsEarned = _getCurrentUserPoints(nightData);
       final completedChallenges = _getCompletedChallengesCount(nightData);
@@ -128,7 +127,37 @@ class _NightGameScreenState extends State<NightGameScreen> {
         challengesCompletedIncrement: completedChallenges,
       );
 
-      // Navegar a resumen
+      // Verificar logros después de actualizar estadísticas
+      final updatedUserData = userProvider.userData;
+      final nightsCompleted = updatedUserData?['nightsCompleted'] ?? 0;
+      final challengesCompletedTotal = updatedUserData?['challengesCompleted'] ?? 0;
+      final level = updatedUserData?['level'] ?? 0;
+      final friendsCount = updatedUserData?['friendsCount'] ?? 0;
+      final photosUploaded = updatedUserData?['photosUploaded'] ?? 0;
+      final nightsCreated = updatedUserData?['nightsCreated'] ?? 0;
+
+      final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+        userId: _currentUserId!,
+        nightsCompleted: nightsCompleted,
+        challengesCompleted: challengesCompletedTotal,
+        level: level,
+        friendsCount: friendsCount,
+        photosUploaded: photosUploaded,
+        nightsCreated: nightsCreated,
+      );
+
+      if (newlyUnlocked.isNotEmpty && mounted) {
+        final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+            backgroundColor: AfterlifeColors.acidGreen,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await userProvider.refresh();
+      }
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -149,9 +178,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   void _navigateToCompleteChallenge(Map<String, dynamic> challenge, String nightId, List<dynamic> playersRaw) async {
-    // Convertir a List<Map<String, dynamic>>
     final List<Map<String, dynamic>> players = List<Map<String, dynamic>>.from(playersRaw);
-
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -164,12 +191,59 @@ class _NightGameScreenState extends State<NightGameScreen> {
     if (result != null && mounted) {
       final playerName = result['player'];
       final imageBytes = result['image'] as Uint8List?;
+      
+      // Completar el reto (esto suma puntos al jugador y marca el reto como completado)
       await _nightService.completeChallenge(
         nightId,
         _currentChallengeIndex,
         playerName,
         imageBytes,
       );
+
+      // Si se subió una foto, incrementar photosUploaded y verificar logros
+      if (imageBytes != null && _currentUserId != null) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final userDocRef = FirebaseFirestore.instance.collection('users').doc(_currentUserId);
+        final userDoc = await userDocRef.get();
+        final currentPhotos = userDoc.data()?['photosUploaded'] ?? 0;
+        await userDocRef.update({'photosUploaded': currentPhotos + 1});
+        
+        // Refrescar para obtener los nuevos datos
+        await userProvider.refresh();
+        
+        // Obtener estadísticas actualizadas
+        final updatedData = userProvider.userData;
+        final nightsCompleted = updatedData?['nightsCompleted'] ?? 0;
+        final challengesCompletedTotal = updatedData?['challengesCompleted'] ?? 0;
+        final level = updatedData?['level'] ?? 0;
+        final friendsCount = updatedData?['friendsCount'] ?? 0;
+        final photosUploaded = currentPhotos + 1;
+        final nightsCreated = updatedData?['nightsCreated'] ?? 0;
+        
+        // Verificar logros
+        final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+          userId: _currentUserId!,
+          nightsCompleted: nightsCompleted,
+          challengesCompleted: challengesCompletedTotal,
+          level: level,
+          friendsCount: friendsCount,
+          photosUploaded: photosUploaded,
+          nightsCreated: nightsCreated,
+        );
+        
+        if (newlyUnlocked.isNotEmpty && mounted) {
+          final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+              backgroundColor: AfterlifeColors.acidGreen,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          await userProvider.refresh();
+        }
+      }
+      
       // El StreamBuilder actualizará la UI automáticamente
     }
   }
@@ -307,7 +381,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
           return Column(
             children: [
-              // Barra de progreso
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: const Color(0xFF1A1A1A),
