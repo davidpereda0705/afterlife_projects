@@ -67,17 +67,17 @@ class FriendService {
     await batch.commit();
   }
 
-  // Aceptar solicitud
+  // Aceptar solicitud (con incremento de friendsCount)
   Future<void> acceptFriendRequest(String friendUid) async {
     final batch = _firestore.batch();
     final now = FieldValue.serverTimestamp();
     
+    // Añadir a subcolección friends de cada usuario
     final myFriendRef = _firestore
         .collection('users')
         .doc(currentUserId)
         .collection('friends')
         .doc(friendUid);
-    
     batch.set(myFriendRef, {
       'uid': friendUid,
       'status': 'accepted',
@@ -89,19 +89,18 @@ class FriendService {
         .doc(friendUid)
         .collection('friends')
         .doc(currentUserId);
-    
     batch.set(friendFriendRef, {
       'uid': currentUserId,
       'status': 'accepted',
       'since': now,
     });
     
+    // Eliminar solicitudes pendientes
     final myRequestRef = _firestore
         .collection('users')
         .doc(currentUserId)
         .collection('friend_requests')
         .doc(friendUid);
-    
     batch.delete(myRequestRef);
     
     final friendRequestRef = _firestore
@@ -109,8 +108,15 @@ class FriendService {
         .doc(friendUid)
         .collection('friend_requests')
         .doc(currentUserId);
-    
     batch.delete(friendRequestRef);
+    
+    // Incrementar friendsCount en los documentos de usuario
+    batch.update(_firestore.collection('users').doc(currentUserId), {
+      'friendsCount': FieldValue.increment(1),
+    });
+    batch.update(_firestore.collection('users').doc(friendUid), {
+      'friendsCount': FieldValue.increment(1),
+    });
     
     await batch.commit();
   }
@@ -124,7 +130,6 @@ class FriendService {
         .doc(currentUserId)
         .collection('friend_requests')
         .doc(friendUid);
-    
     batch.delete(myRequestRef);
     
     final friendRequestRef = _firestore
@@ -132,7 +137,6 @@ class FriendService {
         .doc(friendUid)
         .collection('friend_requests')
         .doc(currentUserId);
-    
     batch.delete(friendRequestRef);
     
     await batch.commit();
@@ -156,7 +160,7 @@ class FriendService {
               'name': userDoc.data()?['username'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
               'initials': _getInitials(userDoc.data()?['username'] ?? ''),
-              'status': 'online',
+              'status': 'online',   // Puedes mejorar esto con presencia real
               'message': '¡Conectado!',
               'time': _formatTime(doc.data()['since']),
               'unread': 0,
@@ -191,7 +195,7 @@ class FriendService {
         });
   }
 
-  // Eliminar amigo
+  // Eliminar amigo (con decremento de friendsCount)
   Future<void> removeFriend(String friendUid) async {
     final batch = _firestore.batch();
     
@@ -200,7 +204,6 @@ class FriendService {
         .doc(currentUserId)
         .collection('friends')
         .doc(friendUid);
-    
     batch.delete(myFriendRef);
     
     final friendFriendRef = _firestore
@@ -208,8 +211,15 @@ class FriendService {
         .doc(friendUid)
         .collection('friends')
         .doc(currentUserId);
-    
     batch.delete(friendFriendRef);
+    
+    // Decrementar friendsCount
+    batch.update(_firestore.collection('users').doc(currentUserId), {
+      'friendsCount': FieldValue.increment(-1),
+    });
+    batch.update(_firestore.collection('users').doc(friendUid), {
+      'friendsCount': FieldValue.increment(-1),
+    });
     
     await batch.commit();
   }
