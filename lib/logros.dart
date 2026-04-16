@@ -1,6 +1,4 @@
-import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AchievementBadge.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
@@ -287,7 +285,7 @@ class AchievementsScreen extends StatelessWidget {
               ),
             ),
           ),
-          ...locked.map((achievement) => _buildLockedAchievement(achievement)).toList(),
+          ...locked.map((achievement) => _buildLockedAchievement(achievement)),
         ],
         const SizedBox(height: 20),
       ],

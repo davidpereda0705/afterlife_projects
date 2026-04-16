@@ -11,7 +11,7 @@ class FriendService {
   // Obtener el nombre del usuario actual
   Future<String> getCurrentUserName() async {
     final doc = await _firestore.collection('users').doc(currentUserId).get();
-    return doc.data()?['name'] ?? 'Usuario';
+    return doc.data()?['username'] ?? 'Usuario';
   }
 
   // Buscar usuarios por nombre
@@ -20,8 +20,8 @@ class FriendService {
     
     final results = await _firestore
         .collection('users')
-        .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('username', isGreaterThanOrEqualTo: query)
+        .where('username', isLessThanOrEqualTo: '$query\uf8ff')
         .limit(20)
         .get();
     
@@ -29,9 +29,9 @@ class FriendService {
         .where((doc) => doc.id != currentUserId)
         .map((doc) => ({
               'uid': doc.id,
-              'name': doc.data()['name'] ?? 'Sin nombre',
+              'name': doc.data()['username'] ?? 'Sin nombre',
               'email': doc.data()['email'] ?? '',
-              'initials': _getInitials(doc.data()['name'] ?? ''),
+              'initials': _getInitials(doc.data()['username'] ?? 'Sin nombre'),
             }))
         .toList();
   }
@@ -153,9 +153,9 @@ class FriendService {
             final userDoc = await _firestore.collection('users').doc(friendUid).get();
             friends.add({
               'uid': friendUid,
-              'name': userDoc.data()?['name'] ?? 'Sin nombre',
+              'name': userDoc.data()?['username'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['name'] ?? ''),
+              'initials': _getInitials(userDoc.data()?['username'] ?? 'Sin nombre'),
               'status': 'online',
               'message': '¡Conectado!',
               'time': _formatTime(doc.data()['since']),
@@ -182,9 +182,9 @@ class FriendService {
             final userDoc = await _firestore.collection('users').doc(requesterUid).get();
             requests.add({
               'uid': requesterUid,
-              'name': userDoc.data()?['name'] ?? 'Sin nombre',
+              'name': userDoc.data()?['username'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['name'] ?? ''),
+              'initials': _getInitials(userDoc.data()?['username'] ?? 'Sin nombre'),
             });
           }
           return requests;

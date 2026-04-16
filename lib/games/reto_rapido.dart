@@ -400,7 +400,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 40),
               AfterButton(
                 label: 'JUGAR DE NUEVO',

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -384,7 +383,7 @@ final List<String> _spicyQuestions = [
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

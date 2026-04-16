@@ -601,7 +601,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildCreateNightButton(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {

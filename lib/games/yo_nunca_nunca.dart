@@ -13,7 +13,7 @@ class YoNuncaGame extends StatefulWidget {
 
 class _YoNuncaGameState extends State<YoNuncaGame> {
   // Jugadores de ejemplo (nombre, iniciales, contador de bebidas)
-  List<Map<String, dynamic>> _players = [
+  final List<Map<String, dynamic>> _players = [
     {'name': 'Carlos', 'initials': 'CR', 'drinks': 0},
     {'name': 'Ana', 'initials': 'AN', 'drinks': 0},
     {'name': 'María', 'initials': 'MJ', 'drinks': 0},
@@ -21,7 +21,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
   ];
 
   // Frases (puedes usar las que ya tienes)
-  List<String> _frases = [
+  final List<String> _frases = [
     "Yo nunca nunca he besado a alguien de esta sala.",
     "Yo nunca nunca he enviado un mensaje por error a mi ex.",
     "Yo nunca nunca he fingido estar sobrio delante de mis padres.",
@@ -311,7 +311,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 40),
               AfterButton(
                 label: 'JUGAR DE NUEVO',
