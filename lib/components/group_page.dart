@@ -1,12 +1,12 @@
 // lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
-import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/chat_page.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
-import 'package:afterlife_projects/components/AfterButton.dart';
 import 'package:afterlife_projects/services/friend_service.dart';
+import 'package:afterlife_projects/services/chat_service.dart';
+import 'package:afterlife_projects/components/chat_screen.dart';
 import 'package:flutter/material.dart';
 
 class GroupPage extends StatefulWidget {
@@ -18,6 +18,7 @@ class GroupPage extends StatefulWidget {
 
 class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   final FriendService _friendService = FriendService();
+  final ChatService _chatService = ChatService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int _selectedTab = 0; // 0: amigos, 1: solicitudes, 2: buscar
@@ -320,10 +321,21 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     }
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final chatId = await _chatService.getOrCreateChat(
+          friend['uid'],
+          friend['name']
+        );
+        if (!context.mounted) return;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ChatPage(userName: friend['name'])),
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              chatId: chatId,
+              otherUserId: friend['uid'],
+              otherUserName: friend['name'],
+            )
+          ),
         );
       },
       child: Container(

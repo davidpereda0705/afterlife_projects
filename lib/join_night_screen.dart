@@ -1,7 +1,6 @@
 // lib/screens/join_night_screen.dart
 import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
 import 'night_game_screen.dart';
 
 class JoinNightScreen extends StatefulWidget {

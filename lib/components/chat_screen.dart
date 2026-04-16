@@ -39,6 +39,13 @@ class _ChatScreenState extends State<ChatScreen> {
     // Marcar mensajes como leídos al abrir el chat
     _chatService.markMessagesAsRead(widget.chatId);
     
+    // Y seguir marcando como leídos si llegan nuevos mientras estamos dentro
+    _chatService.getMessages(widget.chatId).listen((messages) {
+      if (mounted) {
+        _chatService.markMessagesAsRead(widget.chatId);
+      }
+    });
+    
     // Listener para el estado "escribiendo"
     _focusNode.addListener(() {
       _chatService.setTyping(widget.chatId, _focusNode.hasFocus);
@@ -325,10 +332,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     fontSize: 10,
                   ),
                 ),
-                if (isMe && message['read'])
+                if (isMe)
                   const SizedBox(width: 4),
-                if (isMe && message['read'])
-                  Icon(Icons.done_all, size: 12, color: AfterlifeColors.acidGreen),
+                if (isMe)
+                  Icon(
+                    message['read'] ? Icons.done_all : Icons.done,
+                    size: 12, 
+                    color: message['read'] ? AfterlifeColors.acidGreen : Colors.white70
+                  ),
               ],
             ),
           ],

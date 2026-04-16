@@ -1,9 +1,7 @@
 import 'package:afterlife_projects/journal_storage.dart';
 import 'package:afterlife_projects/night_summary.dart';
-import 'package:afterlife_projects/night_summary_detail_screen.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
-import '../theme/text_theme.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});

@@ -148,7 +148,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
             ),
             child: DropdownButtonFormField<String>(
-              value: _selectedPlayer,
+              initialValue: _selectedPlayer,
               hint: const Text('Selecciona un jugador', style: TextStyle(color: Colors.white54)),
               dropdownColor: AfterlifeColors.surfaceDark,
               icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7B1FA2)),

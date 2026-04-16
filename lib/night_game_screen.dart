@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/user_provider.dart';
-import '../theme/colors.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
 import 'ActiveNightManager.dart';

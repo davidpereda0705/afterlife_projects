@@ -5,7 +5,6 @@ import 'package:afterlife_projects/games/reto_rapido.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 
 class MinigamesScreen extends StatelessWidget {

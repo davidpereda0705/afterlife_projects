@@ -1,6 +1,5 @@
 // lib/screens/login_page.dart
 import 'package:afterlife_projects/components/AfterButton.dart';
-import 'package:afterlife_projects/main_screen.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';

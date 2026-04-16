@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/text_theme.dart';
 import '../components/AfterLife_Avatar.dart';
-import '../components/AfterLifeCard.dart';
 import '../components/AfterButton.dart';
 
 class NightSummaryScreen extends StatefulWidget {
@@ -217,7 +216,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       ),
       body: GestureDetector(
         onTap: _nextStep,
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: Stack(
@@ -342,7 +341,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     // Mostrar el jugador actual del podio
     final player = _podiumPlayers[_podiumIndex];
     final int position = _podiumPlayers.length - _podiumIndex; // 3,2,1
-    final String positionText = position == 1 ? '🏆 GANADOR 🏆' : '${position}º LUGAR';
+    final String positionText = position == 1 ? '🏆 GANADOR 🏆' : '$positionº LUGAR';
     final Color color = position == 1
         ? const Color(0xFFF59E0B)
         : position == 2

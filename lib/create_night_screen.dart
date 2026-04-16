@@ -1,7 +1,6 @@
 // lib/screens/create_night_screen.dart
 import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
 import 'night_game_screen.dart';
 
 
@@ -192,7 +191,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           // Selector de día
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedDay,
+              initialValue: _selectedDay,
               hint: const Text(
                 'Día',
                 style: TextStyle(color: Colors.white54),
@@ -223,7 +222,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           // Selector de hora
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedHour,
+              initialValue: _selectedHour,
               hint: const Text(
                 'Hora',
                 style: TextStyle(color: Colors.white54),

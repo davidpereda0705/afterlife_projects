@@ -82,13 +82,14 @@ class ChatService {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('senderId', isNotEqualTo: currentUserId)
         .where('read', isEqualTo: false)
         .get();
     
     final batch = _firestore.batch();
     for (var doc in messages.docs) {
-      batch.update(doc.reference, {'read': true});
+      if (doc.data()['senderId'] != currentUserId) {
+        batch.update(doc.reference, {'read': true});
+      }
     }
     await batch.commit();
     
@@ -125,19 +126,20 @@ class ChatService {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('deleted', isEqualTo: false)
         .orderBy('timestamp', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-          return {
-            'id': doc.id,
-            'text': doc.data()['text'],
-            'senderId': doc.data()['senderId'],
-            'timestamp': doc.data()['timestamp'],
-            'read': doc.data()['read'] ?? false,
-            'isMe': doc.data()['senderId'] == currentUserId,
-          };
-        }).toList());
+        .map((snapshot) => snapshot.docs
+          .where((doc) => doc.data()['deleted'] != true)
+          .map((doc) {
+            return {
+              'id': doc.id,
+              'text': doc.data()['text'],
+              'senderId': doc.data()['senderId'],
+              'timestamp': doc.data()['timestamp'],
+              'read': doc.data()['read'] ?? false,
+              'isMe': doc.data()['senderId'] == currentUserId,
+            };
+          }).toList());
   }
 
   // Buscar mensajes en un chat
@@ -149,7 +151,7 @@ class ChatService {
         .doc(chatId)
         .collection('messages')
         .where('text', isGreaterThanOrEqualTo: query)
-        .where('text', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('text', isLessThanOrEqualTo: '$query\uf8ff')
         .orderBy('timestamp', descending: true)
         .limit(50)
         .get();
@@ -189,7 +191,7 @@ class ChatService {
             final otherUserId = participants.firstWhere((id) => id != currentUserId);
             
             final userDoc = await _firestore.collection('users').doc(otherUserId).get();
-            final otherUserName = userDoc.data()?['name'] ?? 'Usuario';
+            final otherUserName = userDoc.data()?['username'] ?? 'Usuario';
             final otherUserInitials = _getInitials(otherUserName);
             
             // Obtener contador de no leídos
@@ -216,7 +218,7 @@ class ChatService {
   }
 
   String _getChatId(String uid1, String uid2) {
-    return uid1.compareTo(uid2) < 0 ? '${uid1}_${uid2}' : '${uid2}_${uid1}';
+    return uid1.compareTo(uid2) < 0 ? '${uid1}_$uid2' : '${uid2}_$uid1';
   }
 
   String _getInitials(String name) {

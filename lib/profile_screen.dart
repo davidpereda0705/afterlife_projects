@@ -1,5 +1,4 @@
 // lib/screens/profile_screen.dart
-import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
