@@ -95,4 +95,37 @@ class AuthService {
   User? getCurrentUser() {
     return _auth.currentUser;
   }
+
+  /// Cambia la contraseña del usuario actual.
+  /// Requiere la contraseña actual para reautenticar.
+  /// Lanza una excepción si la reautenticación falla o si hay otro error.
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('No hay usuario autenticado');
+    }
+
+    if (newPassword.length < 6) {
+      throw Exception('La nueva contraseña debe tener al menos 6 caracteres');
+    }
+
+    // Reautenticar con la contraseña actual
+    AuthCredential credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+
+    try {
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        throw Exception('Contraseña actual incorrecta');
+      } else {
+        throw Exception('Error al cambiar contraseña: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Error inesperado: $e');
+    }
+  }
 }
