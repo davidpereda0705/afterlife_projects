@@ -1,5 +1,4 @@
 // lib/features/home/home_screen.dart
-import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
@@ -13,7 +12,7 @@ import 'package:provider/provider.dart';
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
-  // NOCHES EN ESPERA (LOBBY)
+  // NOCHES EN ESPERA (LOBBY) - ESTOS DATOS SON MOCK, DESPUÉS LOS REEMPLAZAREMOS POR FIRESTORE
   final List<Map<String, dynamic>> _pendingNights = [
     {
       'id': '1',
@@ -147,9 +146,9 @@ class HomeScreen extends StatelessWidget {
                 groupsCount,
               ),
               const SizedBox(height: 24),
-              _buildPendingNightsSection(context), // 👈 PASAMOS CONTEXTO
+              _buildPendingNightsSection(context),
               const SizedBox(height: 16),
-              _buildCreateNightButton(context),
+              _buildCreateNightButton(context, userProvider),
               const SizedBox(height: 20),
             ],
           ),
@@ -262,7 +261,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ===== SECCIÓN DE NOCHES EN ESPERA (AHORA RECIBE CONTEXTO) =====
+  // ===== SECCIÓN DE NOCHES EN ESPERA =====
   Widget _buildPendingNightsSection(BuildContext context) {
     final availableNights = _pendingNights.where((night) {
       final isNotFull = night['currentPlayers'] < night['maxPlayers'];
@@ -565,31 +564,34 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
-  if (ActiveNightManager().isActive) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
-        backgroundColor: Colors.orange,
+  // Método para unirse a una noche desde Home
+  void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.activeNightId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NightGameScreen(nightId: night['id']),
       ),
     );
-    return;
   }
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => NightGameScreen(nightId: night['id']),
-    ),
-  );
-}
-
-  Widget _buildCreateNightButton(BuildContext context) {
+  // Botón para crear nueva noche
+  Widget _buildCreateNightButton(BuildContext context, UserProvider userProvider) {
     return Container(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          if (ActiveNightManager().isActive) {
+          if (userProvider.activeNightId != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(

@@ -1,3 +1,4 @@
+// lib/screens/join_night_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,14 +52,20 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
       return;
     }
 
+    // Obtener el provider para comprobar si ya tiene noche activa
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.activeNightId != null) {
+      _showSnackBar('Ya tienes una noche activa', Colors.orange);
+      return;
+    }
+
     final username = userProvider.userData?['username'] ?? 'Usuario';
     final initials = username.length >= 2
         ? username.substring(0, 2).toUpperCase()
         : username.substring(0, 1).toUpperCase();
 
     try {
-      // Verificar si la noche aún existe y no está llena
+      // Verificar que la noche aún existe y no está llena
       final nightDoc = await _nightService.getNightById(night['id']);
       if (nightDoc == null) {
         _showSnackBar('La noche ya no existe', Colors.red);
@@ -76,14 +83,18 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
 
       // Unirse a la noche
       await _nightService.joinNight(night['id'], userId, username, initials);
+      // Marcar noche activa para el usuario
+      await _nightService.setActiveNightForUser(userId, night['id']);
+      // Refrescar UserProvider para actualizar el badge
+      await userProvider.refresh();
+
       _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
 
-      // Navegar a la sala de juego con el nightId
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NightGameScreen(nightId: night['id']), // ✅ Cambiado: usa nightId
+            builder: (context) => NightGameScreen(nightId: night['id']),
           ),
         );
       }
@@ -93,9 +104,9 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   @override
@@ -129,9 +140,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: _buildBody(),
-            ),
+            Expanded(child: _buildBody()),
           ],
         ),
       ),
@@ -153,7 +162,9 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadAvailableNights,
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7B1FA2)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7B1FA2),
+              ),
               child: const Text('REINTENTAR'),
             ),
           ],
@@ -182,7 +193,9 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFull ? Colors.grey.withOpacity(0.3) : const Color(0xFFEC4899).withOpacity(0.3),
+          color: isFull
+              ? Colors.grey.withOpacity(0.3)
+              : const Color(0xFFEC4899).withOpacity(0.3),
         ),
       ),
       child: Column(
@@ -194,13 +207,19 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     night['hostInitials'] ?? '?',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ),
@@ -211,12 +230,19 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                   children: [
                     Text(
                       night['name'] ?? 'Sin nombre',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${night['hostName'] ?? ''} · ${night['groupName'] ?? ''}',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -235,26 +261,40 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
               const Spacer(),
               if (!isFull)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF84CC16).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
                     'DISPONIBLE',
-                    style: TextStyle(color: Color(0xFF84CC16), fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Color(0xFF84CC16),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
                     'COMPLETA',
-                    style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
             ],
@@ -276,14 +316,21 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
             child: ElevatedButton(
               onPressed: isFull ? null : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull ? Colors.grey.withOpacity(0.3) : const Color(0xFFEC4899),
+                backgroundColor: isFull
+                    ? Colors.grey.withOpacity(0.3)
+                    : const Color(0xFFEC4899),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: Text(
                 isFull ? 'COMPLETA' : 'UNIRSE',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -305,7 +352,11 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           const SizedBox(height: 16),
           const Text(
             'No hay noches disponibles',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(

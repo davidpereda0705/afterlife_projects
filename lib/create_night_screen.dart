@@ -1,3 +1,4 @@
+// lib/screens/create_night_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,37 +17,25 @@ class CreateNightScreen extends StatefulWidget {
 class _CreateNightScreenState extends State<CreateNightScreen> {
   final NightService _nightService = NightService();
 
-  // Controladores
   final TextEditingController _nightNameController = TextEditingController();
   final TextEditingController _challengeNameController = TextEditingController();
   final TextEditingController _challengePointsController = TextEditingController();
 
-  // Variables
   String? _selectedDay;
   String? _selectedHour;
   int _maxPlayers = 8;
 
-  // Días de la semana
   final List<String> _days = [
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-    'Domingo',
+    'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo',
   ];
 
-  // Horas de inicio
   final List<String> _hours = [
     '20:00', '20:30', '21:00', '21:30', '22:00', '22:30',
     '23:00', '23:30', '00:00', '00:30', '01:00', '01:30',
     '02:00', '02:30', '03:00', '03:30', '04:00'
   ];
 
-  // Lista de retos personalizados
   final List<Map<String, dynamic>> _customChallenges = [];
-
   bool _isCreating = false;
 
   @override
@@ -447,7 +436,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         hostId: userId,
         hostName: username,
         hostInitials: initials,
-        groupName: 'Mi Grupo',
+        groupName: 'Mi Grupo',  // Puedes hacer editable después
         day: _selectedDay!,
         time: _selectedHour!,
         maxPlayers: _maxPlayers,
@@ -459,14 +448,18 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         }).toList(),
       );
 
+      // Marcar la noche como activa para el usuario
+      await _nightService.setActiveNightForUser(userId, nightId);
+      // También actualizamos el UserProvider localmente para que el badge se muestre
+      await userProvider.refresh();
+
       _showMessage('¡Noche creada con éxito!', const Color(0xFF84CC16));
 
-      // Navegar a la sala de juego con el nightId
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NightGameScreen(nightId: nightId), // ✅ Cambiado: ahora usa nightId
+            builder: (context) => NightGameScreen(nightId: nightId),
           ),
         );
       }

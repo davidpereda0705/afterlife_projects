@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,28 +9,48 @@ class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? _userData;
   bool _isLoading = false;
   String? _error;
+  StreamSubscription<User?>? _authSubscription;
 
   Map<String, dynamic>? get userData => _userData;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  
+  // ✅ Getter para la noche activa
+  String? get activeNightId => _userData?['activeNightId'];
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   UserProvider() {
-    _loadUserData();
+    // Escuchar cambios en la autenticación (login/logout)
+    _authSubscription = _auth.authStateChanges().listen((User? user) {
+      if (user == null) {
+        _clearUserData();
+      } else {
+        _loadUserData();
+      }
+    });
+  }
+
+  void _clearUserData() {
+    _userData = null;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> _loadUserData() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      _clearUserData();
+      return;
+    }
+
     _isLoading = true;
+    _error = null;
     notifyListeners();
+
     try {
-      final userId = _auth.currentUser?.uid;
-      if (userId == null) {
-        _userData = null;
-        _error = 'No hay usuario autenticado';
-        return;
-      }
       final doc = await _firestore.collection('users').doc(userId).get();
       if (doc.exists) {
         _userData = doc.data();
@@ -36,9 +58,9 @@ class UserProvider extends ChangeNotifier {
         _userData = null;
         _error = 'Usuario no encontrado en Firestore';
       }
-      _error = null;
     } catch (e) {
       _error = e.toString();
+      _userData = null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -49,12 +71,27 @@ class UserProvider extends ChangeNotifier {
     await _loadUserData();
   }
 
-  /// Actualiza el perfil del usuario (username, handle, y opcionalmente avatar)
+  /// Establece la noche activa para el usuario
+  Future<void> setActiveNight(String nightId) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) throw Exception('No hay usuario autenticado');
+    await _firestore.collection('users').doc(userId).update({'activeNightId': nightId});
+    await refresh(); // Recargar datos para que activeNightId se actualice
+  }
+
+  /// Limpia la noche activa del usuario
+  Future<void> clearActiveNight() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) throw Exception('No hay usuario autenticado');
+    await _firestore.collection('users').doc(userId).update({'activeNightId': null});
+    await refresh();
+  }
+
   Future<void> updateUserProfile({
     required String username,
     required String handle,
-    File? avatarFile,      // Si quieres subir el avatar, implementa la subida a Storage
-    String? avatarUrl,     // Alternativa: pasar directamente la URL del avatar
+    File? avatarFile,
+    String? avatarUrl,
   }) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
@@ -77,17 +114,6 @@ class UserProvider extends ChangeNotifier {
       updateData['avatarUrl'] = avatarUrl;
     }
 
-    // Si tienes Firebase Storage, puedes implementar la subida aquí:
-    // if (avatarFile != null) {
-    //   final storageRef = FirebaseStorage.instance
-    //       .ref()
-    //       .child('avatars')
-    //       .child('$userId.jpg');
-    //   await storageRef.putFile(avatarFile);
-    //   final downloadUrl = await storageRef.getDownloadURL();
-    //   updateData['avatarUrl'] = downloadUrl;
-    // }
-
     try {
       await _firestore.collection('users').doc(userId).update(updateData);
       await refresh();
@@ -96,10 +122,6 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// Actualiza las estadísticas del usuario después de finalizar una noche.
-  /// [pointsEarned] : puntos obtenidos por el usuario en la noche.
-  /// [nightsCompletedIncrement] : normalmente 1.
-  /// [challengesCompletedIncrement] : número de retos completados en la noche.
   Future<void> updateAfterNight({
     required int pointsEarned,
     required int nightsCompletedIncrement,
@@ -135,5 +157,11 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       throw Exception('Error al actualizar estadísticas: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 }

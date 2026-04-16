@@ -1,15 +1,17 @@
-import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/join_night_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../components/AfterLifeCard.dart';
+import '../providers/user_provider.dart';
 
 class NightSelectionScreen extends StatelessWidget {
   const NightSelectionScreen({super.key});
 
   void _checkAndNavigate(BuildContext context, Widget destination) {
-    if (ActiveNightManager().isActive) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.activeNightId != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Ya tienes una noche activa. Finalízala antes de crear o unirte a otra.'),

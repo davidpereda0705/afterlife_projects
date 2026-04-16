@@ -1,3 +1,4 @@
+// lib/providers/night_provider.dart
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -16,11 +17,9 @@ class NightProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Escucha los cambios de una noche específica en tiempo real
   void listenToNight(String nightId) {
-    // Cancelar suscripción anterior
     _subscription?.cancel();
-    
-    // Escuchar el stream y manejar errores dentro de listen
     _subscription = _nightService.streamNight(nightId).listen(
       (nightData) {
         _currentNight = nightData;
@@ -36,6 +35,7 @@ class NightProvider extends ChangeNotifier {
     );
   }
 
+  /// Limpia la suscripción y los datos de la noche actual
   void clear() {
     _subscription?.cancel();
     _currentNight = null;
@@ -44,12 +44,14 @@ class NightProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Unirse a una noche (actualiza en Firestore y refresca el provider)
   Future<void> joinNight(String nightId, String userId, String userName, String userInitials) async {
     try {
       _isLoading = true;
       notifyListeners();
       await _nightService.joinNight(nightId, userId, userName, userInitials);
       _error = null;
+      // No es necesario recargar porque el stream lo hará automáticamente
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -59,6 +61,7 @@ class NightProvider extends ChangeNotifier {
     }
   }
 
+  /// Completar un reto
   Future<void> completeChallenge(String nightId, int challengeIndex, String playerName, Uint8List? proofBytes) async {
     try {
       _isLoading = true;
@@ -74,6 +77,7 @@ class NightProvider extends ChangeNotifier {
     }
   }
 
+  /// Añadir una foto a la noche
   Future<void> addNightPhoto(String nightId, Uint8List photoBytes) async {
     try {
       _isLoading = true;
@@ -89,6 +93,7 @@ class NightProvider extends ChangeNotifier {
     }
   }
 
+  /// Finalizar la noche (marcar como finished)
   Future<void> finishNight(String nightId) async {
     try {
       _isLoading = true;

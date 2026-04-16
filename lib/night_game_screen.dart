@@ -1,3 +1,4 @@
+// lib/screens/night_game_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -74,10 +75,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         final bytes = await pickedFile.readAsBytes();
         await _nightService.addNightPhoto(nightId, bytes);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Foto añadida'),
-            backgroundColor: Color(0xFF84CC16),
-          ),
+          const SnackBar(content: Text('Foto añadida'), backgroundColor: Color(0xFF84CC16)),
         );
       }
     } catch (e) {
@@ -103,16 +101,23 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return challenges.where((c) => c['completed'] == true).length;
   }
 
-  Future<void> _finishNight(
-    String nightId,
-    Map<String, dynamic> nightData,
-  ) async {
+  Future<void> _finishNight(String nightId, Map<String, dynamic> nightData) async {
     if (_isFinishing) return;
     _isFinishing = true;
 
     try {
+      // Marcar la noche como finalizada en Firestore
       await _nightService.finishNight(nightId);
 
+      // Limpiar noche activa del usuario
+      if (_currentUserId != null) {
+        await _nightService.clearActiveNightForUser(_currentUserId!);
+        // Actualizar UserProvider para que el badge desaparezca
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.refresh();
+      }
+
+      // Actualizar estadísticas del usuario
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final pointsEarned = _getCurrentUserPoints(nightData);
       final completedChallenges = _getCompletedChallengesCount(nightData);
@@ -123,6 +128,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         challengesCompletedIncrement: completedChallenges,
       );
 
+      // Navegar a resumen
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -134,10 +140,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al finalizar: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error al finalizar: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -145,22 +148,16 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
   }
 
-  void _navigateToCompleteChallenge(
-    Map<String, dynamic> challenge,
-    String nightId,
-    List<dynamic> playersRaw,
-  ) async {
+  void _navigateToCompleteChallenge(Map<String, dynamic> challenge, String nightId, List<dynamic> playersRaw) async {
     // Convertir a List<Map<String, dynamic>>
-    final List<Map<String, dynamic>> players = List<Map<String, dynamic>>.from(
-      playersRaw,
-    );
+    final List<Map<String, dynamic>> players = List<Map<String, dynamic>>.from(playersRaw);
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CompleteChallengeScreen(
           challenge: challenge,
-          players: players, // ahora es del tipo correcto
+          players: players,
         ),
       ),
     );
@@ -173,6 +170,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         playerName,
         imageBytes,
       );
+      // El StreamBuilder actualizará la UI automáticamente
     }
   }
 
@@ -191,10 +189,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           stream: _nightStream,
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data == null) {
-              return const Text(
-                'Cargando...',
-                style: TextStyle(color: Colors.white),
-              );
+              return const Text('Cargando...', style: TextStyle(color: Colors.white));
             }
             final night = snapshot.data!;
             return Column(
@@ -202,18 +197,11 @@ class _NightGameScreenState extends State<NightGameScreen> {
               children: [
                 Text(
                   night['name'] ?? 'Noche',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${night['day'] ?? ''} · ${night['time'] ?? ''} · ${night['groupName'] ?? ''}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
                 ),
               ],
             );
@@ -223,40 +211,28 @@ class _NightGameScreenState extends State<NightGameScreen> {
           StreamBuilder<Map<String, dynamic>?>(
             stream: _nightStream,
             builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null)
-                return const SizedBox();
+              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
               final night = snapshot.data!;
               final startTime = _parseStartTime(night['time'] ?? '22:30');
               final endTime = _calculateEndTime(startTime);
               final now = DateTime.now();
-              final timeLeft = endTime.isAfter(now)
-                  ? endTime.difference(now)
-                  : Duration.zero;
+              final timeLeft = endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
               return Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7B1FA2).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF7B1FA2).withOpacity(0.3),
-                  ),
+                  border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
                 ),
-                child: Text(
-                  _formatDuration(timeLeft),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: Text(_formatDuration(timeLeft), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
               );
             },
           ),
           StreamBuilder<Map<String, dynamic>?>(
             stream: _nightStream,
             builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null)
-                return const SizedBox();
+              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
               final night = snapshot.data!;
               return IconButton(
                 icon: const Icon(Icons.flag, color: Color(0xFF84CC16)),
@@ -271,8 +247,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           StreamBuilder<Map<String, dynamic>?>(
             stream: _nightStream,
             builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null)
-                return const SizedBox();
+              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
               final night = snapshot.data!;
               int totalPoints = 0;
               for (var player in night['players'] ?? []) {
@@ -280,28 +255,17 @@ class _NightGameScreenState extends State<NightGameScreen> {
               }
               return Container(
                 margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7B1FA2).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF7B1FA2).withOpacity(0.3),
-                  ),
+                  border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
                     const SizedBox(width: 4),
-                    Text(
-                      '$totalPoints pts',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text('$totalPoints pts', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               );
@@ -316,20 +280,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            );
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
           }
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(
-              child: Text(
-                'Noche no encontrada',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
+            return const Center(child: Text('Noche no encontrada', style: TextStyle(color: Colors.white)));
           }
 
           final nightData = snapshot.data!;
@@ -338,45 +292,28 @@ class _NightGameScreenState extends State<NightGameScreen> {
           final nightPhotos = nightData['nightPhotos'] as List? ?? [];
 
           int totalChallenges = challenges.length;
-          int completedChallenges = challenges
-              .where((c) => c['completed'] == true)
-              .length;
-          double progress = totalChallenges > 0
-              ? completedChallenges / totalChallenges
-              : 0;
+          int completedChallenges = challenges.where((c) => c['completed'] == true).length;
+          double progress = totalChallenges > 0 ? completedChallenges / totalChallenges : 0;
 
-          int nextIncompleteIndex = challenges.indexWhere(
-            (c) => c['completed'] != true,
-          );
-          if (nextIncompleteIndex == -1)
-            nextIncompleteIndex = challenges.length;
+          int nextIncompleteIndex = challenges.indexWhere((c) => c['completed'] != true);
+          if (nextIncompleteIndex == -1) nextIncompleteIndex = challenges.length;
           if (_currentChallengeIndex != nextIncompleteIndex && mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted)
-                setState(() => _currentChallengeIndex = nextIncompleteIndex);
+              if (mounted) setState(() => _currentChallengeIndex = nextIncompleteIndex);
             });
           }
 
-          final allCompleted =
-              completedChallenges == totalChallenges && totalChallenges > 0;
+          final allCompleted = completedChallenges == totalChallenges && totalChallenges > 0;
 
           return Column(
             children: [
+              // Barra de progreso
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: const Color(0xFF1A1A1A),
                 child: Row(
                   children: [
-                    Text(
-                      '$completedChallenges/$totalChallenges',
-                      style: const TextStyle(
-                        color: Color(0xFFEC4899),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text('$completedChallenges/$totalChallenges', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ClipRRect(
@@ -384,9 +321,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         child: LinearProgressIndicator(
                           value: progress,
                           backgroundColor: Colors.white.withOpacity(0.1),
-                          valueColor: const AlwaysStoppedAnimation(
-                            Color(0xFFEC4899),
-                          ),
+                          valueColor: const AlwaysStoppedAnimation(Color(0xFFEC4899)),
                           minHeight: 8,
                         ),
                       ),
@@ -400,23 +335,13 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   children: [
                     _buildHostInfo(nightData),
                     const SizedBox(height: 20),
-                    _buildCurrentChallenge(
-                      nightData,
-                      _currentChallengeIndex,
-                      allCompleted,
-                    ),
+                    _buildCurrentChallenge(nightData, _currentChallengeIndex, allCompleted),
                     const SizedBox(height: 20),
                     _buildNightPhotos(nightPhotos),
                     const SizedBox(height: 20),
                     _buildPlayersRanking(players, nightData['hostName']),
                     const SizedBox(height: 20),
-                    _buildChallengesList(
-                      challenges,
-                      _currentChallengeIndex,
-                      allCompleted,
-                      widget.nightId,
-                      players,
-                    ),
+                    _buildChallengesList(challenges, _currentChallengeIndex, allCompleted, widget.nightId, players),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -442,178 +367,70 @@ class _NightGameScreenState extends State<NightGameScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-              ),
+              gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(
-              child: Text(
-                nightData['hostInitials'] ?? '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: Center(child: Text(nightData['hostInitials'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ANFITRIÓN',
-                  style: TextStyle(
-                    color: Color(0xFF7B1FA2),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  nightData['hostName'] ?? 'Anfitrión',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text('ANFITRIÓN', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(nightData['hostName'] ?? 'Anfitrión', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF84CC16).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'EN CURSO',
-              style: TextStyle(
-                color: Color(0xFF84CC16),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF84CC16).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+            child: const Text('EN CURSO', style: TextStyle(color: Color(0xFF84CC16), fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCurrentChallenge(
-    Map<String, dynamic> nightData,
-    int currentIndex,
-    bool allCompleted,
-  ) {
+  Widget _buildCurrentChallenge(Map<String, dynamic> nightData, int currentIndex, bool allCompleted) {
     final challenges = nightData['challenges'] as List? ?? [];
     if (allCompleted) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-          ),
+          gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7B1FA2).withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Icon(Icons.celebration, color: Colors.white, size: 48),
             const SizedBox(height: 16),
-            const Text(
-              '¡RETOS COMPLETADOS!',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            const Text('¡RETOS COMPLETADOS!', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            const Text(
-              'Puedes finalizar la noche cuando quieras',
-              style: TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
+            const Text('Puedes finalizar la noche cuando quieras', style: TextStyle(color: Colors.white70), textAlign: TextAlign.center),
           ],
         ),
       );
     }
-    if (challenges.isEmpty || currentIndex >= challenges.length)
-      return const SizedBox();
+    if (challenges.isEmpty || currentIndex >= challenges.length) return const SizedBox();
     final current = challenges[currentIndex];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-        ),
+        gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF7B1FA2).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(Icons.emoji_events, color: Colors.white, size: 24),
-              SizedBox(width: 8),
-              Text(
-                'RETO ACTUAL',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
+          const Row(children: [Icon(Icons.emoji_events, color: Colors.white, size: 24), SizedBox(width: 8), Text('RETO ACTUAL', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))]),
           const SizedBox(height: 12),
-          Text(
-            current['name'] ?? 'Reto',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(current['name'] ?? 'Reto', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${current['points'] ?? 0} pts',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Text('${current['points'] ?? 0} pts', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))]),
         ],
       ),
     );
@@ -624,18 +441,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            'FOTOS DE LA NOCHE',
-            style: TextStyle(
-              color: Color(0xFF06B6D4),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
         SizedBox(
           height: 100,
           child: ListView.builder(
@@ -648,6 +454,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 imageProvider = NetworkImage(photo);
               } else if (photo is Uint8List) {
                 imageProvider = MemoryImage(photo);
+              } else if (photo is List<int>) {
+                imageProvider = MemoryImage(Uint8List.fromList(photo));
               } else {
                 imageProvider = const AssetImage('assets/placeholder.png');
               }
@@ -656,10 +464,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
                 ),
               );
             },
@@ -670,22 +475,13 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  Widget _buildPlayersRanking(List players, String? hostName) {
+  Widget _buildPlayersRanking(List<dynamic> players, String? hostName) {
     if (players.isEmpty) return const SizedBox();
-    final sorted = List<Map<String, dynamic>>.from(players)
-      ..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
+    final sorted = List<Map<String, dynamic>>.from(players)..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'CLASIFICACIÓN',
-          style: TextStyle(
-            color: Color(0xFFEC4899),
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
+        const Text('CLASIFICACIÓN', style: TextStyle(color: Color(0xFFEC4899), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(sorted.length, (index) {
           final player = sorted[index];
@@ -696,104 +492,43 @@ class _NightGameScreenState extends State<NightGameScreen> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: index == 0
-                    ? const Color(0xFFF59E0B).withOpacity(0.5)
-                    : Colors.transparent,
-              ),
+              border: Border.all(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.5) : Colors.transparent),
             ),
             child: Row(
               children: [
                 Container(
                   width: 30,
                   height: 30,
-                  decoration: BoxDecoration(
-                    color: index == 0
-                        ? const Color(0xFFF59E0B).withOpacity(0.2)
-                        : Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        color: index == 0
-                            ? const Color(0xFFF59E0B)
-                            : Colors.white54,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  decoration: BoxDecoration(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.2) : Colors.white.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Center(child: Text('${index + 1}', style: TextStyle(color: index == 0 ? const Color(0xFFF59E0B) : Colors.white54, fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF06B6D4).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      player['initials'] ?? '?',
-                      style: const TextStyle(
-                        color: Color(0xFF06B6D4),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFF06B6D4).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                  child: Center(child: Text(player['initials'] ?? '?', style: const TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        player['name'] ?? 'Jugador',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text(player['name'] ?? 'Jugador', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                       if (isHost) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF7B1FA2).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'HOST',
-                            style: TextStyle(
-                              color: Color(0xFF7B1FA2),
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFF7B1FA2).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                          child: const Text('HOST', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${player['points'] ?? 0} pts',
-                    style: const TextStyle(
-                      color: Color(0xFFF59E0B),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: Text('${player['points'] ?? 0} pts', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -803,112 +538,44 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  Widget _buildChallengesList(
-    List challenges,
-    int currentIndex,
-    bool allCompleted,
-    String nightId,
-    List players,
-  ) {
+  Widget _buildChallengesList(List<dynamic> challenges, int currentIndex, bool allCompleted, String nightId, List<dynamic> players) {
     if (challenges.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'RETOS',
-          style: TextStyle(
-            color: Color(0xFF06B6D4),
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
+        const Text('RETOS', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(challenges.length, (index) {
           final challenge = challenges[index];
           final isCurrent = index == currentIndex && !allCompleted;
           final isCompleted = challenge['completed'] == true;
           return GestureDetector(
-            onTap: allCompleted
-                ? null
-                : () {
-                    if (!isCompleted)
-                      _navigateToCompleteChallenge(challenge, nightId, players);
-                  },
+            onTap: allCompleted ? null : () {
+              if (!isCompleted) _navigateToCompleteChallenge(challenge, nightId, players);
+            },
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isCurrent
-                      ? const Color(0xFF06B6D4)
-                      : isCompleted
-                      ? const Color(0xFF84CC16).withOpacity(0.3)
-                      : Colors.transparent,
-                  width: isCurrent ? 2 : 1,
-                ),
+                border: Border.all(color: isCurrent ? const Color(0xFF06B6D4) : isCompleted ? const Color(0xFF84CC16).withOpacity(0.3) : Colors.transparent, width: isCurrent ? 2 : 1),
               ),
               child: Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? const Color(0xFF84CC16).withOpacity(0.2)
-                          : Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      isCompleted ? Icons.check_circle : Icons.emoji_events,
-                      color: isCompleted
-                          ? const Color(0xFF84CC16)
-                          : Colors.white54,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(isCompleted ? Icons.check_circle : Icons.emoji_events, color: isCompleted ? const Color(0xFF84CC16) : Colors.white54, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      challenge['name'] ?? 'Reto',
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Colors.white.withOpacity(0.6)
-                            : Colors.white,
-                        fontWeight: isCurrent
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  if (challenge['proofBytes'] != null)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: Icon(Icons.image, color: Colors.white54, size: 16),
-                    ),
+                  Expanded(child: Text(challenge['name'] ?? 'Reto', style: TextStyle(color: isCompleted ? Colors.white.withOpacity(0.6) : Colors.white, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal))),
+                  if (challenge['proofBytes'] != null) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Colors.white54, size: 16)),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? const Color(0xFF84CC16).withOpacity(0.2)
-                          : const Color(0xFFF59E0B).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${challenge['points'] ?? 0} pts',
-                      style: TextStyle(
-                        color: isCompleted
-                            ? const Color(0xFF84CC16)
-                            : const Color(0xFFF59E0B),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                    child: Text('${challenge['points'] ?? 0} pts', style: TextStyle(color: isCompleted ? const Color(0xFF84CC16) : const Color(0xFFF59E0B), fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
