@@ -1,10 +1,11 @@
-// lib/screens/chat_screen.dart
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/services/chat_service.dart';
+import 'package:afterlife_projects/components/friend_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -101,20 +102,33 @@ class _ChatScreenState extends State<ChatScreen> {
           icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            AfterlifeAvatar(
-              initials: _getInitials(widget.otherUserName),
-              status: AvatarStatus.online,
-              size: 40,
-              showStatusIndicator: true,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              widget.otherUserName,
-              style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
+        title: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FriendProfileScreen(
+                  uid: widget.otherUserId,
+                  friendName: widget.otherUserName,
+                ),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              AfterlifeAvatar(
+                initials: _getInitials(widget.otherUserName),
+                status: AvatarStatus.online,
+                size: 40,
+                showStatusIndicator: true,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.otherUserName,
+                style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
@@ -257,19 +271,9 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
         
-        // Scroll al final cuando hay nuevos mensajes
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-        
         return ListView.builder(
           controller: _scrollController,
+          reverse: true,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: messages.length,
           itemBuilder: (context, index) {
@@ -283,9 +287,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(Map<String, dynamic> message) {
     final isMe = message['isMe'];
-    final time = message['timestamp'] != null
-        ? _formatTime(message['timestamp'].toDate())
-        : '';
+    String time = '';
+    try {
+      if (message['timestamp'] != null) {
+        if (message['timestamp'] is Timestamp) {
+          time = _formatTime((message['timestamp'] as Timestamp).toDate());
+        }
+      }
+    } catch (e) {}
     
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,

@@ -1,12 +1,14 @@
 // lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
 import 'package:afterlife_projects/Menu_Noches.dart';
-import 'package:afterlife_projects/components/chat_page.dart';
+import 'package:afterlife_projects/components/chat_screen.dart';
+import 'package:afterlife_projects/services/chat_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 import 'package:afterlife_projects/services/friend_service.dart';
+import 'package:afterlife_projects/components/friend_profile_screen.dart';
 import 'package:flutter/material.dart';
 
 class GroupPage extends StatefulWidget {
@@ -18,12 +20,15 @@ class GroupPage extends StatefulWidget {
 
 class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   final FriendService _friendService = FriendService();
+  final ChatService _chatService = ChatService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int _selectedTab = 0; // 0: amigos, 1: solicitudes, 2: buscar
   
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
+  bool _isNavigating = false;
+  String? _loadingFriendId;
 
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
@@ -320,11 +325,40 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     }
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ChatPage(userName: friend['name'])),
-        );
+      onTap: () async {
+        if (_isNavigating) return;
+        
+        setState(() {
+          _isNavigating = true;
+          _loadingFriendId = friend['uid'];
+        });
+
+        try {
+          final chatId = await _chatService.getOrCreateChat(
+            friend['uid'],
+            friend['name']
+          );
+          
+          if (!mounted) return;
+          
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: chatId,
+                otherUserId: friend['uid'],
+                otherUserName: friend['name'],
+              ),
+            ),
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isNavigating = false;
+              _loadingFriendId = null;
+            });
+          }
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -333,11 +367,24 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                AfterlifeAvatar(
-                  initials: friend['initials'],
-                  status: _getAvatarStatus(friend['status']),
-                  size: 55,
-                  showStatusIndicator: true,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendProfileScreen(
+                          uid: friend['uid'],
+                          friendName: friend['name'],
+                        ),
+                      ),
+                    );
+                  },
+                  child: AfterlifeAvatar(
+                    initials: friend['initials'],
+                    status: _getAvatarStatus(friend['status']),
+                    size: 55,
+                    showStatusIndicator: true,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -350,6 +397,15 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                             friend['name'],
                             style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
                           ),
+                          if (_loadingFriendId == friend['uid'])
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AfterlifeColors.electricPurple),
+                              ),
+                            ),
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
