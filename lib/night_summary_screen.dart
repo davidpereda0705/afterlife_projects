@@ -788,7 +788,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             color: AfterlifeColors.electricLilac,
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                MaterialPageRoute(builder: (_) =>  HomeScreen()),
                 (route) => false,
               );
             },

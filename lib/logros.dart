@@ -3,17 +3,15 @@ import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key});
 
-  static const String userName = 'Carlos';
-  static const int userLevel = 12;
-  static const int totalPoints = 2450;
-  static const int nightsAttended = 18;
-  static const int challengesCompleted = 47;
-
+  // Lista estática de logros (puede venir del provider más adelante)
   static const List<Map<String, dynamic>> _achievements = [
     {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true, 'description': 'Únete a 5 noches', 'date': '15/03/2025'},
     {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true, 'description': 'Completa tu primera noche', 'date': '10/03/2025'},
@@ -29,23 +27,81 @@ class AchievementsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ CORREGIDO: usar Column en lugar de Container con children
-    return Container(
-      color: AfterlifeColors.background,
-      child: Column(
-        children: [
-          _buildSummaryCard(),
-          Expanded(
-            child: _buildAchievementsList(),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (userProvider.error != null) {
+          return Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text('Error al cargar perfil: ${userProvider.error}',
+                      style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => userProvider.refresh(),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final userData = userProvider.userData;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final email = currentUser?.email ?? 'sin email';
+        final userName = userData?['username'] ?? email.split('@').first;
+        final userLevel = userData?['level'] ?? 1;
+        final totalPoints = userData?['points'] ?? 0;
+        final nightsAttended = userData?['nightsCompleted'] ?? 0;
+        final challengesCompleted = userData?['challengesCompleted'] ?? 0;
+
+        // Calcular logros desbloqueados (aún de lista estática)
+        final unlockedCount = _achievements.where((a) => a['unlocked']).length;
+        final totalCount = _achievements.length;
+
+        return Scaffold(
+          backgroundColor: AfterlifeColors.background,
+          body: Column(
+            children: [
+              _buildSummaryCard(
+                userName: userName,
+                userLevel: userLevel,
+                totalPoints: totalPoints,
+                nightsAttended: nightsAttended,
+                challengesCompleted: challengesCompleted,
+                unlockedCount: unlockedCount,
+                totalCount: totalCount,
+              ),
+              Expanded(
+                child: _buildAchievementsList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildSummaryCard() {
-    int unlockedCount = _achievements.where((a) => a['unlocked']).length;
-    int totalCount = _achievements.length;
+  Widget _buildSummaryCard({
+    required String userName,
+    required int userLevel,
+    required int totalPoints,
+    required int nightsAttended,
+    required int challengesCompleted,
+    required int unlockedCount,
+    required int totalCount,
+  }) {
     double progress = unlockedCount / totalCount;
 
     return Container(

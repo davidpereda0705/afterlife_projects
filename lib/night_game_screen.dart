@@ -1,12 +1,13 @@
-// lib/screens/night_game_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:afterlife_projects/journal_storage.dart';
 import 'package:afterlife_projects/night_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../providers/user_provider.dart';
 import '../theme/colors.dart';
-import '../components/AfterLife_Avatar.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
 import 'ActiveNightManager.dart';
@@ -31,7 +32,11 @@ class _NightGameScreenState extends State<NightGameScreen> {
   Duration _timeLeft = Duration.zero;
   Timer? _timer;
   bool _canFinish = false;
-  bool _isFinishing = false; // 👈 Evita múltiples finalizaciones
+  bool _isFinishing = false;
+
+  // Datos del usuario autenticado
+  String? _currentUserId;
+  String? _currentUsername;
 
   @override
   void initState() {
@@ -51,6 +56,15 @@ class _NightGameScreenState extends State<NightGameScreen> {
     _updateTimeLeft();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateTimeLeft();
+    });
+
+    // Obtener datos del usuario
+    _currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.userData != null) {
+        _currentUsername = userProvider.userData!['username'];
+      }
     });
   }
 
@@ -80,7 +94,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
           _canFinish = true;
         });
         _timer?.cancel();
-        // 👈 Finalizar automáticamente al llegar la hora
         _finishNight();
       }
     } else {
@@ -180,17 +193,63 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
   }
 
-  void _finishNight() {
+  // Obtiene los puntos ganados por el usuario actual en esta noche
+  int _getCurrentUserPoints() {
+    if (_currentUsername == null) return 0;
+    final players = _nightData['players'] as List? ?? [];
+    for (var player in players) {
+      if (player['name'] == _currentUsername) {
+        return player['points'] as int? ?? 0;
+      }
+    }
+    return 0;
+  }
+
+  // Cuenta cuántos retos se completaron en la noche
+  int _getCompletedChallengesCount() {
+    final challenges = _nightData['challenges'] as List? ?? [];
+    return challenges.where((c) => c['completed'] == true).length;
+  }
+
+  Future<void> _finishNight() async {
     if (_isFinishing) return;
     _isFinishing = true;
+
+    // Guardar en diario local
     _saveToJournal();
     ActiveNightManager().clearActiveNight();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NightSummaryScreen(nightData: _nightData),
-      ),
-    );
+
+    // Actualizar estadísticas del usuario en Firestore
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final pointsEarned = _getCurrentUserPoints();
+      final completedChallenges = _getCompletedChallengesCount();
+
+      await userProvider.updateAfterNight(
+        pointsEarned: pointsEarned,
+        nightsCompletedIncrement: 1,
+        challengesCompletedIncrement: completedChallenges,
+      );
+
+      print('✅ Estadísticas actualizadas: +$pointsEarned pts, +1 noche, +$completedChallenges retos');
+    } catch (e) {
+      print('❌ Error actualizando estadísticas: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar progreso: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+
+    // Navegar a resumen
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NightSummaryScreen(nightData: _nightData),
+        ),
+      );
+    }
   }
 
   @override
@@ -620,17 +679,17 @@ class _NightGameScreenState extends State<NightGameScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
   int _getTotalPoints() {
     int total = 0;
     for (var player in _nightData['players'] ?? []) {
       total += (player['points'] is int ? player['points'] as int : int.tryParse(player['points'].toString()) ?? 0);
     }
     return total;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }
