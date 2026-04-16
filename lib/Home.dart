@@ -6,23 +6,14 @@ import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/services/user_service.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  // Datos del usuario (se cargarán desde Firestore)
-  Map<String, dynamic>? _userData;
-  bool _isLoading = true;
-  String? _error;
-
-  // NOCHES EN ESPERA (LOBBY) - TUS DATOS ORIGINALES
+  // NOCHES EN ESPERA (LOBBY)
   final List<Map<String, dynamic>> _pendingNights = [
     {
       'id': '1',
@@ -95,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  // Logros próximos (simplificado)
+  // Logros próximos
   final List<Map<String, dynamic>> _upcomingAchievements = [
     {'title': 'SOCIAL', 'icon': Icons.people, 'progress': 0.8},
     {'title': 'LEYENDA', 'icon': Icons.stars, 'progress': 0.3},
@@ -103,86 +94,77 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final userData = await UserService().getUserData();
-      if (mounted) {
-        setState(() {
-          _userData = userData;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AfterlifeColors.background,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (_error != null) {
-      return Scaffold(
-        backgroundColor: AfterlifeColors.background,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
-              const SizedBox(height: 16),
-              Text('Error al cargar perfil: $_error', style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadUserData,
-                child: const Text('Reintentar'),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (userProvider.error != null) {
+          return Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar perfil: ${userProvider.error}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => userProvider.refresh(),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
               ),
+            ),
+          );
+        }
+
+        final userData = userProvider.userData;
+        final userName = userData?['username'] ?? 'Usuario';
+        final userLevel = userData?['level'] ?? 1;
+        final nightsCompleted = userData?['nightsCompleted'] ?? 0;
+        final challengesCompleted = userData?['challengesCompleted'] ?? 0;
+        final groupsCount = userData?['friendsCount'] ?? 0;
+
+        return Scaffold(
+          backgroundColor: AfterlifeColors.background,
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildProfileCard(
+                userName,
+                userLevel,
+                nightsCompleted,
+                challengesCompleted,
+                groupsCount,
+              ),
+              const SizedBox(height: 24),
+              _buildPendingNightsSection(context), // 👈 PASAMOS CONTEXTO
+              const SizedBox(height: 16),
+              _buildCreateNightButton(context),
+              const SizedBox(height: 20),
             ],
           ),
-        ),
-      );
-    }
-
-    final userName = _userData?['username'] ?? 'Usuario';
-    final userLevel = _userData?['level'] ?? 1;
-    final nightsCompleted = _userData?['nightsCompleted'] ?? 0;
-    final challengesCompleted = _userData?['challengesCompleted'] ?? 0;
-    final groupsCount = _userData?['friendsCount'] ?? 0; // O usa otro campo si prefieres
-
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildProfileCard(userName, userLevel, nightsCompleted, challengesCompleted, groupsCount),
-          const SizedBox(height: 24),
-          _buildPendingNightsSection(),
-          const SizedBox(height: 16),
-          _buildCreateNightButton(),
-          const SizedBox(height: 20),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProfileCard(String userName, int userLevel, int nightsCompleted, int challengesCompleted, int groupsCount) {
+  Widget _buildProfileCard(
+    String userName,
+    int userLevel,
+    int nightsCompleted,
+    int challengesCompleted,
+    int groupsCount,
+  ) {
     return AfterlifeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.electricLilac.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -277,8 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ===== SECCIÓN DE NOCHES EN ESPERA (TUS FUNCIONES ORIGINALES) =====
-  Widget _buildPendingNightsSection() {
+  // ===== SECCIÓN DE NOCHES EN ESPERA (AHORA RECIBE CONTEXTO) =====
+  Widget _buildPendingNightsSection(BuildContext context) {
     final availableNights = _pendingNights.where((night) {
       final isNotFull = night['currentPlayers'] < night['maxPlayers'];
       final userNotJoined = !night['joinedFriends'].contains('CR');
@@ -356,15 +341,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 8),
         Column(
-          children: availableNights.map((night) => _buildPendingNightCard(night)).toList(),
+          children: availableNights
+              .map((night) => _buildPendingNightCard(context, night))
+              .toList(),
         ),
       ],
     );
   }
 
-  Widget _buildPendingNightCard(Map<String, dynamic> night) {
+  Widget _buildPendingNightCard(
+    BuildContext context,
+    Map<String, dynamic> night,
+  ) {
     final bool isFull = night['currentPlayers'] >= night['maxPlayers'];
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -466,7 +456,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (!isFull)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AfterlifeColors.acidGreen.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -489,7 +482,9 @@ class _HomeScreenState extends State<HomeScreen> {
               clipBehavior: Clip.none,
               children: [
                 ...List.generate(
-                  night['joinedFriends'].length > 5 ? 5 : night['joinedFriends'].length,
+                  night['joinedFriends'].length > 5
+                      ? 5
+                      : night['joinedFriends'].length,
                   (index) {
                     return Positioned(
                       left: index * 20.0,
@@ -544,9 +539,11 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isFull ? null : () => _joinNightFromHome(night),
+              onPressed: isFull
+                  ? null
+                  : () => _joinNightFromHome(context, night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull 
+                backgroundColor: isFull
                     ? Colors.grey.withOpacity(0.3)
                     : AfterlifeColors.neonOrange,
                 foregroundColor: Colors.white,
@@ -568,11 +565,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _joinNightFromHome(Map<String, dynamic> night) {
+  void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
     if (ActiveNightManager().isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
+          content: Text(
+            'Ya tienes una noche activa. Finalízala antes de unirte a otra.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -580,11 +579,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     Map<String, dynamic> updatedNight = Map.from(night);
-    List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
+    List<Map<String, dynamic>> updatedPlayers = List.from(
+      night['players'] ?? [],
+    );
     updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
     updatedNight['players'] = updatedPlayers;
     updatedNight['currentPlayers'] = (night['currentPlayers'] ?? 0) + 1;
-    
+
     List<String> updatedJoined = List.from(night['joinedFriends'] ?? []);
     updatedJoined.add('TU');
     updatedNight['joinedFriends'] = updatedJoined;
@@ -599,7 +600,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildCreateNightButton() {
+  Widget _buildCreateNightButton(BuildContext context) {
     return Container(
       width: double.infinity,
       child: ElevatedButton(
@@ -607,7 +608,9 @@ class _HomeScreenState extends State<HomeScreen> {
           if (ActiveNightManager().isActive) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+                content: Text(
+                  'Ya tienes una noche activa. Finalízala antes de crear una nueva.',
+                ),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -615,9 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CreateNightScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateNightScreen()),
           );
         },
         style: ElevatedButton.styleFrom(

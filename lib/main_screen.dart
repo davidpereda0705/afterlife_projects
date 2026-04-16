@@ -34,7 +34,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   ];
 
   late final List<Widget> _pages = [
-    const HomeScreen(),
+     HomeScreen(),
     const GroupPage(),
     const NightSelectionScreen(),
     const MinigamesScreen(),
