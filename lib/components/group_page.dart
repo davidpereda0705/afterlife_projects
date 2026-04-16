@@ -128,6 +128,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
           ),
         ],
       ),
+
     );
   }
 
@@ -161,11 +162,277 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFriendsList() {
-    // ... tu lógica de filtrado y construcción de la lista (igual que antes)
-    // No la repito aquí por brevedad, pero debe ser la misma que tenías.
-    // Solo asegúrate de que NO tenga Scaffold ni AppBar.
-    return Container(); // ← esto es un placeholder, pon aquí tu código real
+          // Aplicar filtros
+    var filteredFriends = _friends.where((friend) {
+      final matchesSearch = _searchQuery.isEmpty || 
+          friend['name'].toLowerCase().contains(_searchQuery);
+      
+      if (!matchesSearch) return false;
+      
+      switch (_selectedTab) {
+        case 1: // Online
+          return friend['status'] == 'online';
+        case 2: // En noche
+          return friend['status'] == 'inNight';
+        default: // Todos
+          return true;
+      }
+    }).toList();
+
+    // Ordenar: online primero, luego en noche, luego away, luego offline
+    filteredFriends.sort((a, b) {
+      const order = {'online': 0, 'inNight': 1, 'away': 2, 'offline': 3};
+      return order[a['status']]!.compareTo(order[b['status']]!);
+    });
+
+    if (filteredFriends.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_off_outlined,
+              size: 60,
+              color: AfterlifeColors.textDisabled,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No se encontraron amigos',
+              style: AfterlifeTextTheme.bodyLarge.copyWith(
+                color: AfterlifeColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Prueba con otra búsqueda',
+              style: TextStyle(color: AfterlifeColors.textDisabled),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: filteredFriends.length,
+      itemBuilder: (context, index) {
+        final friend = filteredFriends[index];
+        return _buildAdvancedFriendTile(friend);
+      },
+    );
   }
 
+  Widget _buildAdvancedFriendTile(Map<String, dynamic> friend) {
+    Color statusColor;
+    String statusText;
+    
+    switch (friend['status']) {
+      case 'online':
+        statusColor = AfterlifeColors.acidGreen;
+        statusText = 'En línea';
+        break;
+      case 'inNight':
+        statusColor = AfterlifeColors.electricLilac;
+        statusText = 'En una noche';
+        break;
+      case 'away':
+        statusColor = AfterlifeColors.neonOrange;
+        statusText = 'Ausente';
+        break;
+      default:
+        statusColor = AfterlifeColors.textDisabled;
+        statusText = 'Desconectado';
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ChatPage(userName: friend['name'])),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: AfterlifeCard(
+          child: Stack(
+            children: [
+              // Indicador de mensajes no leídos
+              if (friend['unread'] > 0)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AfterlifeColors.neonPink,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      friend['unread'].toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Avatar con animación si está escribiendo - VERSIÓN CORREGIDA
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          AfterlifeAvatar(
+                            initials: friend['initials'],
+                            status: _getAvatarStatus(friend['status']),
+                            size: 60,
+                            showStatusIndicator: true,
+                          ),
+                          if (friend['typing'])
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: AfterlifeColors.cyanBlue,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AfterlifeColors.background,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 8,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 16),
+                    
+                    // Información del amigo
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                friend['name'],
+                                style: AfterlifeTextTheme.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  statusText,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 6),
+                          
+                          // Último mensaje con indicador de tipado
+                          Row(
+                            children: [
+                              if (friend['typing'])
+                                Container(
+                                  margin: const EdgeInsets.only(right: 6),
+                                  child: const Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0xFF06B6D4),
+                                    size: 14,
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  friend['typing'] 
+                                      ? 'Escribiendo...' 
+                                      : friend['message'],
+                                  style: TextStyle(
+                                    color: friend['typing'] 
+                                        ? AfterlifeColors.cyanBlue
+                                        : AfterlifeColors.textSecondary,
+                                    fontSize: 13,
+                                    fontStyle: friend['typing'] 
+                                        ? FontStyle.italic 
+                                        : FontStyle.normal,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 4),
+                          
+                          // Hora del último mensaje
+                          Text(
+                            friend['time'],
+                            style: TextStyle(
+                              color: AfterlifeColors.textDisabled,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Icono de chat
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AfterlifeColors.cyanBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.chat_bubble_outline,
+                        color: AfterlifeColors.cyanBlue,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getInitials(String name) {
+    List<String> parts = name.split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+  }
   // El resto de métodos (_buildAdvancedFriendTile, _getInitials, etc.) se mantienen igual
 }
