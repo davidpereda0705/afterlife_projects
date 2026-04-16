@@ -6,7 +6,7 @@ import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
-import 'package:afterlife_projects/services/friend_service.dart'; // 👈 Importar el servicio
+import 'package:afterlife_projects/services/friend_service.dart';
 import 'package:flutter/material.dart';
 
 class GroupPage extends StatefulWidget {
@@ -19,8 +19,9 @@ class GroupPage extends StatefulWidget {
 class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   final FriendService _friendService = FriendService();
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = "";
+  String _searchQuery = '';
   int _selectedTab = 0; // 0: amigos, 1: solicitudes, 2: buscar
+  
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
 
@@ -254,7 +255,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     }
   }
 
-  // Pestaña de amigos
+  // ==================== PESTAÑA DE AMIGOS ====================
   Widget _buildFriendsList() {
     return StreamBuilder(
       stream: _friendService.getFriends(),
@@ -301,6 +302,23 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFriendTile(Map<String, dynamic> friend) {
+    Color statusColor;
+    String statusText;
+    
+    switch (friend['status']) {
+      case 'online':
+        statusColor = AfterlifeColors.acidGreen;
+        statusText = 'En línea';
+        break;
+      case 'inNight':
+        statusColor = AfterlifeColors.electricLilac;
+        statusText = 'En una noche';
+        break;
+      default:
+        statusColor = AfterlifeColors.textDisabled;
+        statusText = 'Desconectado';
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -317,8 +335,8 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
               children: [
                 AfterlifeAvatar(
                   initials: friend['initials'],
-                  status: AvatarStatus.online,
-                  size: 50,
+                  status: _getAvatarStatus(friend['status']),
+                  size: 55,
                   showStatusIndicator: true,
                 ),
                 const SizedBox(width: 12),
@@ -326,13 +344,29 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        friend['name'],
-                        style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          Text(
+                            friend['name'],
+                            style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(color: statusColor, fontSize: 10),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        friend['email'],
+                        friend['message'],
                         style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -352,7 +386,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     );
   }
 
-  // Pestaña de solicitudes
+  // ==================== PESTAÑA DE SOLICITUDES ====================
   Widget _buildRequestsList() {
     return StreamBuilder(
       stream: _friendService.getFriendRequests(),
@@ -439,7 +473,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     );
   }
 
-  // Pestaña de búsqueda
+  // ==================== PESTAÑA DE BÚSQUEDA ====================
   Widget _buildSearchList() {
     if (_isSearching) {
       return const Center(child: CircularProgressIndicator());
@@ -495,7 +529,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   AfterlifeAvatar(
-                    initials: _getInitials(user['name']),
+                    initials: user['initials'],
                     status: AvatarStatus.online,
                     size: 50,
                     showStatusIndicator: false,

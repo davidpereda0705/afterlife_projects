@@ -156,6 +156,11 @@ class FriendService {
               'name': userDoc.data()?['name'] ?? 'Sin nombre',
               'email': userDoc.data()?['email'] ?? '',
               'initials': _getInitials(userDoc.data()?['name'] ?? ''),
+              'status': 'online',
+              'message': '¡Conectado!',
+              'time': _formatTime(doc.data()['since']),
+              'unread': 0,
+              'typing': false,
             });
           }
           return friends;
@@ -216,5 +221,16 @@ class FriendService {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
     return name[0].toUpperCase();
+  }
+
+  String _formatTime(dynamic timestamp) {
+    if (timestamp == null) return 'reciente';
+    final date = timestamp.toDate();
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays > 0) return 'hace ${diff.inDays} día(s)';
+    if (diff.inHours > 0) return 'hace ${diff.inHours} hora(s)';
+    if (diff.inMinutes > 0) return 'hace ${diff.inMinutes} min';
+    return 'ahora';
   }
 }
