@@ -565,40 +565,24 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
-    if (ActiveNightManager().isActive) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Ya tienes una noche activa. Finalízala antes de unirte a otra.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    Map<String, dynamic> updatedNight = Map.from(night);
-    List<Map<String, dynamic>> updatedPlayers = List.from(
-      night['players'] ?? [],
+void _joinNightFromHome(BuildContext context, Map<String, dynamic> night) {
+  if (ActiveNightManager().isActive) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
+        backgroundColor: Colors.orange,
+      ),
     );
-    updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
-    updatedNight['players'] = updatedPlayers;
-    updatedNight['currentPlayers'] = (night['currentPlayers'] ?? 0) + 1;
-
-    List<String> updatedJoined = List.from(night['joinedFriends'] ?? []);
-    updatedJoined.add('TU');
-    updatedNight['joinedFriends'] = updatedJoined;
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NightGameScreen(nightData: updatedNight),
-        ),
-      );
-    });
+    return;
   }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => NightGameScreen(nightId: night['id']),
+    ),
+  );
+}
 
   Widget _buildCreateNightButton(BuildContext context) {
     return Container(

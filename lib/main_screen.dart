@@ -34,7 +34,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   ];
 
   late final List<Widget> _pages = [
-     HomeScreen(),
+    HomeScreen(),
     const GroupPage(),
     const NightSelectionScreen(),
     const MinigamesScreen(),
@@ -79,15 +79,18 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           valueListenable: ActiveNightManager().activeNight,
           builder: (context, activeNight, child) {
             if (activeNight != null) {
-              // Solo mostrar el badge, nada más
+              // Obtener el ID de la noche activa
+              final nightId = activeNight['id'] as String?;
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NightGameScreen(nightData: activeNight),
-                    ),
-                  );
+                  if (nightId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NightGameScreen(nightId: nightId),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -110,7 +113,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               );
             } else {
-              // Solo el título, sin badge
               return Text(
                 'Afterlife',
                 style: AfterlifeTextTheme.headlineMedium.copyWith(

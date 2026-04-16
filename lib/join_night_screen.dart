@@ -1,6 +1,8 @@
-// lib/screens/join_night_screen.dart
-import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/night_service.dart';
+import '../providers/user_provider.dart';
 import '../theme/colors.dart';
 import 'night_game_screen.dart';
 
@@ -12,72 +14,89 @@ class JoinNightScreen extends StatefulWidget {
 }
 
 class _JoinNightScreenState extends State<JoinNightScreen> {
-  // Noches disponibles
-  final List<Map<String, dynamic>> _availableNights = [
-    {
-      'id': '1',
-      'hostName': 'Ana',
-      'hostInitials': 'AN',
-      'nightName': 'Viernes de Locura',
-      'groupName': 'Los Desvelados',
-      'day': 'Viernes',
-      'time': '22:30',
-      'currentPlayers': 3,
-      'maxPlayers': 8,
-      'players': [
-        {'name': 'Ana', 'initials': 'AN', 'points': 0},
-        {'name': 'María', 'initials': 'MJ', 'points': 0},
-        {'name': 'Luis', 'initials': 'LM', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-      ],
-    },
-    {
-      'id': '2',
-      'hostName': 'Carlos',
-      'hostInitials': 'CR',
-      'nightName': 'Sábado Nocturno',
-      'groupName': 'Fiesteros Nocturnos',
-      'day': 'Sábado',
-      'time': '23:00',
-      'currentPlayers': 2,
-      'maxPlayers': 6,
-      'players': [
-        {'name': 'Carlos', 'initials': 'CR', 'points': 0},
-        {'name': 'Pablo', 'initials': 'PA', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-      ],
-    },
-    {
-      'id': '3',
-      'hostName': 'María',
-      'hostInitials': 'MJ',
-      'nightName': 'Previa del Viernes',
-      'groupName': 'Party Animals',
-      'day': 'Viernes',
-      'time': '21:00',
-      'currentPlayers': 4,
-      'maxPlayers': 4,
-      'players': [
-        {'name': 'María', 'initials': 'MJ', 'points': 0},
-        {'name': 'Luis', 'initials': 'LT', 'points': 0},
-        {'name': 'Marta', 'initials': 'MS', 'points': 0},
-        {'name': 'Javier', 'initials': 'JV', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-        {'name': 'Canta una canción', 'points': 200, 'completed': false},
-      ],
-    },
-  ];
+  final NightService _nightService = NightService();
+  List<Map<String, dynamic>> _availableNights = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableNights();
+  }
+
+  Future<void> _loadAvailableNights() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final nights = await _nightService.getAvailableNights();
+      setState(() {
+        _availableNights = nights;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _joinNight(Map<String, dynamic> night) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      _showSnackBar('Debes iniciar sesión', Colors.red);
+      return;
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final username = userProvider.userData?['username'] ?? 'Usuario';
+    final initials = username.length >= 2
+        ? username.substring(0, 2).toUpperCase()
+        : username.substring(0, 1).toUpperCase();
+
+    try {
+      // Verificar si la noche aún existe y no está llena
+      final nightDoc = await _nightService.getNightById(night['id']);
+      if (nightDoc == null) {
+        _showSnackBar('La noche ya no existe', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      final currentPlayers = (nightDoc['players'] as List? ?? []).length;
+      final maxPlayers = nightDoc['maxPlayers'] ?? 0;
+      if (currentPlayers >= maxPlayers) {
+        _showSnackBar('La noche está llena', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      // Unirse a la noche
+      await _nightService.joinNight(night['id'], userId, username, initials);
+      _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
+
+      // Navegar a la sala de juego con el nightId
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NightGameScreen(nightId: night['id']), // ✅ Cambiado: usa nightId
+          ),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Error al unirse: $e', Colors.red);
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,18 +128,9 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                 letterSpacing: 1,
               ),
             ),
-            
             const SizedBox(height: 16),
-            
             Expanded(
-              child: _availableNights.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      itemCount: _availableNights.length,
-                      itemBuilder: (context, index) {
-                        return _buildNightCard(_availableNights[index]);
-                      },
-                    ),
+              child: _buildBody(),
             ),
           ],
         ),
@@ -128,9 +138,43 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
     );
   }
 
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(_error!, style: const TextStyle(color: Colors.white)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadAvailableNights,
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7B1FA2)),
+              child: const Text('REINTENTAR'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_availableNights.isEmpty) {
+      return _buildEmptyState();
+    }
+    return ListView.builder(
+      itemCount: _availableNights.length,
+      itemBuilder: (context, index) => _buildNightCard(_availableNights[index]),
+    );
+  }
+
   Widget _buildNightCard(Map<String, dynamic> night) {
-    final bool isFull = night['currentPlayers'] >= night['maxPlayers'];
-    
+    final players = night['players'] as List? ?? [];
+    final currentPlayers = players.length;
+    final maxPlayers = night['maxPlayers'] ?? 0;
+    final bool isFull = currentPlayers >= maxPlayers;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -138,9 +182,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFull 
-              ? Colors.grey.withOpacity(0.3)
-              : const Color(0xFFEC4899).withOpacity(0.3),
+          color: isFull ? Colors.grey.withOpacity(0.3) : const Color(0xFFEC4899).withOpacity(0.3),
         ),
       ),
       child: Column(
@@ -152,19 +194,13 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
-                  ),
+                  gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
-                    night['hostInitials'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    night['hostInitials'] ?? '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
               ),
@@ -174,35 +210,26 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      night['nightName'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      night['name'] ?? 'Sin nombre',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${night['hostName']} · ${night['groupName']}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
+                      '${night['hostName'] ?? ''} · ${night['groupName'] ?? ''}',
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          
           const SizedBox(height: 12),
-          
           Row(
             children: [
               const Icon(Icons.calendar_today, color: Colors.white54, size: 16),
               const SizedBox(width: 4),
               Text(
-                '${night['day']} · ${night['time']}',
+                '${night['day'] ?? ''} · ${night['time'] ?? ''}',
                 style: const TextStyle(color: Colors.white70),
               ),
               const Spacer(),
@@ -215,11 +242,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                   ),
                   child: const Text(
                     'DISPONIBLE',
-                    style: TextStyle(
-                      color: Color(0xFF84CC16),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Color(0xFF84CC16), fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 )
               else
@@ -231,51 +254,36 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                   ),
                   child: const Text(
                     'COMPLETA',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
             ],
           ),
-          
           const SizedBox(height: 12),
-          
           Row(
             children: [
               const Icon(Icons.people, color: Colors.white54, size: 18),
               const SizedBox(width: 4),
               Text(
-                '${night['currentPlayers']}/${night['maxPlayers']}',
+                '$currentPlayers/$maxPlayers',
                 style: const TextStyle(color: Colors.white70),
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: isFull ? null : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull 
-                    ? Colors.grey.withOpacity(0.3)
-                    : const Color(0xFFEC4899),
+                backgroundColor: isFull ? Colors.grey.withOpacity(0.3) : const Color(0xFFEC4899),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: Text(
                 isFull ? 'COMPLETA' : 'UNIRSE',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -297,11 +305,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           const SizedBox(height: 16),
           const Text(
             'No hay noches disponibles',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -311,46 +315,5 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         ],
       ),
     );
-  }
-
-  // Función para unirse a la noche con comprobación de noche activa
-  void _joinNight(Map<String, dynamic> night) {
-    // Verificar si ya hay una noche activa
-    if (ActiveNightManager().isActive) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // Añadir al usuario actual a la lista de jugadores
-    List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
-    updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
-    
-    // Crear copia actualizada de la noche
-    Map<String, dynamic> updatedNight = Map.from(night);
-    updatedNight['players'] = updatedPlayers;
-    updatedNight['currentPlayers'] = (night['currentPlayers'] ?? 0) + 1;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Te has unido a ${night['nightName']}'),
-        backgroundColor: const Color(0xFF84CC16),
-        duration: const Duration(milliseconds: 500),
-      ),
-    );
-    
-    // IR DIRECTAMENTE A LA SALA DE JUEGO
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NightGameScreen(nightData: updatedNight),
-        ),
-      );
-    });
   }
 }
