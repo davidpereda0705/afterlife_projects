@@ -12,11 +12,73 @@ class MinigamesScreen extends StatelessWidget {
   const MinigamesScreen({super.key});
 
   final List<Map<String, dynamic>> _games = const [
-    // ... tus juegos (igual)
+    {
+      'title': 'VERDAD O BEBIDA',
+      'description': 'Responde con honestidad… o bebe',
+      'icon': Icons.psychology_alt_outlined,
+      'color': Color(0xFFA855F7),
+      'route': 'truth_or_drink',
+    },
+    {
+      'title': 'YO NUNCA',
+      'description': 'El juego que destruye amistades',
+      'icon': Icons.water_drop_outlined,
+      'color': Color(0xFFEC4899),
+      'route': 'yo_nunca',
+    },
+    {
+      'title': 'RETO RÁPIDO',
+      'description': '30 segundos para hacer el ridículo',
+      'icon': Icons.timer_outlined,
+      'color': Color(0xFF06B6D4),
+      'route': 'reto_rapido',
+    },
+    {
+      'title': '¿QUÉ PREFIERES?',
+      'description': 'El dilema donde todos pierden',
+      'icon': Icons.balance_outlined,
+      'color': Color(0xFF84CC16),
+      'route': 'would_you_rather', // Cambiado el identificador
+    },
   ];
 
   void _navigateToGame(BuildContext context, String route) {
-    // ... tu navegación (igual)
+    switch (route) {
+      case 'truth_or_drink':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TruthOrDrinkGame()),
+        );
+        break;
+      case 'yo_nunca':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const YoNuncaGame()),
+        );
+        break;
+      case 'reto_rapido':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RetoRapidoGame()),
+        );
+        break;
+      case 'would_you_rather': // ¡NUEVO CASO!
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const WouldYouRatherGame()),
+        );
+        break;
+      default:
+        // Para cualquier otro juego no implementado
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Próximamente! Este juego llegará muy pronto...'),
+            backgroundColor: AfterlifeColors.electricPurple,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        break;
+    }
   }
 
   @override
@@ -76,6 +138,9 @@ class MinigamesScreen extends StatelessWidget {
                   description: game['description'],
                   icon: game['icon'],
                   color: game['color'],
+                  isAvailable: game['route'] != 'would_you_rather'
+                      ? true
+                      : true, // ¡AHORA SÍ DISPONIBLE!
                 ),
               );
             },
@@ -89,7 +154,11 @@ class MinigamesScreen extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: AfterlifeColors.neonOrange, size: 18),
+                  Icon(
+                    Icons.info_outline,
+                    color: AfterlifeColors.neonOrange,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -114,6 +183,7 @@ class MinigamesScreen extends StatelessWidget {
     required String description,
     required IconData icon,
     required Color color,
+    required bool isAvailable, // Nuevo parámetro
   }) {
     return AfterlifeCard(
       child: Column(
@@ -140,6 +210,25 @@ class MinigamesScreen extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+                    
+          // Indicador de disponibilidad - ¡AHORA TODOS DISPONIBLES!
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'DISPONIBLE',
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
           const SizedBox(height: 4),
           Text(
             description,
