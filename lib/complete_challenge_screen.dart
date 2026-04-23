@@ -66,7 +66,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   @override
   Widget build(BuildContext context) {
     final challenge = widget.challenge;
-    final color = const Color(0xFF7B1FA2);
+    final color = AfterlifeColors.electricLilac;
 
     return Scaffold(
       backgroundColor: AfterlifeColors.background,
@@ -90,7 +90,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
+                colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -152,7 +152,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               initialValue: _selectedPlayer,
               hint: const Text('Selecciona un jugador', style: TextStyle(color: Colors.white54)),
               dropdownColor: AfterlifeColors.surfaceDark,
-              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7B1FA2)),
+              icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.electricLilac),
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(border: InputBorder.none),
               items: widget.players.map<DropdownMenuItem<String>>((player) {

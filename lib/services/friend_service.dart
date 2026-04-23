@@ -1,6 +1,7 @@
 // lib/services/friend_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../core/app_constants.dart';
 
 class FriendService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,8 +11,8 @@ class FriendService {
 
   // Obtener el nombre del usuario actual
   Future<String> getCurrentUserName() async {
-    final doc = await _firestore.collection('users').doc(currentUserId).get();
-    return doc.data()?['username'] ?? 'Usuario';
+    final doc = await _firestore.collection(AppConstants.usersCollection).doc(currentUserId).get();
+    return doc.data()?[AppConstants.fieldUsername] ?? 'Usuario';
   }
 
   // Buscar usuarios por nombre
@@ -19,9 +20,9 @@ class FriendService {
     if (query.isEmpty) return [];
     
     final results = await _firestore
-        .collection('users')
-        .where('username', isGreaterThanOrEqualTo: query)
-        .where('username', isLessThanOrEqualTo: query + '\uf8ff')
+        .collection(AppConstants.usersCollection)
+        .where(AppConstants.fieldUsername, isGreaterThanOrEqualTo: query)
+        .where(AppConstants.fieldUsername, isLessThanOrEqualTo: query + '\uf8ff')
         .limit(20)
         .get();
     
@@ -29,9 +30,9 @@ class FriendService {
         .where((doc) => doc.id != currentUserId)
         .map((doc) => ({
               'uid': doc.id,
-              'name': doc.data()['username'] ?? 'Sin nombre',
-              'email': doc.data()['email'] ?? '',
-              'initials': _getInitials(doc.data()['username'] ?? ''),
+              AppConstants.fieldNightName: doc.data()[AppConstants.fieldUsername] ?? 'Sin nombre',
+              AppConstants.fieldEmail: doc.data()[AppConstants.fieldEmail] ?? '',
+              'initials': _getInitials(doc.data()[AppConstants.fieldUsername] ?? ''),
             }))
         .toList();
   }
@@ -41,26 +42,26 @@ class FriendService {
     final batch = _firestore.batch();
     
     final myRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friend_requests')
         .doc(friendUid);
     
     batch.set(myRequestRef, {
       'uid': friendUid,
-      'status': 'pending',
+      AppConstants.fieldStatus: 'pending',
       'requestedAt': FieldValue.serverTimestamp(),
     });
     
     final friendRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(friendUid)
         .collection('friend_requests')
         .doc(currentUserId);
     
     batch.set(friendRequestRef, {
       'uid': currentUserId,
-      'status': 'pending',
+      AppConstants.fieldStatus: 'pending',
       'requestedAt': FieldValue.serverTimestamp(),
     });
     
@@ -74,48 +75,48 @@ class FriendService {
     
     // Añadir a subcolección friends de cada usuario
     final myFriendRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friends')
         .doc(friendUid);
     batch.set(myFriendRef, {
       'uid': friendUid,
-      'status': 'accepted',
+      AppConstants.fieldStatus: 'accepted',
       'since': now,
     });
     
     final friendFriendRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(friendUid)
         .collection('friends')
         .doc(currentUserId);
     batch.set(friendFriendRef, {
       'uid': currentUserId,
-      'status': 'accepted',
+      AppConstants.fieldStatus: 'accepted',
       'since': now,
     });
     
     // Eliminar solicitudes pendientes
     final myRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friend_requests')
         .doc(friendUid);
     batch.delete(myRequestRef);
     
     final friendRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(friendUid)
         .collection('friend_requests')
         .doc(currentUserId);
     batch.delete(friendRequestRef);
     
     // Incrementar friendsCount en los documentos de usuario
-    batch.update(_firestore.collection('users').doc(currentUserId), {
-      'friendsCount': FieldValue.increment(1),
+    batch.update(_firestore.collection(AppConstants.usersCollection).doc(currentUserId), {
+      AppConstants.fieldFriendsCount: FieldValue.increment(1),
     });
-    batch.update(_firestore.collection('users').doc(friendUid), {
-      'friendsCount': FieldValue.increment(1),
+    batch.update(_firestore.collection(AppConstants.usersCollection).doc(friendUid), {
+      AppConstants.fieldFriendsCount: FieldValue.increment(1),
     });
     
     await batch.commit();
@@ -126,14 +127,14 @@ class FriendService {
     final batch = _firestore.batch();
     
     final myRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friend_requests')
         .doc(friendUid);
     batch.delete(myRequestRef);
     
     final friendRequestRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(friendUid)
         .collection('friend_requests')
         .doc(currentUserId);
@@ -145,24 +146,24 @@ class FriendService {
   // Obtener amigos (aceptados)
   Stream<List<Map<String, dynamic>>> getFriends() {
     return _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friends')
-        .where('status', isEqualTo: 'accepted')
+        .where(AppConstants.fieldStatus, isEqualTo: 'accepted')
         .snapshots()
         .asyncMap((snapshot) async {
           final friends = <Map<String, dynamic>>[];
           for (var doc in snapshot.docs) {
             final friendUid = doc.id;
-            final userDoc = await _firestore.collection('users').doc(friendUid).get();
+            final userDoc = await _firestore.collection(AppConstants.usersCollection).doc(friendUid).get();
             friends.add({
               'uid': friendUid,
-              'name': userDoc.data()?['username'] ?? 'Sin nombre',
-              'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['username'] ?? ''),
-              'status': 'online',   // Puedes mejorar esto con presencia real
+              AppConstants.fieldNightName: userDoc.data()?[AppConstants.fieldUsername] ?? 'Sin nombre',
+              AppConstants.fieldEmail: userDoc.data()?[AppConstants.fieldEmail] ?? '',
+              'initials': _getInitials(userDoc.data()?[AppConstants.fieldUsername] ?? ''),
+              AppConstants.fieldStatus: 'online',   // Puedes mejorar esto con presencia real
               'message': '¡Conectado!',
-              'time': _formatTime(doc.data()['since']),
+              AppConstants.fieldTime: _formatTime(doc.data()['since']),
               'unread': 0,
               'typing': false,
             });
@@ -174,21 +175,21 @@ class FriendService {
   // Obtener solicitudes pendientes
   Stream<List<Map<String, dynamic>>> getFriendRequests() {
     return _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friend_requests')
-        .where('status', isEqualTo: 'pending')
+        .where(AppConstants.fieldStatus, isEqualTo: 'pending')
         .snapshots()
         .asyncMap((snapshot) async {
           final requests = <Map<String, dynamic>>[];
           for (var doc in snapshot.docs) {
             final requesterUid = doc.id;
-            final userDoc = await _firestore.collection('users').doc(requesterUid).get();
+            final userDoc = await _firestore.collection(AppConstants.usersCollection).doc(requesterUid).get();
             requests.add({
               'uid': requesterUid,
-              'name': userDoc.data()?['username'] ?? 'Sin nombre',
-              'email': userDoc.data()?['email'] ?? '',
-              'initials': _getInitials(userDoc.data()?['username'] ?? ''),
+              AppConstants.fieldNightName: userDoc.data()?[AppConstants.fieldUsername] ?? 'Sin nombre',
+              AppConstants.fieldEmail: userDoc.data()?[AppConstants.fieldEmail] ?? '',
+              'initials': _getInitials(userDoc.data()?[AppConstants.fieldUsername] ?? ''),
             });
           }
           return requests;
@@ -200,25 +201,25 @@ class FriendService {
     final batch = _firestore.batch();
     
     final myFriendRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(currentUserId)
         .collection('friends')
         .doc(friendUid);
     batch.delete(myFriendRef);
     
     final friendFriendRef = _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(friendUid)
         .collection('friends')
         .doc(currentUserId);
     batch.delete(friendFriendRef);
     
     // Decrementar friendsCount
-    batch.update(_firestore.collection('users').doc(currentUserId), {
-      'friendsCount': FieldValue.increment(-1),
+    batch.update(_firestore.collection(AppConstants.usersCollection).doc(currentUserId), {
+      AppConstants.fieldFriendsCount: FieldValue.increment(-1),
     });
-    batch.update(_firestore.collection('users').doc(friendUid), {
-      'friendsCount': FieldValue.increment(-1),
+    batch.update(_firestore.collection(AppConstants.usersCollection).doc(friendUid), {
+      AppConstants.fieldFriendsCount: FieldValue.increment(-1),
     });
     
     await batch.commit();

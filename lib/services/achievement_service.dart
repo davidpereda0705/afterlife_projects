@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+
+import '../core/level_calculator.dart';
 import '../models/achievement.dart';
+import '../core/app_constants.dart';
 
 class AchievementService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Inicializa los logros por defecto en Firestore si la colección está vacía.
   Future<void> initializeDefaultAchievements() async {
-    final snapshot = await _firestore.collection('achievements').limit(1).get();
+    final snapshot = await _firestore.collection(AppConstants.achievementsCollection).limit(1).get();
     if (snapshot.docs.isNotEmpty) return;
 
     final defaultAchievements = [
@@ -25,21 +28,21 @@ class AchievementService {
 
     final batch = _firestore.batch();
     for (var achievement in defaultAchievements) {
-      final docRef = _firestore.collection('achievements').doc();
+      final docRef = _firestore.collection(AppConstants.achievementsCollection).doc();
       batch.set(docRef, achievement);
     }
     await batch.commit();
-    print('✅ Logros iniciales creados en Firestore');
+    debugPrint('✅ Logros iniciales creados en Firestore');
   }
 
   Future<List<Achievement>> getAllAchievements() async {
-    final snapshot = await _firestore.collection('achievements').where('active', isEqualTo: true).get();
+    final snapshot = await _firestore.collection(AppConstants.achievementsCollection).where('active', isEqualTo: true).get();
     return snapshot.docs.map((doc) => Achievement.fromMap(doc.data(), doc.id)).toList();
   }
 
   Future<List<String>> getUnlockedAchievementIds(String userId) async {
-    final doc = await _firestore.collection('users').doc(userId).get();
-    final unlocked = doc.data()?['unlockedAchievements'] as List? ?? [];
+    final doc = await _firestore.collection(AppConstants.usersCollection).doc(userId).get();
+    final unlocked = doc.data()?[AppConstants.fieldUnlockedAchievements] as List? ?? [];
     return unlocked.map((e) => e['achievementId'] as String).toList();
   }
 
@@ -61,9 +64,9 @@ class AchievementService {
 
       bool achieved = false;
       switch (achievement.category) {
-        case 'nights': achieved = nightsCompleted >= achievement.requirement; break;
-        case 'challenges': achieved = challengesCompleted >= achievement.requirement; break;
-        case 'level': achieved = level >= achievement.requirement; break;
+        case AppConstants.nightsCollection: achieved = nightsCompleted >= achievement.requirement; break;
+        case AppConstants.fieldChallenges: achieved = challengesCompleted >= achievement.requirement; break;
+        case AppConstants.fieldLevel: achieved = level >= achievement.requirement; break;
         case 'friends': achieved = friendsCount >= achievement.requirement; break;
         case 'photos': achieved = photosUploaded >= achievement.requirement; break;
         case 'nights_created': achieved = nightsCreated >= achievement.requirement; break;
@@ -79,9 +82,9 @@ class AchievementService {
   }
 
   Future<void> _unlockAchievements(String userId, List<Achievement> achievements) async {
-    final userRef = _firestore.collection('users').doc(userId);
+    final userRef = _firestore.collection(AppConstants.usersCollection).doc(userId);
     final userDoc = await userRef.get();
-    final currentUnlocked = List<Map<String, dynamic>>.from(userDoc.data()?['unlockedAchievements'] ?? []);
+    final currentUnlocked = List<Map<String, dynamic>>.from(userDoc.data()?[AppConstants.fieldUnlockedAchievements] ?? []);
     final totalPointsToAdd = achievements.fold(0, (sum, a) => sum + a.points);
 
     for (final achievement in achievements) {
@@ -92,24 +95,24 @@ class AchievementService {
       });
     }
 
-    final currentPoints = userDoc.data()?['points'] ?? 0;
+    final currentPoints = userDoc.data()?[AppConstants.fieldPoints] ?? 0;
     final newPoints = currentPoints + totalPointsToAdd;
     final newLevel = _calculateLevel(newPoints);
-    final currentLevel = userDoc.data()?['level'] ?? 1;
+    final currentLevel = userDoc.data()?[AppConstants.fieldLevel] ?? 1;
 
     final updates = {
-      'unlockedAchievements': currentUnlocked,
-      'points': newPoints,
+      AppConstants.fieldUnlockedAchievements: currentUnlocked,
+      AppConstants.fieldPoints: newPoints,
     };
     if (newLevel != currentLevel) {
-      updates['level'] = newLevel;
+      updates[AppConstants.fieldLevel] = newLevel;
     }
 
     await userRef.update(updates);
   }
 
   int _calculateLevel(int points) {
-    return 1 + (points ~/ 100);
+    return LevelCalculator.calculate(points);
   }
 
   double getProgress(Achievement achievement, {
@@ -122,9 +125,9 @@ class AchievementService {
   }) {
     int current = 0;
     switch (achievement.category) {
-      case 'nights': current = nightsCompleted; break;
-      case 'challenges': current = challengesCompleted; break;
-      case 'level': current = level; break;
+      case AppConstants.nightsCollection: current = nightsCompleted; break;
+      case AppConstants.fieldChallenges: current = challengesCompleted; break;
+      case AppConstants.fieldLevel: current = level; break;
       case 'friends': current = friendsCount; break;
       case 'photos': current = photosUploaded; break;
       case 'nights_created': current = nightsCreated; break;

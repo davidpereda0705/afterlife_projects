@@ -55,9 +55,9 @@ class NightSummaryDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('MVP', style: TextStyle(color: Color(0xFFF59E0B))),
+                        Text('MVP', style: TextStyle(color: AfterlifeColors.neonOrange)),
                         Text(mvp['name'], style: TextStyle(color: Colors.white)),
-                        Text('${mvp['points']} pts', style: TextStyle(color: Color(0xFFF59E0B))),
+                        Text('${mvp['points']} pts', style: TextStyle(color: AfterlifeColors.neonOrange)),
                       ],
                     ),
                   ],
@@ -72,7 +72,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('CLASIFICACIÓN', style: TextStyle(color: Color(0xFFEC4899))),
+                    const Text('CLASIFICACIÓN', style: TextStyle(color: AfterlifeColors.neonPink)),
                     const SizedBox(height: 12),
                     ...players.map((player) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -94,7 +94,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Expanded(child: Text(player['name'], style: const TextStyle(color: Colors.white))),
-                          Text('${player['points']} pts', style: const TextStyle(color: Color(0xFFF59E0B))),
+                          Text('${player['points']} pts', style: const TextStyle(color: AfterlifeColors.neonOrange)),
                         ],
                       ),
                     )),
@@ -111,7 +111,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('📸 FOTOS', style: TextStyle(color: Color(0xFF06B6D4))),
+                      const Text('📸 FOTOS', style: TextStyle(color: AfterlifeColors.cyanBlue)),
                       const SizedBox(height: 12),
                       GridView.builder(
                         shrinkWrap: true,

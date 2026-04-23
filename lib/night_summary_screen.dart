@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:afterlife_projects/Home.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/text_theme.dart';
@@ -33,9 +34,12 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   Timer? _carouselTimer;
   int _currentImageIndex = 0;
 
+  late ConfettiController _confettiController;
+
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -115,6 +119,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         _startCarousel('challenge');
       } else if (_currentStep == 4) {
         _startCarousel('night');
+      } else if (_currentStep == 5) {
+        _confettiController.play();
       }
     }
   }
@@ -154,6 +160,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     _stopCarousel();
     _controller.dispose();
     _pageController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -242,6 +249,22 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                 },
                 child: _buildStepContent(_currentStep),
               ),
+              // Confetti en el paso final
+              if (_currentStep == 5)
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    shouldLoop: false,
+                    colors: [
+                      AfterlifeColors.electricLilac,
+                      AfterlifeColors.neonPink,
+                      AfterlifeColors.acidGreen,
+                      AfterlifeColors.cyanBlue,
+                    ],
+                  ),
+                ),
               // Indicador de paso (excepto en resumen final)
               if (_currentStep != 5)
                 Positioned(
@@ -343,7 +366,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     final int position = _podiumPlayers.length - _podiumIndex; // 3,2,1
     final String positionText = position == 1 ? '🏆 GANADOR 🏆' : '$positionº LUGAR';
     final Color color = position == 1
-        ? const Color(0xFFF59E0B)
+        ? AfterlifeColors.neonOrange
         : position == 2
             ? Colors.grey[400]!
             : Colors.brown[300]!;
@@ -428,7 +451,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             const Text(
               'CLASIFICACIÓN FINAL',
               style: TextStyle(
-                color: Color(0xFFEC4899),
+                color: AfterlifeColors.neonPink,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -446,7 +469,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       height: 30,
                       decoration: BoxDecoration(
                         color: index == 0
-                            ? const Color(0xFFF59E0B).withOpacity(0.2)
+                            ? AfterlifeColors.neonOrange.withOpacity(0.2)
                             : Colors.white.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
@@ -455,7 +478,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                           '${index + 1}',
                           style: TextStyle(
                             color: index == 0
-                                ? const Color(0xFFF59E0B)
+                                ? AfterlifeColors.neonOrange
                                 : Colors.white54,
                             fontWeight: FontWeight.bold,
                           ),
@@ -475,13 +498,13 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withOpacity(0.2),
+                        color: AfterlifeColors.neonOrange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${player['points'] ?? 0} pts',
                         style: const TextStyle(
-                          color: Color(0xFFF59E0B),
+                          color: AfterlifeColors.neonOrange,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -515,7 +538,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         const Text(
           '📸 RETOS COMPLETADOS',
           style: TextStyle(
-            color: Color(0xFF06B6D4),
+            color: AfterlifeColors.cyanBlue,
             fontSize: 18,
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
@@ -595,7 +618,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         const Text(
           '📸 MOMENTOS DE LA NOCHE',
           style: TextStyle(
-            color: Color(0xFFEC4899),
+            color: AfterlifeColors.neonPink,
             fontSize: 18,
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
@@ -675,7 +698,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
           const Text(
             'CLASIFICACIÓN',
             style: TextStyle(
-              color: Color(0xFFEC4899),
+              color: AfterlifeColors.neonPink,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -692,7 +715,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     height: 25,
                     decoration: BoxDecoration(
                       color: index == 0
-                          ? const Color(0xFFF59E0B).withOpacity(0.2)
+                          ? AfterlifeColors.neonOrange.withOpacity(0.2)
                           : Colors.white.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
@@ -701,7 +724,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                         '${index + 1}',
                         style: TextStyle(
                           color: index == 0
-                              ? const Color(0xFFF59E0B)
+                              ? AfterlifeColors.neonOrange
                               : Colors.white54,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -719,7 +742,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                   Text(
                     '${player['points'] ?? 0} pts',
                     style: const TextStyle(
-                      color: Color(0xFFF59E0B),
+                      color: AfterlifeColors.neonOrange,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -736,7 +759,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             const Text(
               '📸 FOTOS',
               style: TextStyle(
-                color: Color(0xFF06B6D4),
+                color: AfterlifeColors.cyanBlue,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

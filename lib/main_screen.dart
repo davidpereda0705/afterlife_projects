@@ -1,8 +1,6 @@
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/group_page.dart';
-import 'package:afterlife_projects/journal_screen.dart';
-import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +27,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
     BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
     BottomNavItem(icon: Icons.sports_esports_outlined, selectedIcon: Icons.sports_esports, label: 'Minijuegos'),
-    BottomNavItem(icon: Icons.emoji_events_outlined, selectedIcon: Icons.emoji_events, label: 'Logros'),
-    BottomNavItem(icon: Icons.book_outlined, selectedIcon: Icons.book, label: 'Diario'),
     BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
   ];
 
@@ -39,8 +35,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     const GroupPage(),
     const NightSelectionScreen(),
     const MinigamesScreen(),
-    const AchievementsScreen(),
-    const JournalScreen(),
     const ProfileScreen(),
   ];
 
@@ -99,7 +93,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.nightlight_round, size: 20, color: Color(0xFF84CC16)),
+                      const Icon(Icons.nightlight_round, size: 20, color: AfterlifeColors.acidGreen),
                       const SizedBox(width: 6),
                       const Text(
                         'Noche activa',

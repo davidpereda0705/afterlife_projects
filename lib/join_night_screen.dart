@@ -88,7 +88,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
       // Refrescar UserProvider para actualizar el badge
       await userProvider.refresh();
 
-      _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
+      _showSnackBar('Te has unido a ${night['name']}', AfterlifeColors.acidGreen);
 
       if (mounted) {
         Navigator.pushReplacement(
@@ -112,9 +112,9 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -133,7 +133,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
             const Text(
               'NOCHES DISPONIBLES',
               style: TextStyle(
-                color: Color(0xFFEC4899),
+                color: AfterlifeColors.neonPink,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
@@ -163,7 +163,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
             ElevatedButton(
               onPressed: _loadAvailableNights,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B1FA2),
+                backgroundColor: AfterlifeColors.electricLilac,
               ),
               child: const Text('REINTENTAR'),
             ),
@@ -195,7 +195,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         border: Border.all(
           color: isFull
               ? Colors.grey.withOpacity(0.3)
-              : const Color(0xFFEC4899).withOpacity(0.3),
+              : AfterlifeColors.neonPink.withOpacity(0.3),
         ),
       ),
       child: Column(
@@ -208,7 +208,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
+                    colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -266,13 +266,13 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF84CC16).withOpacity(0.2),
+                    color: AfterlifeColors.acidGreen.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
                     'DISPONIBLE',
                     style: TextStyle(
-                      color: Color(0xFF84CC16),
+                      color: AfterlifeColors.acidGreen,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -318,7 +318,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFull
                     ? Colors.grey.withOpacity(0.3)
-                    : const Color(0xFFEC4899),
+                    : AfterlifeColors.neonPink,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -347,7 +347,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           Icon(
             Icons.nightlight_round,
             size: 60,
-            color: const Color(0xFF7B1FA2).withOpacity(0.5),
+            color: AfterlifeColors.electricLilac.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           const Text(

@@ -358,7 +358,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFF7B1FA2),
+                                            AfterlifeColors.electricLilac,
                                           ),
                                         ),
                                       ),

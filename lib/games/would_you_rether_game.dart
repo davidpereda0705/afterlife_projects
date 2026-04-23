@@ -7,15 +7,15 @@ import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
 class WouldYouRatherGame extends StatefulWidget {
-  const WouldYouRatherGame({super.key});
+  final List<Map<String, dynamic>>? players;
+  const WouldYouRatherGame({super.key, this.players});
 
   @override
   State<WouldYouRatherGame> createState() => _WouldYouRatherGameState();
 }
 
 class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
-  // Jugadores fijos
-  final List<String> _players = ["Alex", "Marta", "Carlos", "Lucía"];
+  late List<String> _players;
   
   // Categoría seleccionada
   final String _selectedCategory = 'explosivo';
@@ -100,6 +100,11 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
   @override
   void initState() {
     super.initState();
+    if (widget.players != null && widget.players!.isNotEmpty) {
+      _players = widget.players!.map((p) => p['name'] as String).toList();
+    } else {
+      _players = ["Alex", "Marta", "Carlos", "Lucía"];
+    }
     _resetVotingState();
   }
 
@@ -545,11 +550,11 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
     Color colorResultado = AfterlifeColors.neonOrange;
     
     if (_votesA < _votesB) {
-      resultado = 'PIERDE OPCIÓN A\nBeben los que votaron A';
+      resultado = 'PIERDE OPCIÓN A\nPierden los que votaron A';
     } else if (_votesB < _votesA) {
-      resultado = 'PIERDE OPCIÓN B\nBeben los que votaron B';
+      resultado = 'PIERDE OPCIÓN B\nPierden los que votaron B';
     } else {
-      resultado = 'EMPATE\nBEBEN TODOS';
+      resultado = 'EMPATE\nPIERDEN TODOS';
       colorResultado = AfterlifeColors.acidGreen;
     }
     
