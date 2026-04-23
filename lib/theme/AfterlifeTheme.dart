@@ -16,7 +16,6 @@ class AfterlifeTheme {
         primary: AfterlifeColors.electricPurple,
         secondary: AfterlifeColors.neonPink,
         surface: AfterlifeColors.surfaceDark,
-        background: AfterlifeColors.background,
         onSurface: AfterlifeColors.textPrimary,
       ),
       

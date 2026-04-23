@@ -1,3 +1,4 @@
+// lib/screens/complete_challenge_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -148,7 +149,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
             ),
             child: DropdownButtonFormField<String>(
-              value: _selectedPlayer,
+              initialValue: _selectedPlayer,
               hint: const Text('Selecciona un jugador', style: TextStyle(color: Colors.white54)),
               dropdownColor: AfterlifeColors.surfaceDark,
               icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7B1FA2)),

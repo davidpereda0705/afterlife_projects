@@ -1,11 +1,17 @@
-// lib/screens/group_page.dart
+// lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
 import 'package:afterlife_projects/Menu_Noches.dart';
-import 'package:afterlife_projects/components/chat_page.dart';
+import 'package:afterlife_projects/components/chat_screen.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
+import 'package:afterlife_projects/services/chat_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
-import 'package:afterlife_projects/components/AfterButton.dart';
+import 'package:afterlife_projects/services/friend_service.dart';
+import 'package:afterlife_projects/components/friend_profile_screen.dart';
+import 'package:afterlife_projects/services/achievement_service.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class GroupPage extends StatefulWidget {
@@ -16,93 +22,17 @@ class GroupPage extends StatefulWidget {
 }
 
 class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
+  final FriendService _friendService = FriendService();
+  final ChatService _chatService = ChatService();
+  final AchievementService _achievementService = AchievementService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  int _selectedTab = 0; // 0: Todos, 1: Online, 2: Noches
+  int _selectedTab = 0; // 0: amigos, 1: solicitudes, 2: buscar
   
-  // Datos de amigos mejorados
-  final List<Map<String, dynamic>> _friends = [
-    {
-      'name': 'Marc_After',
-      'status': 'online',
-      'message': '¡Mañana se sale! 🎉',
-      'time': 'Ahora',
-      'initials': 'MA',
-      'unread': 3,
-      'lastSeen': null,
-      'typing': false,
-    },
-    {
-      'name': 'Elena_Night',
-      'status': 'online',
-      'message': '¿A qué hora quedamos?',
-      'time': '10:30',
-      'initials': 'EN',
-      'unread': 0,
-      'lastSeen': null,
-      'typing': true,
-    },
-    {
-      'name': 'Pau_Vibes',
-      'status': 'away',
-      'message': 'Visto hace 2h',
-      'time': 'Hace 2h',
-      'initials': 'PV',
-      'unread': 0,
-      'lastSeen': DateTime.now().subtract(const Duration(hours: 2)),
-      'typing': false,
-    },
-    {
-      'name': 'Alex_Party',
-      'status': 'online',
-      'message': '🎧 Enviando audio...',
-      'time': '10:15',
-      'initials': 'AP',
-      'unread': 1,
-      'lastSeen': null,
-      'typing': false,
-    },
-    {
-      'name': 'Laura_Nox',
-      'status': 'inNight',
-      'message': '🔴 En una noche',
-      'time': '23:45',
-      'initials': 'LN',
-      'unread': 5,
-      'lastSeen': null,
-      'typing': false,
-    },
-    {
-      'name': 'David_Fiesta',
-      'status': 'offline',
-      'message': 'Visto hace 1 día',
-      'time': 'Ayer',
-      'initials': 'DF',
-      'unread': 0,
-      'lastSeen': DateTime.now().subtract(const Duration(days: 1)),
-      'typing': false,
-    },
-    {
-      'name': 'Sara_Glow',
-      'status': 'online',
-      'message': '¿Vais a la fiesta?',
-      'time': '10:05',
-      'initials': 'SG',
-      'unread': 2,
-      'lastSeen': null,
-      'typing': false,
-    },
-    {
-      'name': 'Javi_Rave',
-      'status': 'inNight',
-      'message': '🔴 En Techno Loft',
-      'time': '00:30',
-      'initials': 'JR',
-      'unread': 0,
-      'lastSeen': null,
-      'typing': false,
-    },
-  ];
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
+  bool _isNavigating = false;
+  String? _loadingFriendId;
 
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
@@ -128,164 +58,238 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Función auxiliar para obtener el estado del avatar
   AvatarStatus _getAvatarStatus(String status) {
     switch (status) {
       case 'online':
         return AvatarStatus.online;
       case 'inNight':
         return AvatarStatus.inNight;
-      case 'away':
-        return AvatarStatus.offline;
       default:
         return AvatarStatus.offline;
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'COMUNIDAD',
-              style: AfterlifeTextTheme.headlineMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-            Text(
-              'Conecta con tus amigos',
-              style: AfterlifeTextTheme.bodySmall.copyWith(
-                color: AfterlifeColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Badge de invitaciones
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.people_outline, color: AfterlifeColors.electricPurple),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: AfterlifeColors.neonPink,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ],
+  void _searchUsers(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+    setState(() => _isSearching = true);
+    final results = await _friendService.searchUsers(query);
+    setState(() {
+      _searchResults = results;
+      _isSearching = false;
+    });
+  }
+
+  void _sendRequest(String uid, String name) async {
+    try {
+      await _friendService.sendFriendRequest(uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Solicitud enviada a $name'), backgroundColor: Colors.green),
+      );
+      _searchController.clear();
+      _searchResults = [];
+      setState(() => _searchQuery = '');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _acceptRequest(String uid, String name) async {
+    try {
+      await _friendService.acceptFriendRequest(uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: Colors.green),
+      );
+      
+      // Verificar logros después de aceptar
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      // Esperar un poco para que Firestore actualice el documento
+      await Future.delayed(const Duration(milliseconds: 500));
+      await userProvider.refresh();
+      final userData = userProvider.userData;
+      final friendsCount = userData?['friendsCount'] ?? 0;
+      
+      final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+        userId: userId,
+        nightsCompleted: userData?['nightsCompleted'] ?? 0,
+        challengesCompleted: userData?['challengesCompleted'] ?? 0,
+        level: userData?['level'] ?? 0,
+        friendsCount: friendsCount,
+        photosUploaded: userData?['photosUploaded'] ?? 0,
+        nightsCreated: userData?['nightsCreated'] ?? 0,
+      );
+      
+      if (newlyUnlocked.isNotEmpty && mounted) {
+        final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+            backgroundColor: AfterlifeColors.acidGreen,
+            duration: const Duration(seconds: 3),
           ),
-          const SizedBox(width: 8),
+        );
+        await userProvider.refresh();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _rejectRequest(String uid, String name) async {
+    try {
+      await _friendService.rejectFriendRequest(uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Colors.orange),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _removeFriend(String uid, String name) async {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AfterlifeColors.surfaceDark,
+        title: const Text('Eliminar amigo', style: TextStyle(color: Colors.white)),
+        content: Text('¿Seguro que quieres eliminar a $name de tus amigos?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _friendService.removeFriend(uid);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Colors.orange),
+                );
+                
+                // Verificar logros después de eliminar (opcional, pero útil para actualizar progreso)
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final userId = FirebaseAuth.instance.currentUser!.uid;
+                await Future.delayed(const Duration(milliseconds: 500));
+                await userProvider.refresh();
+                final userData = userProvider.userData;
+                final friendsCount = userData?['friendsCount'] ?? 0;
+                
+                final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
+                  userId: userId,
+                  nightsCompleted: userData?['nightsCompleted'] ?? 0,
+                  challengesCompleted: userData?['challengesCompleted'] ?? 0,
+                  level: userData?['level'] ?? 0,
+                  friendsCount: friendsCount,
+                  photosUploaded: userData?['photosUploaded'] ?? 0,
+                  nightsCreated: userData?['nightsCreated'] ?? 0,
+                );
+                
+                if (newlyUnlocked.isNotEmpty && mounted) {
+                  final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
+                      backgroundColor: AfterlifeColors.acidGreen,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  await userProvider.refresh();
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          // Barra de búsqueda mejorada
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AfterlifeColors.surfaceDark,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AfterlifeColors.electricLilac.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 16),
-                  Icon(Icons.search, color: AfterlifeColors.electricLilac, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(color: AfterlifeColors.textPrimary),
-                      decoration: InputDecoration(
-                        hintText: 'Buscar amigos...',
-                        hintStyle: TextStyle(color: AfterlifeColors.textDisabled),
-                        border: InputBorder.none,
-                      ),
-                      onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
-                    ),
-                  ),
-                  if (_searchQuery.isNotEmpty)
-                    IconButton(
-                      icon: Icon(Icons.close, color: AfterlifeColors.textSecondary),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
+    );
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AfterlifeColors.background,
+      child: Column(
+        children: [
           // Tabs de filtro
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _buildFilterChip('Todos', 0, AfterlifeColors.cyanBlue),
+                _buildFilterChip('AMIGOS', 0, AfterlifeColors.cyanBlue),
                 const SizedBox(width: 8),
-                _buildFilterChip('Online', 1, AfterlifeColors.acidGreen),
+                _buildFilterChip('SOLICITUDES', 1, AfterlifeColors.neonOrange),
                 const SizedBox(width: 8),
-                _buildFilterChip('En noche', 2, AfterlifeColors.electricLilac),
+                _buildFilterChip('BUSCAR', 2, AfterlifeColors.electricLilac),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          // Barra de búsqueda (solo visible en pestaña de buscar)
+          if (_selectedTab == 2)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AfterlifeColors.surfaceDark,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Icon(Icons.search, color: AfterlifeColors.electricLilac, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: AfterlifeColors.textPrimary),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre...',
+                          hintStyle: TextStyle(color: AfterlifeColors.textDisabled),
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                          _searchUsers(value);
+                        },
+                      ),
+                    ),
+                    if (_searchQuery.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.close, color: AfterlifeColors.textSecondary),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                          _searchUsers('');
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
 
-          // Lista de amigos filtrada
+          const SizedBox(height: 8),
+
+          // Contenido según pestaña seleccionada
           Expanded(
-            child: _buildFriendsList(),
+            child: _buildContent(),
           ),
         ],
-      ),
-      floatingActionButton: ScaleTransition(
-        scale: _fabAnimation,
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            // Crear nuevo grupo o búsqueda de amigos
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Buscar nuevos amigos'),
-                backgroundColor: AfterlifeColors.electricLilac,
-              ),
-            );
-          },
-          backgroundColor: AfterlifeColors.electricLilac,
-          icon: const Icon(Icons.group_add, color: Colors.white),
-          label: const Text(
-            'NUEVO GRUPO',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
       ),
     );
   }
@@ -294,7 +298,14 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     final isSelected = _selectedTab == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
+        onTap: () {
+          setState(() => _selectedTab = index);
+          if (index != 2) {
+            _searchController.clear();
+            _searchQuery = '';
+            _searchResults = [];
+          }
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
@@ -319,68 +330,66 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFriendsList() {
-    // Aplicar filtros
-    var filteredFriends = _friends.where((friend) {
-      final matchesSearch = _searchQuery.isEmpty || 
-          friend['name'].toLowerCase().contains(_searchQuery);
-      
-      if (!matchesSearch) return false;
-      
-      switch (_selectedTab) {
-        case 1: // Online
-          return friend['status'] == 'online';
-        case 2: // En noche
-          return friend['status'] == 'inNight';
-        default: // Todos
-          return true;
-      }
-    }).toList();
-
-    // Ordenar: online primero, luego en noche, luego away, luego offline
-    filteredFriends.sort((a, b) {
-      const order = {'online': 0, 'inNight': 1, 'away': 2, 'offline': 3};
-      return order[a['status']]!.compareTo(order[b['status']]!);
-    });
-
-    if (filteredFriends.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_off_outlined,
-              size: 60,
-              color: AfterlifeColors.textDisabled,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No se encontraron amigos',
-              style: AfterlifeTextTheme.bodyLarge.copyWith(
-                color: AfterlifeColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Prueba con otra búsqueda',
-              style: TextStyle(color: AfterlifeColors.textDisabled),
-            ),
-          ],
-        ),
-      );
+  Widget _buildContent() {
+    switch (_selectedTab) {
+      case 0:
+        return _buildFriendsList();
+      case 1:
+        return _buildRequestsList();
+      case 2:
+        return _buildSearchList();
+      default:
+        return const SizedBox();
     }
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredFriends.length,
-      itemBuilder: (context, index) {
-        final friend = filteredFriends[index];
-        return _buildAdvancedFriendTile(friend);
+  // ==================== PESTAÑA DE AMIGOS ====================
+  Widget _buildFriendsList() {
+    return StreamBuilder(
+      stream: _friendService.getFriends(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white70)));
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final friends = snapshot.data!;
+        
+        if (friends.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 60, color: AfterlifeColors.textDisabled),
+                const SizedBox(height: 16),
+                Text(
+                  'No tienes amigos aún',
+                  style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ve a la pestaña "BUSCAR" para añadir amigos',
+                  style: TextStyle(color: AfterlifeColors.textDisabled),
+                ),
+              ],
+            ),
+          );
+        }
+        
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: friends.length,
+          itemBuilder: (context, index) {
+            final friend = friends[index];
+            return _buildFriendTile(friend);
+          },
+        );
       },
     );
   }
 
-  Widget _buildAdvancedFriendTile(Map<String, dynamic> friend) {
+  Widget _buildFriendTile(Map<String, dynamic> friend) {
     Color statusColor;
     String statusText;
     
@@ -393,203 +402,311 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         statusColor = AfterlifeColors.electricLilac;
         statusText = 'En una noche';
         break;
-      case 'away':
-        statusColor = AfterlifeColors.neonOrange;
-        statusText = 'Ausente';
-        break;
       default:
         statusColor = AfterlifeColors.textDisabled;
         statusText = 'Desconectado';
     }
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ChatPage(userName: friend['name'])),
-        );
+      onTap: () async {
+        if (_isNavigating) return;
+        
+        setState(() {
+          _isNavigating = true;
+          _loadingFriendId = friend['uid'];
+        });
+
+        try {
+          final chatId = await _chatService.getOrCreateChat(
+            friend['uid'],
+            friend['name']
+          );
+          
+          if (!mounted) return;
+          
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: chatId,
+                otherUserId: friend['uid'],
+                otherUserName: friend['name'],
+              ),
+            ),
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isNavigating = false;
+              _loadingFriendId = null;
+            });
+          }
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         child: AfterlifeCard(
-          child: Stack(
-            children: [
-              // Indicador de mensajes no leídos
-              if (friend['unread'] > 0)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AfterlifeColors.neonPink,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      friend['unread'].toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendProfileScreen(
+                          uid: friend['uid'],
+                          friendName: friend['name'],
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                  child: AfterlifeAvatar(
+                    initials: friend['initials'],
+                    status: _getAvatarStatus(friend['status']),
+                    size: 55,
+                    showStatusIndicator: true,
                   ),
                 ),
-              
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    // Avatar con animación si está escribiendo - VERSIÓN CORREGIDA
-                    SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: Stack(
-                        clipBehavior: Clip.none,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          AfterlifeAvatar(
-                            initials: friend['initials'],
-                            status: _getAvatarStatus(friend['status']),
-                            size: 60,
-                            showStatusIndicator: true,
-                          ),
-                          if (friend['typing'])
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: AfterlifeColors.cyanBlue,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AfterlifeColors.background,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  color: Colors.white,
-                                  size: 8,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 16),
-                    
-                    // Información del amigo
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                friend['name'],
-                                style: AfterlifeTextTheme.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  statusText,
-                                  style: TextStyle(
-                                    color: statusColor,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 6),
-                          
-                          // Último mensaje con indicador de tipado
-                          Row(
-                            children: [
-                              if (friend['typing'])
-                                Container(
-                                  margin: const EdgeInsets.only(right: 6),
-                                  child: const Icon(
-                                    Icons.more_horiz,
-                                    color: Color(0xFF06B6D4),
-                                    size: 14,
-                                  ),
-                                ),
-                              Expanded(
-                                child: Text(
-                                  friend['typing'] 
-                                      ? 'Escribiendo...' 
-                                      : friend['message'],
-                                  style: TextStyle(
-                                    color: friend['typing'] 
-                                        ? AfterlifeColors.cyanBlue
-                                        : AfterlifeColors.textSecondary,
-                                    fontSize: 13,
-                                    fontStyle: friend['typing'] 
-                                        ? FontStyle.italic 
-                                        : FontStyle.normal,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 4),
-                          
-                          // Hora del último mensaje
                           Text(
-                            friend['time'],
-                            style: TextStyle(
-                              color: AfterlifeColors.textDisabled,
-                              fontSize: 10,
+                            friend['name'],
+                            style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          if (_loadingFriendId == friend['uid'])
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AfterlifeColors.electricPurple),
+                              ),
+                            ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(color: statusColor, fontSize: 10),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    
-                    // Icono de chat
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AfterlifeColors.cyanBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 4),
+                      Text(
+                        friend['message'],
+                        style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Icon(
-                        Icons.chat_bubble_outline,
-                        color: AfterlifeColors.cyanBlue,
-                        size: 22,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                IconButton(
+                  icon: Icon(Icons.more_vert, color: AfterlifeColors.textSecondary),
+                  onPressed: () => _removeFriend(friend['uid'], friend['name']),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  String _getInitials(String name) {
-    List<String> parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  // ==================== PESTAÑA DE SOLICITUDES ====================
+  Widget _buildRequestsList() {
+    return StreamBuilder(
+      stream: _friendService.getFriendRequests(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white70)));
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final requests = snapshot.data!;
+        
+        if (requests.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_add_outlined, size: 60, color: AfterlifeColors.textDisabled),
+                const SizedBox(height: 16),
+                Text(
+                  'No hay solicitudes pendientes',
+                  style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
+                ),
+              ],
+            ),
+          );
+        }
+        
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final req = requests[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: AfterlifeCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      AfterlifeAvatar(
+                        initials: req['initials'],
+                        status: AvatarStatus.online,
+                        size: 50,
+                        showStatusIndicator: false,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              req['name'],
+                              style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Quiere ser tu amigo',
+                              style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.check, color: AfterlifeColors.acidGreen),
+                            onPressed: () => _acceptRequest(req['uid'], req['name']),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close, color: AfterlifeColors.neonPink),
+                            onPressed: () => _rejectRequest(req['uid'], req['name']),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ==================== PESTAÑA DE BÚSQUEDA ====================
+  Widget _buildSearchList() {
+    if (_isSearching) {
+      return const Center(child: CircularProgressIndicator());
     }
-    return name.substring(0, 1).toUpperCase();
+    
+    if (_searchResults.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_search, size: 60, color: AfterlifeColors.textDisabled),
+            const SizedBox(height: 16),
+            Text(
+              'No se encontraron usuarios',
+              style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Prueba con otro nombre',
+              style: TextStyle(color: AfterlifeColors.textDisabled),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search, size: 60, color: AfterlifeColors.textDisabled),
+            const SizedBox(height: 16),
+            Text(
+              'Busca usuarios por nombre',
+              style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final user = _searchResults[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: AfterlifeCard(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  AfterlifeAvatar(
+                    initials: user['initials'],
+                    status: AvatarStatus.online,
+                    size: 50,
+                    showStatusIndicator: false,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user['name'],
+                          style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user['email'],
+                          style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _sendRequest(user['uid'], user['name']),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AfterlifeColors.acidGreen,
+                      minimumSize: const Size(80, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('AÑADIR', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

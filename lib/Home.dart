@@ -1,13 +1,15 @@
 // lib/features/home/home_screen.dart
-import 'package:afterlife_projects/ActiveNightManager.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
+import 'package:afterlife_projects/services/night_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
+import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,87 +19,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Datos de ejemplo del usuario
-  final String userName = 'Carlos';
-  final int userLevel = 12;
-  final int nightsCompleted = 8;
-  final int challengesCompleted = 47;
-  final int groupsCount = 12;
+  final NightService _nightService = NightService();
+  List<Map<String, dynamic>> _availableNights = [];
+  bool _isLoadingNights = true;
+  String? _errorNights;
 
-  // NOCHES EN ESPERA (LOBBY)
-  final List<Map<String, dynamic>> _pendingNights = [
-    {
-      'id': '1',
-      'groupName': 'Los Desvelados',
-      'hostName': 'Ana',
-      'hostInitials': 'AN',
-      'nightName': 'Viernes de Locura',
-      'day': 'Viernes',
-      'time': '22:30',
-      'currentPlayers': 3,
-      'maxPlayers': 8,
-      'groupMembers': ['AN', 'CR', 'MJ', 'JP', 'LM', 'PA', 'SS', 'DL'],
-      'joinedFriends': ['AN', 'MJ', 'LM'],
-      'players': [
-        {'name': 'Ana', 'initials': 'AN', 'points': 0},
-        {'name': 'María', 'initials': 'MJ', 'points': 0},
-        {'name': 'Luis', 'initials': 'LM', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-      ],
-    },
-    {
-      'id': '2',
-      'groupName': 'Fiesteros Nocturnos',
-      'hostName': 'Luis',
-      'hostInitials': 'LP',
-      'nightName': 'Sábado Nocturno',
-      'day': 'Sábado',
-      'time': '23:00',
-      'currentPlayers': 2,
-      'maxPlayers': 6,
-      'groupMembers': ['LM', 'PA', 'SS', 'RC', 'MV'],
-      'joinedFriends': ['LM', 'PA'],
-      'players': [
-        {'name': 'Luis', 'initials': 'LP', 'points': 0},
-        {'name': 'Pablo', 'initials': 'PA', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-      ],
-    },
-    {
-      'id': '3',
-      'groupName': 'Party Animals',
-      'hostName': 'Pedro',
-      'hostInitials': 'PD',
-      'nightName': 'Previa Viernes',
-      'day': 'Viernes',
-      'time': '21:00',
-      'currentPlayers': 4,
-      'maxPlayers': 4,
-      'groupMembers': ['PG', 'LT', 'MS', 'JV'],
-      'joinedFriends': ['PG', 'LT', 'MS', 'JV'],
-      'players': [
-        {'name': 'Pedro', 'initials': 'PD', 'points': 0},
-        {'name': 'Luis', 'initials': 'LT', 'points': 0},
-        {'name': 'Marta', 'initials': 'MS', 'points': 0},
-        {'name': 'Javier', 'initials': 'JV', 'points': 0},
-      ],
-      'challenges': [
-        {'name': 'Selfie con el grupo', 'points': 100, 'completed': false},
-        {'name': 'Baila con un extraño', 'points': 150, 'completed': false},
-        {'name': 'Foto con el DJ', 'points': 120, 'completed': false},
-        {'name': 'Canta una canción', 'points': 200, 'completed': false},
-      ],
-    },
-  ];
-
-  // Logros próximos (simplificado para el home)
+  // Logros próximos (estáticos, luego los migraremos)
   final List<Map<String, dynamic>> _upcomingAchievements = [
     {'title': 'SOCIAL', 'icon': Icons.people, 'progress': 0.8},
     {'title': 'LEYENDA', 'icon': Icons.stars, 'progress': 0.3},
@@ -105,45 +32,168 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Text(
-          'Afterlife',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
+  void initState() {
+    super.initState();
+    _loadAvailableNights();
+  }
+
+  Future<void> _loadAvailableNights() async {
+    setState(() {
+      _isLoadingNights = true;
+      _errorNights = null;
+    });
+    try {
+      final nights = await _nightService.getAvailableNights();
+      setState(() {
+        _availableNights = nights;
+        _isLoadingNights = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorNights = e.toString();
+        _isLoadingNights = false;
+      });
+    }
+  }
+
+  Future<void> _joinNight(Map<String, dynamic> night) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      _showSnackBar('Debes iniciar sesión', Colors.red);
+      return;
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.activeNightId != null) {
+      _showSnackBar('Ya tienes una noche activa', Colors.orange);
+      return;
+    }
+
+    final username = userProvider.userData?['username'] ?? 'Usuario';
+    final initials = username.length >= 2
+        ? username.substring(0, 2).toUpperCase()
+        : username.substring(0, 1).toUpperCase();
+
+    try {
+      // Verificar que la noche aún existe y no está llena
+      final nightDoc = await _nightService.getNightById(night['id']);
+      if (nightDoc == null) {
+        _showSnackBar('La noche ya no existe', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      final currentPlayers = (nightDoc['players'] as List? ?? []).length;
+      final maxPlayers = nightDoc['maxPlayers'] ?? 0;
+      if (currentPlayers >= maxPlayers) {
+        _showSnackBar('La noche está llena', Colors.red);
+        _loadAvailableNights();
+        return;
+      }
+
+      // Unirse a la noche
+      await _nightService.joinNight(night['id'], userId, username, initials);
+      // Marcar noche activa para el usuario
+      await _nightService.setActiveNightForUser(userId, night['id']);
+      // Refrescar UserProvider para actualizar el badge
+      await userProvider.refresh();
+
+      _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NightGameScreen(nightId: night['id']),
           ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: avatar.AfterlifeAvatar(
-              initials: 'CR',
-              status: avatar.AvatarStatus.online,
-              size: 40,
-              showStatusIndicator: true,
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildProfileCard(),
-          const SizedBox(height: 24),
-          _buildPendingNightsSection(),
-          const SizedBox(height: 16),
-          _buildCreateNightButton(),
-          const SizedBox(height: 20),
-        ],
-      ),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Error al unirse: $e', Colors.red);
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
     );
   }
 
-  Widget _buildProfileCard() {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (userProvider.error != null) {
+          return Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar perfil: ${userProvider.error}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => userProvider.refresh(),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final userData = userProvider.userData;
+        final userName = userData?['username'] ?? 'Usuario';
+        final userLevel = userData?['level'] ?? 1;
+        final nightsCompleted = userData?['nightsCompleted'] ?? 0;
+        final challengesCompleted = userData?['challengesCompleted'] ?? 0;
+        final groupsCount = userData?['friendsCount'] ?? 0;
+
+        return Scaffold(
+          backgroundColor: AfterlifeColors.background,
+          body: RefreshIndicator(
+            onRefresh: _loadAvailableNights,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildProfileCard(
+                  userName,
+                  userLevel,
+                  nightsCompleted,
+                  challengesCompleted,
+                  groupsCount,
+                ),
+                const SizedBox(height: 24),
+                _buildPendingNightsSection(context),
+                const SizedBox(height: 16),
+                _buildCreateNightButton(context, userProvider),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileCard(
+    String userName,
+    int userLevel,
+    int nightsCompleted,
+    int challengesCompleted,
+    int groupsCount,
+  ) {
     return AfterlifeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               avatar.AfterlifeAvatar(
-                initials: 'CR',
+                initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                 status: avatar.AvatarStatus.online,
                 size: 70,
                 showStatusIndicator: true,
@@ -169,7 +219,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.electricLilac.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -238,14 +291,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPendingNightsSection() {
-    final availableNights = _pendingNights.where((night) {
-      final isNotFull = night['currentPlayers'] < night['maxPlayers'];
-      final userNotJoined = !night['joinedFriends'].contains('CR');
-      return isNotFull && userNotJoined;
-    }).toList();
-
-    if (availableNights.isEmpty) {
+  // ===== SECCIÓN DE NOCHES EN ESPERA (DESDE FIRESTORE) =====
+  Widget _buildPendingNightsSection(BuildContext context) {
+    if (_isLoadingNights) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorNights != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AfterlifeColors.surfaceDark,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AfterlifeColors.electricLilac.withOpacity(0.2),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              'Error al cargar noches: $_errorNights',
+              style: const TextStyle(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadAvailableNights,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_availableNights.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -304,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'NOCHES EN ESPERA (${availableNights.length})',
+                'NOCHES EN ESPERA (${_availableNights.length})',
                 style: AfterlifeTextTheme.titleLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1,
@@ -316,15 +395,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 8),
         Column(
-          children: availableNights.map((night) => _buildPendingNightCard(night)).toList(),
+          children: _availableNights
+              .map((night) => _buildNightCard(context, night))
+              .toList(),
         ),
       ],
     );
   }
 
-  Widget _buildPendingNightCard(Map<String, dynamic> night) {
-    final bool isFull = night['currentPlayers'] >= night['maxPlayers'];
-    
+  Widget _buildNightCard(BuildContext context, Map<String, dynamic> night) {
+    final players = night['players'] as List? ?? [];
+    final currentPlayers = players.length;
+    final maxPlayers = night['maxPlayers'] ?? 0;
+    final bool isFull = currentPlayers >= maxPlayers;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -356,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      night['groupName'],
+                      night['groupName'] ?? 'Grupo',
                       style: AfterlifeTextTheme.titleMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -371,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Anfitrión: ${night['hostName']}',
+                          'Anfitrión: ${night['hostName'] ?? ''}',
                           style: AfterlifeTextTheme.bodySmall.copyWith(
                             color: AfterlifeColors.neonOrange,
                           ),
@@ -388,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  night['time'],
+                  night['time'] ?? '',
                   style: AfterlifeTextTheme.labelSmall.copyWith(
                     color: AfterlifeColors.neonOrange,
                     fontWeight: FontWeight.bold,
@@ -407,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                night['nightName'],
+                night['name'] ?? 'Noche sin nombre',
                 style: AfterlifeTextTheme.bodyLarge.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -419,14 +503,17 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Jugadores: ${night['currentPlayers']}/${night['maxPlayers']}',
+                'Jugadores: $currentPlayers/$maxPlayers',
                 style: AfterlifeTextTheme.bodySmall.copyWith(
                   color: AfterlifeColors.textSecondary,
                 ),
               ),
               if (!isFull)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AfterlifeColors.acidGreen.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -442,71 +529,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 32,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                ...List.generate(
-                  night['joinedFriends'].length > 5 ? 5 : night['joinedFriends'].length,
-                  (index) {
-                    return Positioned(
-                      left: index * 20.0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AfterlifeColors.background,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: avatar.AfterlifeAvatar(
-                          initials: night['joinedFriends'][index],
-                          status: avatar.AvatarStatus.online,
-                          size: 28,
-                          showStatusIndicator: true,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                if (night['joinedFriends'].length > 5)
-                  Positioned(
-                    left: 5 * 20.0,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AfterlifeColors.electricLilac.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AfterlifeColors.background,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '+${night['joinedFriends'].length - 5}',
-                          style: AfterlifeTextTheme.labelSmall.copyWith(
-                            color: AfterlifeColors.electricLilac,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isFull ? null : () => _joinNightFromHome(night),
+              onPressed: isFull
+                  ? null
+                  : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull 
+                backgroundColor: isFull
                     ? Colors.grey.withOpacity(0.3)
                     : AfterlifeColors.neonOrange,
                 foregroundColor: Colors.white,
@@ -528,48 +559,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _joinNightFromHome(Map<String, dynamic> night) {
-    // Verificar si ya hay una noche activa
-    if (ActiveNightManager().isActive) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ya tienes una noche activa. Finalízala antes de unirte a otra.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    Map<String, dynamic> updatedNight = Map.from(night);
-    List<Map<String, dynamic>> updatedPlayers = List.from(night['players'] ?? []);
-    updatedPlayers.add({'name': 'TÚ', 'initials': 'TU', 'points': 0});
-    updatedNight['players'] = updatedPlayers;
-    updatedNight['currentPlayers'] = (night['currentPlayers'] ?? 0) + 1;
-    
-    List<String> updatedJoined = List.from(night['joinedFriends'] ?? []);
-    updatedJoined.add('TU');
-    updatedNight['joinedFriends'] = updatedJoined;
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NightGameScreen(nightData: updatedNight),
-        ),
-      );
-    });
-  }
-
-  Widget _buildCreateNightButton() {
+  Widget _buildCreateNightButton(BuildContext context, UserProvider userProvider) {
     return Container(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // Verificar si ya hay una noche activa
-          if (ActiveNightManager().isActive) {
+          if (userProvider.activeNightId != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+                content: Text(
+                  'Ya tienes una noche activa. Finalízala antes de crear una nueva.',
+                ),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -577,9 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CreateNightScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateNightScreen()),
           );
         },
         style: ElevatedButton.styleFrom(

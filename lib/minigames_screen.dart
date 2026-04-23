@@ -1,4 +1,3 @@
-// lib/screens/minigames_screen.dart
 import 'package:afterlife_projects/games/truth_or_drinks_game.dart';
 import 'package:afterlife_projects/games/would_you_rether_game.dart';
 import 'package:afterlife_projects/games/yo_nunca_nunca.dart';
@@ -6,7 +5,6 @@ import 'package:afterlife_projects/games/reto_rapido.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 
 class MinigamesScreen extends StatelessWidget {
@@ -84,30 +82,10 @@ class MinigamesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        title: Text(
-          'Minijuegos',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: AfterlifeAvatar(
-              initials: 'CR',
-              status: AvatarStatus.online,
-              size: 40,
-              showStatusIndicator: true,
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
+    // Eliminamos Scaffold y AppBar
+    return Container(
+      color: AfterlifeColors.background,
+      child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Tarjeta de bienvenida
@@ -159,7 +137,9 @@ class MinigamesScreen extends StatelessWidget {
                   description: game['description'],
                   icon: game['icon'],
                   color: game['color'],
-                  isAvailable: game['route'] != 'would_you_rather' ? true : true, // ¡AHORA SÍ DISPONIBLE!
+                  isAvailable: game['route'] != 'would_you_rather'
+                      ? true
+                      : true, // ¡AHORA SÍ DISPONIBLE!
                 ),
               );
             },
@@ -215,11 +195,7 @@ class MinigamesScreen extends StatelessWidget {
               color: color.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 8),
           Text(
@@ -233,18 +209,7 @@ class MinigamesScreen extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(
-            description,
-            style: AfterlifeTextTheme.bodySmall.copyWith(
-              color: AfterlifeColors.textSecondary,
-              fontSize: 10,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          
+                    
           // Indicador de disponibilidad - ¡AHORA TODOS DISPONIBLES!
           const SizedBox(height: 8),
           Container(
@@ -261,6 +226,18 @@ class MinigamesScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
+
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: AfterlifeTextTheme.bodySmall.copyWith(
+              color: AfterlifeColors.textSecondary,
+              fontSize: 10,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

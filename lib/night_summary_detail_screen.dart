@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import '../theme/colors.dart';
 import '../theme/text_theme.dart';
-import '../components/AfterLife_Avatar.dart';
 import '../components/AfterLifeCard.dart';
 import '../components/AfterButton.dart';
 

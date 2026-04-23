@@ -1,11 +1,10 @@
-// lib/screens/login_page.dart
+import 'dart:ui';
 import 'package:afterlife_projects/components/AfterButton.dart';
-import 'package:afterlife_projects/main_screen.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
+import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Para capturar excepciones específicas
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,26 +13,59 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool isLogin = true;
-  bool isLoading = false; // 👈 Estado de carga
+  bool isLoading = false;
+  bool showPassword = false;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _confirmPassController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController(); // Para registro (email)
-  final TextEditingController _userController = TextEditingController();   // En login será email, en registro será nombre de usuario
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _userController = TextEditingController();
 
   final AuthService _auth = AuthService();
 
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _passController.dispose();
+    _confirmPassController.dispose();
+    _emailController.dispose();
+    _userController.dispose();
+    super.dispose();
+  }
+
+  void _switchMode() {
+    setState(() {
+      isLogin = !isLogin;
+      _formKey.currentState?.reset();
+      _fadeController.reset();
+      _fadeController.forward();
+    });
+  }
+
   void _intentarAcceder() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Revisa los datos marcados en rojo'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    // Si no es login, validamos el formulario normalmente
+    if (!isLogin && !_formKey.currentState!.validate()) return;
+    
+    // Si es login, solo comprobamos que no estén vacíos
+    if (isLogin && (_userController.text.trim().isEmpty || _passController.text.trim().isEmpty)) {
+      _showError('Introduce tus datos');
       return;
     }
 
@@ -41,228 +73,244 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       if (isLogin) {
-        // Login: el campo "USUARIO" debe ser un email
-        final email = _userController.text.trim();
-        final password = _passController.text.trim();
-        await _auth.signInWithEmail(email, password);
-        // El StreamBuilder en main.dart redirigirá automáticamente a MainScreen
+        await _auth.signInWithEmail(_userController.text.trim(), _passController.text.trim());
       } else {
-        // Registro: necesitamos email, contraseña y nombre de usuario
-        final email = _emailController.text.trim();
-        final password = _passController.text.trim();
-        final username = _userController.text.trim();
-        await _auth.registerWithEmail(email, password, username); // Ajustamos el método para guardar nombre
-        // También se redirige automáticamente
+        await _auth.registerWithEmail(
+          _emailController.text.trim(),
+          _passController.text.trim(),
+          _userController.text.trim(),
+        );
       }
     } on FirebaseAuthException catch (e) {
-      String mensaje;
-      switch (e.code) {
-        case 'user-not-found':
-          mensaje = 'Usuario no encontrado';
-          break;
-        case 'wrong-password':
-          mensaje = 'Contraseña incorrecta';
-          break;
-        case 'email-already-in-use':
-          mensaje = 'El email ya está registrado';
-          break;
-        case 'weak-password':
-          mensaje = 'La contraseña es demasiado débil';
-          break;
-        default:
-          mensaje = 'Error: ${e.message}';
+      if (isLogin) {
+        _showError('Nombre / contraseña incorrecto, inténtalo de nuevo');
+      } else {
+        _showError(e.message ?? 'Error al registrarse');
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensaje), backgroundColor: Colors.redAccent),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.redAccent),
-      );
+      _showError('Nombre / contraseña incorrecto, inténtalo de nuevo');
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent.withOpacity(0.9),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: AfterlifeColors.electricLilacGradient,
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const SizedBox(height: 60),
-                Image.asset(
-                  'assets/imatges/logo_afterlife.png',
-                  width: 250,
-                  fit: BoxFit.contain,
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Fondo Dinámico
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AfterlifeColors.background,
+                    AfterlifeColors.electricPurple.withOpacity(0.15),
+                    AfterlifeColors.background,
+                    AfterlifeColors.electricLilac.withOpacity(0.1),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  isLogin ? 'BIENVENIDO' : 'ÚNETE A LA FIESTA',
-                  style: TextStyle(
-                    fontFamily: 'Syne',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: AfterlifeColors.textPrimary,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // CAMPO PRINCIPAL (Email en login, Nombre de usuario en registro)
-                _buildTextField(
-                  Icons.person_outline,
-                  isLogin ? 'EMAIL' : 'NOMBRE DE USUARIO',
-                  controller: _userController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Campo obligatorio';
-                    if (isLogin) {
-                      if (!value.contains('@')) return 'Introduce un email válido';
-                    } else {
-                      if (value.length < 3) return 'Mínimo 3 caracteres';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // CONTRASEÑA
-                _buildTextField(
-                  Icons.lock_outline,
-                  'CONTRASEÑA',
-                  isPassword: true,
-                  controller: _passController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Contraseña obligatoria';
-                    if (value.length < 6) return 'Mínimo 6 caracteres';
-                    if (!RegExp(r'^(?=.*[0-9])(?=.*[!@#\$&*~]).*$').hasMatch(value)) {
-                      return 'Añade un número y un símbolo (!@#)';
-                    }
-                    return null;
-                  },
-                ),
-
-                if (!isLogin) ...[
-                  const SizedBox(height: 20),
-                  // REPETIR CONTRASEÑA
-                  _buildTextField(
-                    Icons.lock_reset_outlined,
-                    'REPETIR CONTRASEÑA',
-                    isPassword: true,
-                    controller: _confirmPassController,
-                    validator: (value) {
-                      if (value != _passController.text) {
-                        return 'Las contraseñas no coinciden';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  // EMAIL (solo en registro)
-                  _buildTextField(
-                    Icons.email_outlined,
-                    'EMAIL',
-                    controller: _emailController,
-                    validator: (value) {
-                      if (value == null || !value.contains('@')) {
-                        return 'Introduce un email válido';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-
-                const SizedBox(height: 50),
-
-                if (isLoading)
-                  const CircularProgressIndicator()
-                else
-                  AfterButton(
-                    label: isLogin ? 'ENTRAR' : 'REGISTRAR',
-                    color: AfterlifeColors.electricLilac,
-                    onPressed: _intentarAcceder,
-                  ),
-
-                const SizedBox(height: 30),
-
-                TextButton(
-                  onPressed: () {
-                    _formKey.currentState?.reset();
-                    // Limpiamos controladores para evitar validaciones cruzadas
-                    _passController.clear();
-                    _confirmPassController.clear();
-                    _emailController.clear();
-                    _userController.clear();
-                    setState(() => isLogin = !isLogin);
-                  },
-                  child: Text(
-                    isLogin ? '¿No tienes cuenta? REGÍSTRATE' : '¿Ya tienes cuenta? ENTRA',
-                    style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
-                      fontFamily: 'Syne',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
+              ),
             ),
           ),
-        ),
+          
+          // Elementos Decorativos (Círculos difusos)
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AfterlifeColors.electricLilac.withOpacity(0.2),
+              ),
+              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container()),
+            ),
+          ),
+
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo y Título
+                      Image.asset(
+                        'assets/imatges/logo_afterlife.png',
+                        width: 250,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(height: 40),
+
+                      // Contenedor Glassmorphism
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  _buildTextField(
+                                    icon: Icons.person_outline,
+                                    label: isLogin ? 'EMAIL' : 'USUARIO',
+                                    controller: _userController,
+                                    validator: isLogin ? null : (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                  ),
+                                  
+                                  if (!isLogin) ...[
+                                    const SizedBox(height: 16),
+                                    _buildTextField(
+                                      icon: Icons.alternate_email,
+                                      label: 'EMAIL',
+                                      controller: _emailController,
+                                      validator: (v) => (v == null || !v.contains('@')) ? 'Email inválido' : null,
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 16),
+                                  _buildTextField(
+                                    icon: Icons.lock_outline,
+                                    label: 'CONTRASEÑA',
+                                    isPassword: true,
+                                    showPassword: showPassword,
+                                    togglePassword: () => setState(() => showPassword = !showPassword),
+                                    controller: _passController,
+                                    validator: isLogin ? null : (v) => (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
+                                  ),
+
+                                  if (!isLogin) ...[
+                                    const SizedBox(height: 16),
+                                    _buildTextField(
+                                      icon: Icons.security_outlined,
+                                      label: 'REPETIR CONTRASEÑA',
+                                      isPassword: true,
+                                      showPassword: showPassword,
+                                      controller: _confirmPassController,
+                                      validator: (v) => v != _passController.text ? 'No coinciden' : null,
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 32),
+                                  
+                                  isLoading
+                                      ? const CircularProgressIndicator(color: AfterlifeColors.electricPurple)
+                                      : AfterButton(
+                                          label: isLogin ? 'INICIAR SESIÓN' : 'REGISTRARSE',
+                                          color: AfterlifeColors.electricLilac,
+                                          onPressed: _intentarAcceder,
+                                        ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+                      
+                      // Footer
+                      TextButton(
+                        onPressed: _switchMode,
+                        child: RichText(
+                          text: TextSpan(
+                            text: isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? ',
+                            style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                            children: [
+                              TextSpan(
+                                text: isLogin ? 'REGÍSTRATE' : 'ENTRA',
+                                style: const TextStyle(
+                                  color: AfterlifeColors.electricPurple,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTextField(
-    IconData icon,
-    String hint, {
+  Widget _buildTextField({
+    required IconData icon,
+    required String label,
     bool isPassword = false,
+    bool? showPassword,
+    VoidCallback? togglePassword,
     required TextEditingController controller,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText: isPassword && !(showPassword ?? false),
       validator: validator,
-      style: TextStyle(color: AfterlifeColors.textPrimary, fontFamily: 'Syne'),
+      style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple),
-        hintText: hint,
-        hintStyle: TextStyle(color: AfterlifeColors.textDisabled, fontSize: 12),
-        errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11),
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withOpacity(0.7), size: 20),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  (showPassword ?? false) ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white38,
+                  size: 20,
+                ),
+                onPressed: togglePassword,
+              )
+            : null,
         filled: true,
-        fillColor: AfterlifeColors.surfaceDark.withOpacity(0.3),
+        fillColor: Colors.white.withOpacity(0.05),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(
-            color: AfterlifeColors.electricPurple.withOpacity(0.5),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(
-            color: AfterlifeColors.electricPurple,
-            width: 2,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AfterlifeColors.electricPurple, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
       ),
     );

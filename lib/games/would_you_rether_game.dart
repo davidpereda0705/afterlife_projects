@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
-import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
@@ -19,7 +18,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
   final List<String> _players = ["Alex", "Marta", "Carlos", "Lucía"];
   
   // Categoría seleccionada
-  String _selectedCategory = 'explosivo';
+  final String _selectedCategory = 'explosivo';
   
   // Estado del juego
   bool _gameStarted = false;
