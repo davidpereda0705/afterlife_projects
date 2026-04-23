@@ -3,7 +3,9 @@ import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/journal_screen.dart';
 import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
+import 'package:afterlife_projects/services/achievement_service.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 Importación necesaria para Timestamp
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
@@ -13,8 +15,82 @@ import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final AchievementService _achievementService = AchievementService();
+  List<Map<String, dynamic>> _recentAchievements = [];
+  bool _loadingAchievements = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentAchievements();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final userProvider = Provider.of<UserProvider>(context);
+    if (!userProvider.isLoading) {
+      _loadRecentAchievements();
+    }
+  }
+
+  Future<void> _loadRecentAchievements() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final unlockedRaw = userProvider.unlockedAchievements;
+    if (unlockedRaw.isEmpty) {
+      setState(() {
+        _recentAchievements = [];
+        _loadingAchievements = false;
+      });
+      return;
+    }
+
+    setState(() => _loadingAchievements = true);
+
+    try {
+      final allAchievements = await _achievementService.getAllAchievements();
+      final Map<String, dynamic> achievementMap = {
+        for (var a in allAchievements) a.id: {'title': a.title, 'icon': a.icon}
+      };
+
+      List<Map<String, dynamic>> temp = [];
+      for (var item in unlockedRaw) {
+        final id = item['achievementId'] as String;
+        dynamic unlockedAtValue = item['unlockedAt'];
+        DateTime? unlockedAt;
+        if (unlockedAtValue is Timestamp) {
+          unlockedAt = unlockedAtValue.toDate();
+        } else if (unlockedAtValue is DateTime) {
+          unlockedAt = unlockedAtValue;
+        }
+        if (achievementMap.containsKey(id)) {
+          temp.add({
+            'title': achievementMap[id]['title'],
+            'icon': achievementMap[id]['icon'],
+            'unlockedAt': unlockedAt ?? DateTime.now(),
+          });
+        }
+      }
+      temp.sort((a, b) => b['unlockedAt'].compareTo(a['unlockedAt']));
+      final recent = temp.take(3).toList();
+
+      setState(() {
+        _recentAchievements = recent;
+        _loadingAchievements = false;
+      });
+    } catch (e) {
+      setState(() => _loadingAchievements = false);
+      debugPrint('Error cargando logros recientes: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +134,7 @@ class ProfileScreen extends StatelessWidget {
         final nightsAttended = userData?['nightsCompleted'] ?? 0;
         final challengesCompleted = userData?['challengesCompleted'] ?? 0;
         final friendsCount = userData?['friendsCount'] ?? 0;
-        final achievementsCount = userData?['achievementsCount'] ?? 0;
-
-        final unlockedList = userProvider.unlockedAchievements;
-        final recentAchievements = unlockedList.isNotEmpty
-            ? unlockedList.take(3).map((a) {
-                return {
-                  'title': 'LOGRO',
-                  'icon': Icons.emoji_events,
-                  'unlocked': true,
-                };
-              }).toList()
-            : <Map<String, dynamic>>[];
+        final achievementsCount = userProvider.unlockedAchievements.length;
 
         return Scaffold(
           backgroundColor: AfterlifeColors.background,
@@ -88,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 24),
               _buildStatsGrid(nightsAttended, challengesCompleted, friendsCount, achievementsCount),
               const SizedBox(height: 24),
-              _buildRecentAchievements(recentAchievements),
+              _buildRecentAchievements(),
               const SizedBox(height: 24),
               _buildActionButtons(context),
               const SizedBox(height: 20),
@@ -188,19 +253,27 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentAchievements(List<Map<String, dynamic>> achievements) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text(
-            'LOGROS RECIENTES',
-            style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
-          ),
+  Widget _buildRecentAchievements() {
+    if (_loadingAchievements) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: CircularProgressIndicator(),
         ),
-        const SizedBox(height: 8),
-        if (achievements.isEmpty)
+      );
+    }
+    if (_recentAchievements.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              'LOGROS RECIENTES',
+              style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
+            ),
+          ),
+          const SizedBox(height: 8),
           Center(
             child: Column(
               children: [
@@ -217,25 +290,38 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-          )
-        else
-          Center(
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: achievements.map((ach) {
-                return SizedBox(
-                  width: 100,
-                  child: AchievementBadge(
-                    title: ach['title'],
-                    icon: ach['icon'],
-                    isUnlocked: ach['unlocked'],
-                  ),
-                );
-              }).toList(),
-            ),
           ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            'LOGROS RECIENTES',
+            style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: _recentAchievements.map((ach) {
+              return SizedBox(
+                width: 100,
+                child: AchievementBadge(
+                  title: ach['title'],
+                  icon: ach['icon'],
+                  isUnlocked: true,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }
@@ -315,7 +401,6 @@ class ProfileScreen extends StatelessWidget {
               Navigator.pop(ctx);
               try {
                 await authService.signOut();
-                // El StreamBuilder en main.dart redirigirá a LoginPage
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error al cerrar sesión: $e'), backgroundColor: Colors.red),
