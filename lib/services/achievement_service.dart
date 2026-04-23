@@ -90,7 +90,9 @@ class AchievementService {
     for (final achievement in achievements) {
       currentUnlocked.add({
         'achievementId': achievement.id,
-        'unlockedAt': FieldValue.serverTimestamp(),
+        // ⚠️ IMPORTANTE: No se puede usar FieldValue.serverTimestamp() dentro de un array.
+        // Usamos DateTime.now() que se convertirá a Timestamp.
+        'unlockedAt': DateTime.now(),
         'pointsEarned': achievement.points,
       });
     }
