@@ -139,10 +139,30 @@ final List<String> _spicyQuestions = [
   "¿Has tenido una cita con alguien que sabías que tenía fama de rompecorazones?",
 ];
 
+  @override
+  void initState() {
+    super.initState();
+
+    // 1. Inicializar la lista de jugadores
+    if (widget.players != null && widget.players!.isNotEmpty) {
+      _players = widget.players!.map((player) => player['name'] as String).toList();
+    } else {
+      _players = ['Jugador 1', 'Jugador 2', 'Jugador 3', 'Jugador 4'];
+    }
+
+    // 2. Inicializar el mapa de penalizaciones
+    _playerPenalties = {};
+    for (var player in _players) {
+      _playerPenalties[player] = 1; // Todos empiezan con 1
+    }
+
+    // 3. Establecer la primera pregunta
+    _nextQuestion();
+  }
+
   void _nextQuestion() {
     setState(() {
       _currentQuestion = _spicyQuestions[_questionIndex];
-
       _questionIndex++;
 
       if (_questionIndex >= _spicyQuestions.length) {
@@ -153,29 +173,24 @@ final List<String> _spicyQuestions = [
 
   void _answered() {
     setState(() {
-      // Solo reiniciamos el castigo del jugador actual cuando RESPONDE
+      // Reiniciar el castigo del jugador actual cuando RESPONDE
       _playerPenalties[_currentPlayer] = 1;
-
       _currentPlayerIndex++;
 
       if (_currentPlayerIndex >= _players.length) {
         _currentPlayerIndex = 0;
       }
     });
-
     _nextQuestion();
   }
 
   void _drinkPenalty() {
     final player = _currentPlayer;
     final currentPenalty = _currentPenalty;
-    
-    // SNACKBAR ELIMINADO - ahora solo se ve en el contador
 
     setState(() {
-      // INCREMENTAMOS el castigo de ESTE jugador (no se reinicia)
+      // Incrementar el castigo de ESTE jugador al beber
       _playerPenalties[player] = currentPenalty + 1;
-
       _currentPlayerIndex++;
 
       if (_currentPlayerIndex >= _players.length) {
@@ -192,7 +207,6 @@ final List<String> _spicyQuestions = [
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AfterlifeColors.background,
-
       appBar: AppBar(
         backgroundColor: AfterlifeColors.background,
         elevation: 0,
@@ -201,7 +215,6 @@ final List<String> _spicyQuestions = [
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -210,26 +223,14 @@ final List<String> _spicyQuestions = [
               children: [
                 Text(
                   "Turno de",
-                  style: TextStyle(
-                    color: AfterlifeColors.textSecondary,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   _currentPlayer.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-                
-                // Mostrar los tragos acumulados del jugador actual
                 const SizedBox(height: 4),
-                
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
@@ -238,49 +239,31 @@ final List<String> _spicyQuestions = [
                     border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
                   ),
                   child: Text(
-                    "⚡ $_currentPenalty castigo${_currentPenalty != 1 ? 's' : ''} acumulado${_currentPenalty != 1 ? 's' : ''}",
-                    style: TextStyle(
-                      color: AfterlifeColors.neonPink,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    "⚡ $_currentPenalty Bebida${_currentPenalty != 1 ? 's' : ''} acumulada${_currentPenalty != 1 ? 's' : ''}",
+                    style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           AfterlifeCard(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Icon(
-                    Icons.local_fire_department,
-                    color: Colors.orange,
-                    size: 40,
-                  ),
-
+                  const Icon(Icons.local_fire_department, color: Colors.orange, size: 40),
                   const SizedBox(height: 16),
-
                   Text(
                     _currentQuestion,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 30),
-
           Row(
             children: [
               Expanded(
@@ -290,35 +273,25 @@ final List<String> _spicyQuestions = [
                   onPressed: _answered,
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: AfterButton(
-                  label: "RETO ($_currentPenalty)",
+                  label: "BEBER ($_currentPenalty)",  // 👈 Cambiado de "RETO" a "BEBER"
                   color: AfterlifeColors.acidGreen,
                   onPressed: _drinkPenalty,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
           Center(
             child: Text(
-              "Si no respondes, tus castigos acumulados aumentan ⚡",
-              style: TextStyle(
-                color: AfterlifeColors.textSecondary,
-                fontSize: 12,
-              ),
+              "Si no respondes, bebes y tus bebidas acumuladas aumentan ⚡",
+              style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Mostrar el resumen de tragos de todos los jugadores
           AfterlifeCard(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -326,12 +299,8 @@ final List<String> _spicyQuestions = [
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "ESTADO DE CASTIGOS ⚡",
-                    style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    "ESTADO DE BEBIDAS ⚡",
+                    style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   ..._players.map((player) {
@@ -341,17 +310,11 @@ final List<String> _spicyQuestions = [
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            player,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
+                          Text(player, style: const TextStyle(color: Colors.white, fontSize: 16)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                             decoration: BoxDecoration(
-                              color: player == _currentPlayer 
+                              color: player == _currentPlayer
                                   ? AfterlifeColors.acidGreen.withOpacity(0.3)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
@@ -362,14 +325,12 @@ final List<String> _spicyQuestions = [
                               ),
                             ),
                             child: Text(
-                              "$penalty castigo${penalty != 1 ? 's' : ''}",
+                              "$penalty Bebida${penalty != 1 ? 's' : ''}",
                               style: TextStyle(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen
                                     : AfterlifeColors.textSecondary,
-                                fontWeight: player == _currentPlayer
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                fontWeight: player == _currentPlayer ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                           ),
