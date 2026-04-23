@@ -17,10 +17,8 @@ class UserProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   
-  // Getter para la noche activa
   String? get activeNightId => _userData?['activeNightId'];
   
-  // Getter para la lista de logros desbloqueados
   List<Map<String, dynamic>> get unlockedAchievements {
     final list = _userData?['unlockedAchievements'];
     if (list is List) {
@@ -61,34 +59,95 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
+      final docRef = _firestore.collection('users').doc(userId);
+      final doc = await docRef.get();
+
+      Map<String, dynamic> data = {};
       if (doc.exists) {
-        _userData = doc.data();
-        _error = null;
+        data = doc.data()!;
       } else {
-        _userData = null;
-        _error = 'Usuario no encontrado en Firestore';
+        // Si el documento no existe (caso extremo), lo creamos con valores por defecto
+        data = {
+          'username': _auth.currentUser?.email?.split('@').first ?? 'Usuario',
+          'email': _auth.currentUser?.email ?? '',
+          'level': 1,
+          'points': 0,
+          'nightsCompleted': 0,
+          'challengesCompleted': 0,
+          'friendsCount': 0,
+          'photosUploaded': 0,
+          'nightsCreated': 0,
+          'unlockedAchievements': [],
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+        await docRef.set(data);
       }
+
+      bool needsUpdate = false;
+
+      // 1. Asegurar campos existentes
+      if (!data.containsKey('photosUploaded')) {
+        data['photosUploaded'] = 0;
+        needsUpdate = true;
+      }
+      if (!data.containsKey('nightsCreated')) {
+        data['nightsCreated'] = 0;
+        needsUpdate = true;
+      }
+      if (!data.containsKey('friendsCount')) {
+        data['friendsCount'] = 0;
+        needsUpdate = true;
+      }
+      if (!data.containsKey('unlockedAchievements')) {
+        data['unlockedAchievements'] = [];
+        needsUpdate = true;
+      } else {
+        // 2. Limpiar array de logros desbloqueados (eliminar elementos inválidos)
+        final list = data['unlockedAchievements'];
+        if (list is List) {
+          final cleanList = list.where((item) {
+            return item is Map && item.containsKey('achievementId');
+          }).toList();
+          if (cleanList.length != list.length) {
+            data['unlockedAchievements'] = cleanList;
+            needsUpdate = true;
+          }
+        } else {
+          data['unlockedAchievements'] = [];
+          needsUpdate = true;
+        }
+      }
+
+      // 3. Guardar cambios si es necesario
+      if (needsUpdate) {
+        await docRef.update({
+          'photosUploaded': data['photosUploaded'],
+          'nightsCreated': data['nightsCreated'],
+          'friendsCount': data['friendsCount'],
+          'unlockedAchievements': data['unlockedAchievements'],
+        });
+      }
+
+      _userData = data;
+      _error = null;
     } catch (e) {
       _error = e.toString();
       _userData = null;
+      debugPrint('Error en _loadUserData: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Método público para forzar una recarga manual (útil si se edita el perfil)
   Future<void> refresh() async {
     await _loadUserData();
   }
 
-  /// Calcula el nivel según los puntos totales.
   int _calculateLevel(int points) {
     return LevelCalculator.calculate(points);
   }
 
-  /// Establece la noche activa para el usuario
   Future<void> setActiveNight(String nightId) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
@@ -96,7 +155,6 @@ class UserProvider extends ChangeNotifier {
     await refresh();
   }
 
-  /// Limpia la noche activa del usuario
   Future<void> clearActiveNight() async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
@@ -104,7 +162,6 @@ class UserProvider extends ChangeNotifier {
     await refresh();
   }
 
-  /// Actualiza la lista de logros desbloqueados (usado por AchievementService)
   Future<void> updateUnlockedAchievements(List<Map<String, dynamic>> newList) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
@@ -119,9 +176,7 @@ class UserProvider extends ChangeNotifier {
     String? avatarUrl,
   }) async {
     final userId = _auth.currentUser?.uid;
-    if (userId == null) {
-      throw Exception('No hay usuario autenticado');
-    }
+    if (userId == null) throw Exception('No hay usuario autenticado');
 
     if (username.trim().isEmpty) {
       throw Exception('El nombre de usuario no puede estar vacío');
@@ -130,18 +185,17 @@ class UserProvider extends ChangeNotifier {
       throw Exception('El handle debe empezar con @ y tener al menos un carácter');
     }
 
-    Map<String, dynamic> updateData = {
+    final updateData = <String, dynamic>{
       'username': username.trim(),
       'handle': handle.trim(),
     };
-
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       updateData['avatarUrl'] = avatarUrl;
     }
 
     try {
       await _firestore.collection('users').doc(userId).update(updateData);
-      await refresh(); // Recargar los datos después de actualizar
+      await refresh();
     } catch (e) {
       throw Exception('Error al actualizar perfil: $e');
     }
@@ -153,16 +207,12 @@ class UserProvider extends ChangeNotifier {
     required int challengesCompletedIncrement,
   }) async {
     final userId = _auth.currentUser?.uid;
-    if (userId == null) {
-      throw Exception('No hay usuario autenticado');
-    }
+    if (userId == null) throw Exception('No hay usuario autenticado');
 
     try {
       final docRef = _firestore.collection('users').doc(userId);
       final doc = await docRef.get();
-      if (!doc.exists) {
-        throw Exception('Usuario no encontrado');
-      }
+      if (!doc.exists) throw Exception('Usuario no encontrado');
 
       final currentPoints = doc.data()?['points'] ?? 0;
       final currentNights = doc.data()?['nightsCompleted'] ?? 0;
