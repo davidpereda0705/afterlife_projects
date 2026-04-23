@@ -9,8 +9,8 @@ class MinigamesScreen extends StatelessWidget {
 
   final List<Map<String, dynamic>> _games = const [
     {
-      'title': 'VERDAD O RETO',
-      'description': 'Responde con honestidad… o acepta el castigo',
+      'title': 'VERDAD O BEBIDA',
+      'description': 'Responde con honestidad… o acepta la consecuencia',
       'icon': Icons.psychology_alt_outlined,
       'color': AfterlifeColors.electricPurple,
       'route': 'truth_or_drink',
