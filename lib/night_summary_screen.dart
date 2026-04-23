@@ -1,7 +1,6 @@
-// lib/screens/night_summary_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:afterlife_projects/Home.dart';
+import 'package:afterlife_projects/main_screen.dart'; // 👈 Importar MainScreen
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
@@ -25,11 +24,9 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  // Datos del podio (3º, 2º, 1º)
   List<Map<String, dynamic>> _podiumPlayers = [];
   int _podiumIndex = 0;
 
-  // Para el carrusel de imágenes
   PageController _pageController = PageController();
   Timer? _carouselTimer;
   int _currentImageIndex = 0;
@@ -45,12 +42,9 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       duration: const Duration(milliseconds: 800),
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
-    // Preparar podio (tercero, segundo, primero)
     final players = _getSortedPlayers();
     if (players.length >= 3) {
       _podiumPlayers = [players[2], players[1], players[0]];
@@ -62,9 +56,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   }
 
   List<Map<String, dynamic>> _getSortedPlayers() {
-    final players = List<Map<String, dynamic>>.from(
-      widget.nightData['players'] ?? [],
-    );
+    final players = List<Map<String, dynamic>>.from(widget.nightData['players'] ?? []);
     players.sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
     return players;
   }
@@ -72,7 +64,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   void _startStep() {
     _controller.forward(from: 0.0);
     if (_currentStep == 1) {
-      // Paso del podio: comenzar animación secuencial
       _startPodiumSequence();
     } else if (_currentStep == 3) {
       _startCarousel('challenge');
@@ -88,9 +79,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
 
   void _showNextPodium() {
     if (_podiumIndex < _podiumPlayers.length) {
-      // Mostrar el jugador actual
       setState(() {});
-      // Tiempo más largo para que se vea bien
       Future.delayed(const Duration(milliseconds: 2500), () {
         if (mounted) {
           _podiumIndex++;
@@ -98,7 +87,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         }
       });
     } else {
-      // Terminado el podio, pasar al siguiente paso automáticamente
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) _nextStep();
       });
@@ -126,11 +114,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   }
 
   void _startCarousel(String type) {
-    final photos = (type == 'challenge')
-        ? _getChallengePhotos()
-        : _getNightPhotos();
+    final photos = (type == 'challenge') ? _getChallengePhotos() : _getNightPhotos();
     if (photos.isEmpty) {
-      // Si no hay fotos, saltamos al siguiente paso después de un breve tiempo
       Future.delayed(const Duration(seconds: 1), _nextStep);
       return;
     }
@@ -164,7 +149,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     super.dispose();
   }
 
-  // ---- Datos para las fotos ----
   List<Map<String, dynamic>> _getChallengePhotos() {
     final challenges = widget.nightData['challenges'] ?? [];
     List<Map<String, dynamic>> photos = [];
@@ -184,7 +168,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     final nightPhotos = widget.nightData['nightPhotos'] ?? [];
     List<Map<String, dynamic>> photos = [];
     for (var item in nightPhotos) {
-      // La estructura puede ser bytes directo o mapa {bytes}
       if (item is Uint8List) {
         photos.add({'bytes': item});
       } else if (item is Map && item.containsKey('bytes')) {
@@ -203,92 +186,99 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     return name[0].toUpperCase();
   }
 
+  void _goToMainScreen() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-      appBar: AppBar(
+    return WillPopScope(
+      onWillPop: () async {
+        _goToMainScreen();
+        return false;
+      },
+      child: Scaffold(
         backgroundColor: AfterlifeColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Resumen de la noche',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: AfterlifeColors.background,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+            onPressed: _goToMainScreen,
+          ),
+          title: Text(
+            'Resumen de la noche',
+            style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-      ),
-      body: GestureDetector(
-        onTap: _nextStep,
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: Stack(
-            children: [
-              // Fondo con gradiente
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AfterlifeColors.electricLilac.withOpacity(0.3),
-                      AfterlifeColors.background,
-                    ],
+        body: GestureDetector(
+          onTap: _nextStep,
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AfterlifeColors.electricLilac.withOpacity(0.3),
+                        AfterlifeColors.background,
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              // Contenido animado según el paso
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 800),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                child: _buildStepContent(_currentStep),
-              ),
-              // Confetti en el paso final
-              if (_currentStep == 5)
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: ConfettiWidget(
-                    confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive,
-                    shouldLoop: false,
-                    colors: [
-                      AfterlifeColors.electricLilac,
-                      AfterlifeColors.neonPink,
-                      AfterlifeColors.acidGreen,
-                      AfterlifeColors.cyanBlue,
-                    ],
-                  ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 800),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  child: _buildStepContent(_currentStep),
                 ),
-              // Indicador de paso (excepto en resumen final)
-              if (_currentStep != 5)
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return Container(
-                        width: 10,
-                        height: 10,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: index == _currentStep
-                              ? AfterlifeColors.electricLilac
-                              : Colors.white.withOpacity(0.3),
-                        ),
-                      );
-                    }),
+                if (_currentStep == 5)
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: ConfettiWidget(
+                      confettiController: _confettiController,
+                      blastDirectionality: BlastDirectionality.explosive,
+                      shouldLoop: false,
+                      colors: [
+                        AfterlifeColors.electricLilac,
+                        AfterlifeColors.neonPink,
+                        AfterlifeColors.acidGreen,
+                        AfterlifeColors.cyanBlue,
+                      ],
+                    ),
                   ),
-                ),
-            ],
+                if (_currentStep != 5)
+                  Positioned(
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return Container(
+                          width: 10,
+                          height: 10,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: index == _currentStep
+                                ? AfterlifeColors.electricLilac
+                                : Colors.white.withOpacity(0.3),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -350,7 +340,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 1: PODIO (3º, 2º, 1º secuencial) MEJORADO ----
+  // ---- PASO 1: PODIO ----
   Widget _buildPodium() {
     if (_podiumPlayers.isEmpty) {
       return Center(
@@ -361,9 +351,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       );
     }
 
-    // Mostrar el jugador actual del podio
     final player = _podiumPlayers[_podiumIndex];
-    final int position = _podiumPlayers.length - _podiumIndex; // 3,2,1
+    final int position = _podiumPlayers.length - _podiumIndex;
     final String positionText = position == 1 ? '🏆 GANADOR 🏆' : '$positionº LUGAR';
     final Color color = position == 1
         ? AfterlifeColors.neonOrange
@@ -439,7 +428,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 2: TABLA DE CLASIFICACIÓN (sin botón) ----
+  // ---- PASO 2: TABLA DE CLASIFICACIÓN ----
   Widget _buildRanking() {
     final players = _getSortedPlayers();
     return Center(
@@ -493,10 +482,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AfterlifeColors.neonOrange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -520,7 +506,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 3: FOTOS DE LOS RETOS (carrusel con información) ----
+  // ---- PASO 3: FOTOS DE LOS RETOS ----
   Widget _buildChallengePhotos() {
     final photos = _getChallengePhotos();
     if (photos.isEmpty) {
@@ -600,7 +586,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 4: FOTOS DE LA NOCHE (sin texto de subida) ----
+  // ---- PASO 4: FOTOS DE LA NOCHE ----
   Widget _buildNightPhotos() {
     final photos = _getNightPhotos();
     if (photos.isEmpty) {
@@ -668,7 +654,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 5: RESUMEN FINAL (con zoom y cierre tocando fuera) ----
+  // ---- PASO 5: RESUMEN FINAL ----
   Widget _buildFinalSummary() {
     final players = _getSortedPlayers();
     final challengePhotos = _getChallengePhotos();
@@ -680,7 +666,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nombre de la noche
           Center(
             child: Text(
               widget.nightData['name'] ?? 'Noche sin nombre',
@@ -694,7 +679,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
           ),
           const SizedBox(height: 20),
 
-          // Clasificación compacta
           const Text(
             'CLASIFICACIÓN',
             style: TextStyle(
@@ -754,7 +738,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
 
           const SizedBox(height: 20),
 
-          // Fotos (grid de 2 columnas) con zoom y cierre tocando fuera
           if (allPhotos.isNotEmpty) ...[
             const Text(
               '📸 FOTOS',
@@ -804,16 +787,10 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
 
           const SizedBox(height: 30),
 
-          // Botón para volver al inicio
           AfterButton(
             label: 'VOLVER AL INICIO',
             color: AfterlifeColors.electricLilac,
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) =>  HomeScreen()),
-                (route) => false,
-              );
-            },
+            onPressed: _goToMainScreen,
           ),
           const SizedBox(height: 20),
         ],
@@ -827,14 +804,12 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       barrierDismissible: false,
       builder: (context) => Stack(
         children: [
-          // Fondo semitransparente que cierra al tocarlo
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
               color: Colors.black.withOpacity(0.9),
             ),
           ),
-          // Imagen centrada y que no cierra al tocarla
           Center(
             child: InteractiveViewer(
               minScale: 0.5,
@@ -845,7 +820,6 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
               ),
             ),
           ),
-          // Botón de cierre opcional (también cierra)
           Positioned(
             top: 40,
             right: 20,
