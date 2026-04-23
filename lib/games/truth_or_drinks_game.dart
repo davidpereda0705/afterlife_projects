@@ -4,23 +4,16 @@ import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
 class TruthOrDrinkGame extends StatefulWidget {
-  const TruthOrDrinkGame({super.key});
+  final List<Map<String, dynamic>>? players;
+  const TruthOrDrinkGame({super.key, this.players});
 
   @override
   State<TruthOrDrinkGame> createState() => _TruthOrDrinkGameState();
 }
 
 class _TruthOrDrinkGameState extends State<TruthOrDrinkGame> {
-  // Jugadores
-  final List<String> _players = ["Alex", "Marta", "Carlos", "Lucía"];
-  
-  // Mapa para llevar el castigo individual de cada jugador
-  final Map<String, int> _playerPenalties = {
-    "Alex": 1,
-    "Marta": 1,
-    "Carlos": 1,
-    "Lucía": 1,
-  };
+  late List<String> _players;
+  late Map<String, int> _playerPenalties;
 
   int _currentPlayerIndex = 0;
 
@@ -245,7 +238,7 @@ final List<String> _spicyQuestions = [
                     border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
                   ),
                   child: Text(
-                    "🍻 $_currentPenalty trago${_currentPenalty != 1 ? 's' : ''} acumulado${_currentPenalty != 1 ? 's' : ''}",
+                    "⚡ $_currentPenalty castigo${_currentPenalty != 1 ? 's' : ''} acumulado${_currentPenalty != 1 ? 's' : ''}",
                     style: TextStyle(
                       color: AfterlifeColors.neonPink,
                       fontSize: 14,
@@ -302,7 +295,7 @@ final List<String> _spicyQuestions = [
 
               Expanded(
                 child: AfterButton(
-                  label: "BEBER ($_currentPenalty)",
+                  label: "RETO ($_currentPenalty)",
                   color: AfterlifeColors.acidGreen,
                   onPressed: _drinkPenalty,
                 ),
@@ -314,7 +307,7 @@ final List<String> _spicyQuestions = [
 
           Center(
             child: Text(
-              "Si no respondes, tus tragos acumulados aumentan 🍻",
+              "Si no respondes, tus castigos acumulados aumentan ⚡",
               style: TextStyle(
                 color: AfterlifeColors.textSecondary,
                 fontSize: 12,
@@ -333,7 +326,7 @@ final List<String> _spicyQuestions = [
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "ESTADO DE TRAGOS 🍻",
+                    "ESTADO DE CASTIGOS ⚡",
                     style: TextStyle(
                       color: AfterlifeColors.textSecondary,
                       fontSize: 12,
@@ -369,7 +362,7 @@ final List<String> _spicyQuestions = [
                               ),
                             ),
                             child: Text(
-                              "$penalty trago${penalty != 1 ? 's' : ''}",
+                              "$penalty castigo${penalty != 1 ? 's' : ''}",
                               style: TextStyle(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen

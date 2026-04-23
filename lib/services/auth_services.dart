@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/app_constants.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -23,22 +24,22 @@ class AuthService {
 
       // Datos iniciales del usuario con todos los campos que usará la app
       final userData = {
-        'username': username,
-        'email': email,
-        'level': 1,
-        'points': 0,
-        'nightsCompleted': 0,
-        'challengesCompleted': 0,
-        'friendsCount': 0,
+        AppConstants.fieldUsername: username,
+        AppConstants.fieldEmail: email,
+        AppConstants.fieldLevel: 1,
+        AppConstants.fieldPoints: 0,
+        AppConstants.fieldNightsCompleted: 0,
+        AppConstants.fieldChallengesCompleted: 0,
+        AppConstants.fieldFriendsCount: 0,
         'achievementsCount': 0,
-        'photosUploaded': 0, // Añadir
-        'nightsCreated': 0, // Añadir
-        'createdAt': FieldValue.serverTimestamp(),
+        AppConstants.fieldPhotosUploaded: 0, // Añadir
+        AppConstants.fieldNightsCreated: 0, // Añadir
+        AppConstants.fieldCreatedAt: FieldValue.serverTimestamp(),
       };
 
       // Guardar en Firestore (esperamos a que termine para asegurar consistencia)
-      await _firestore.collection('users').doc(result.user!.uid).set(userData);
-      print('✅ Usuario guardado en Firestore con datos iniciales');
+      await _firestore.collection(AppConstants.usersCollection).doc(result.user!.uid).set(userData);
+      // Usuario guardado en Firestore
 
       return result.user;
     } on FirebaseAuthException catch (e) {

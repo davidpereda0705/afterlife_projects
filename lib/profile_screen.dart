@@ -1,5 +1,7 @@
 // lib/screens/profile_screen.dart
 import 'package:afterlife_projects/edit_profile.dart';
+import 'package:afterlife_projects/journal_screen.dart';
+import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:flutter/material.dart';
@@ -58,11 +60,16 @@ class ProfileScreen extends StatelessWidget {
         final friendsCount = userData?['friendsCount'] ?? 0;
         final achievementsCount = userData?['achievementsCount'] ?? 0;
 
-        final recentAchievements = const [
-          {'title': 'SOCIAL', 'icon': Icons.people, 'unlocked': true},
-          {'title': 'NO VETERANO', 'icon': Icons.military_tech, 'unlocked': true},
-          {'title': 'FIESTERO', 'icon': Icons.nightlife, 'unlocked': true},
-        ];
+        final unlockedList = userProvider.unlockedAchievements;
+        final recentAchievements = unlockedList.isNotEmpty
+            ? unlockedList.take(3).map((a) {
+                return {
+                  'title': 'LOGRO',
+                  'icon': Icons.emoji_events,
+                  'unlocked': true,
+                };
+              }).toList()
+            : <Map<String, dynamic>>[];
 
         return Scaffold(
           backgroundColor: AfterlifeColors.background,
@@ -193,23 +200,42 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Center(
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: achievements.map((ach) {
-              return SizedBox(
-                width: 100,
-                child: AchievementBadge(
-                  title: ach['title'],
-                  icon: ach['icon'],
-                  isUnlocked: ach['unlocked'],
+        if (achievements.isEmpty)
+          Center(
+            child: Column(
+              children: [
+                Icon(Icons.lock_outline, color: AfterlifeColors.textDisabled, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'Aún no has desbloqueado logros',
+                  style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
                 ),
-              );
-            }).toList(),
+                const SizedBox(height: 4),
+                Text(
+                  '¡Juega noches y completa retos para conseguirlos!',
+                  style: TextStyle(color: AfterlifeColors.textDisabled, fontSize: 12),
+                ),
+              ],
+            ),
+          )
+        else
+          Center(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: achievements.map((ach) {
+                return SizedBox(
+                  width: 100,
+                  child: AchievementBadge(
+                    title: ach['title'],
+                    icon: ach['icon'],
+                    isUnlocked: ach['unlocked'],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -219,6 +245,32 @@ class ProfileScreen extends StatelessWidget {
 
     return Column(
       children: [
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AchievementsScreen()));
+          },
+          icon: Icon(Icons.emoji_events, color: AfterlifeColors.neonOrange),
+          label: Text('MIS LOGROS', style: TextStyle(color: AfterlifeColors.neonOrange)),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AfterlifeColors.neonOrange.withOpacity(0.5)),
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const JournalScreen()));
+          },
+          icon: Icon(Icons.book, color: AfterlifeColors.cyanBlue),
+          label: Text('MI DIARIO', style: TextStyle(color: AfterlifeColors.cyanBlue)),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AfterlifeColors.cyanBlue.withOpacity(0.5)),
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));

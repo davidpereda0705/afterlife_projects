@@ -78,7 +78,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         final bytes = await pickedFile.readAsBytes();
         await _nightService.addNightPhoto(nightId, bytes);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto añadida'), backgroundColor: Color(0xFF84CC16)),
+          const SnackBar(content: Text('Foto añadida'), backgroundColor: AfterlifeColors.acidGreen),
         );
       }
     } catch (e) {
@@ -250,143 +250,122 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: StreamBuilder<Map<String, dynamic>?>(
-          stream: _nightStream,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const Text('Cargando...', style: TextStyle(color: Colors.white));
-            }
-            final night = snapshot.data!;
-            return Column(
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: _nightStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white))),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
+            body: Center(child: Text('Noche no encontrada', style: TextStyle(color: Colors.white))),
+          );
+        }
+
+        final nightData = snapshot.data!;
+        final challenges = nightData['challenges'] as List? ?? [];
+        final players = nightData['players'] as List? ?? [];
+        final nightPhotos = nightData['nightPhotos'] as List? ?? [];
+
+        int totalChallenges = challenges.length;
+        int completedChallenges = challenges.where((c) => c['completed'] == true).length;
+        double progress = totalChallenges > 0 ? completedChallenges / totalChallenges : 0;
+
+        int nextIncompleteIndex = challenges.indexWhere((c) => c['completed'] != true);
+        if (nextIncompleteIndex == -1) nextIncompleteIndex = challenges.length;
+        if (_currentChallengeIndex != nextIncompleteIndex && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _currentChallengeIndex = nextIncompleteIndex);
+          });
+        }
+
+        final allCompleted = completedChallenges == totalChallenges && totalChallenges > 0;
+        final startTime = _parseStartTime(nightData['time'] ?? '22:30');
+        final endTime = _calculateEndTime(startTime);
+        final now = DateTime.now();
+        final timeLeft = endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
+        int totalPoints = 0;
+        for (var player in players) {
+          totalPoints += (player['points'] as int? ?? 0);
+        }
+
+        return Scaffold(
+          backgroundColor: AfterlifeColors.background,
+          appBar: AppBar(
+            backgroundColor: AfterlifeColors.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  night['name'] ?? 'Noche',
+                  nightData['name'] ?? 'Noche',
                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${night['day'] ?? ''} · ${night['time'] ?? ''} · ${night['groupName'] ?? ''}',
+                  '${nightData['day'] ?? ''} · ${nightData['time'] ?? ''} · ${nightData['groupName'] ?? ''}',
                   style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
                 ),
               ],
-            );
-          },
-        ),
-        actions: [
-          StreamBuilder<Map<String, dynamic>?>(
-            stream: _nightStream,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
-              final night = snapshot.data!;
-              final startTime = _parseStartTime(night['time'] ?? '22:30');
-              final endTime = _calculateEndTime(startTime);
-              final now = DateTime.now();
-              final timeLeft = endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
-              return Container(
+            ),
+            actions: [
+              Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7B1FA2).withOpacity(0.2),
+                  color: AfterlifeColors.electricLilac.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
+                  border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
                 ),
                 child: Text(_formatDuration(timeLeft), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-              );
-            },
-          ),
-          StreamBuilder<Map<String, dynamic>?>(
-            stream: _nightStream,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
-              final night = snapshot.data!;
-              return IconButton(
-                icon: const Icon(Icons.flag, color: Color(0xFF84CC16)),
-                onPressed: () => _finishNight(widget.nightId, night),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_a_photo, color: Colors.white),
-            onPressed: () => _addNightPhoto(widget.nightId),
-          ),
-          StreamBuilder<Map<String, dynamic>?>(
-            stream: _nightStream,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
-              final night = snapshot.data!;
-              int totalPoints = 0;
-              for (var player in night['players'] ?? []) {
-                totalPoints += (player['points'] as int? ?? 0);
-              }
-              return Container(
+              ),
+              IconButton(
+                icon: const Icon(Icons.flag, color: AfterlifeColors.acidGreen),
+                onPressed: () => _finishNight(widget.nightId, nightData),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_a_photo, color: Colors.white),
+                onPressed: () => _addNightPhoto(widget.nightId),
+              ),
+              Container(
                 margin: const EdgeInsets.only(right: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7B1FA2).withOpacity(0.2),
+                  color: AfterlifeColors.electricLilac.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
+                  border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
+                    const Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 16),
                     const SizedBox(width: 4),
                     Text('$totalPoints pts', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: StreamBuilder<Map<String, dynamic>?>(
-        stream: _nightStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
-          }
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Noche no encontrada', style: TextStyle(color: Colors.white)));
-          }
-
-          final nightData = snapshot.data!;
-          final challenges = nightData['challenges'] as List? ?? [];
-          final players = nightData['players'] as List? ?? [];
-          final nightPhotos = nightData['nightPhotos'] as List? ?? [];
-
-          int totalChallenges = challenges.length;
-          int completedChallenges = challenges.where((c) => c['completed'] == true).length;
-          double progress = totalChallenges > 0 ? completedChallenges / totalChallenges : 0;
-
-          int nextIncompleteIndex = challenges.indexWhere((c) => c['completed'] != true);
-          if (nextIncompleteIndex == -1) nextIncompleteIndex = challenges.length;
-          if (_currentChallengeIndex != nextIncompleteIndex && mounted) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _currentChallengeIndex = nextIncompleteIndex);
-            });
-          }
-
-          final allCompleted = completedChallenges == totalChallenges && totalChallenges > 0;
-
-          return Column(
+          body: Column(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: const Color(0xFF1A1A1A),
+                color: AfterlifeColors.surfaceDark,
                 child: Row(
                   children: [
-                    Text('$completedChallenges/$totalChallenges', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold)),
+                    Text('$completedChallenges/$totalChallenges', style: const TextStyle(color: AfterlifeColors.neonPink, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ClipRRect(
@@ -394,7 +373,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         child: LinearProgressIndicator(
                           value: progress,
                           backgroundColor: Colors.white.withOpacity(0.1),
-                          valueColor: const AlwaysStoppedAnimation(Color(0xFFEC4899)),
+                          valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonPink),
                           minHeight: 8,
                         ),
                       ),
@@ -420,9 +399,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -432,7 +411,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -440,7 +419,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
+              gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(child: Text(nightData['hostInitials'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -450,15 +429,15 @@ class _NightGameScreenState extends State<NightGameScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ANFITRIÓN', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 10, fontWeight: FontWeight.bold)),
+                const Text('ANFITRIÓN', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 10, fontWeight: FontWeight.bold)),
                 Text(nightData['hostName'] ?? 'Anfitrión', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFF84CC16).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-            child: const Text('EN CURSO', style: TextStyle(color: Color(0xFF84CC16), fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(color: AfterlifeColors.acidGreen.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+            child: const Text('EN CURSO', style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -471,9 +450,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
+          gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: AfterlifeColors.electricLilac.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -492,9 +471,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)]),
+        gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AfterlifeColors.electricLilac.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,7 +493,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
         SizedBox(
           height: 100,
           child: ListView.builder(
@@ -554,7 +533,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('CLASIFICACIÓN', style: TextStyle(color: Color(0xFFEC4899), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        const Text('CLASIFICACIÓN', style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(sorted.length, (index) {
           final player = sorted[index];
@@ -565,22 +544,22 @@ class _NightGameScreenState extends State<NightGameScreen> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.5) : Colors.transparent),
+              border: Border.all(color: index == 0 ? AfterlifeColors.neonOrange.withOpacity(0.5) : Colors.transparent),
             ),
             child: Row(
               children: [
                 Container(
                   width: 30,
                   height: 30,
-                  decoration: BoxDecoration(color: index == 0 ? const Color(0xFFF59E0B).withOpacity(0.2) : Colors.white.withOpacity(0.1), shape: BoxShape.circle),
-                  child: Center(child: Text('${index + 1}', style: TextStyle(color: index == 0 ? const Color(0xFFF59E0B) : Colors.white54, fontWeight: FontWeight.bold))),
+                  decoration: BoxDecoration(color: index == 0 ? AfterlifeColors.neonOrange.withOpacity(0.2) : Colors.white.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Center(child: Text('${index + 1}', style: TextStyle(color: index == 0 ? AfterlifeColors.neonOrange : Colors.white54, fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(color: const Color(0xFF06B6D4).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                  child: Center(child: Text(player['initials'] ?? '?', style: const TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold))),
+                  decoration: BoxDecoration(color: AfterlifeColors.cyanBlue.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                  child: Center(child: Text(player['initials'] ?? '?', style: const TextStyle(color: AfterlifeColors.cyanBlue, fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -591,8 +570,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: const Color(0xFF7B1FA2).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                          child: const Text('HOST', style: TextStyle(color: Color(0xFF7B1FA2), fontSize: 8, fontWeight: FontWeight.bold)),
+                          decoration: BoxDecoration(color: AfterlifeColors.electricLilac.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                          child: const Text('HOST', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],
@@ -600,8 +579,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                  child: Text('${player['points'] ?? 0} pts', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
+                  decoration: BoxDecoration(color: AfterlifeColors.neonOrange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: Text('${player['points'] ?? 0} pts', style: const TextStyle(color: AfterlifeColors.neonOrange, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -616,7 +595,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('RETOS', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        const Text('RETOS', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 12),
         ...List.generate(challenges.length, (index) {
           final challenge = challenges[index];
@@ -632,23 +611,23 @@ class _NightGameScreenState extends State<NightGameScreen> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isCurrent ? const Color(0xFF06B6D4) : isCompleted ? const Color(0xFF84CC16).withOpacity(0.3) : Colors.transparent, width: isCurrent ? 2 : 1),
+                border: Border.all(color: isCurrent ? AfterlifeColors.cyanBlue : isCompleted ? AfterlifeColors.acidGreen.withOpacity(0.3) : Colors.transparent, width: isCurrent ? 2 : 1),
               ),
               child: Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(isCompleted ? Icons.check_circle : Icons.emoji_events, color: isCompleted ? const Color(0xFF84CC16) : Colors.white54, size: 20),
+                    decoration: BoxDecoration(color: isCompleted ? AfterlifeColors.acidGreen.withOpacity(0.2) : Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(isCompleted ? Icons.check_circle : Icons.emoji_events, color: isCompleted ? AfterlifeColors.acidGreen : Colors.white54, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: Text(challenge['name'] ?? 'Reto', style: TextStyle(color: isCompleted ? Colors.white.withOpacity(0.6) : Colors.white, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal))),
                   if (challenge['proofBytes'] != null) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Colors.white54, size: 16)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: isCompleted ? const Color(0xFF84CC16).withOpacity(0.2) : const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                    child: Text('${challenge['points'] ?? 0} pts', style: TextStyle(color: isCompleted ? const Color(0xFF84CC16) : const Color(0xFFF59E0B), fontSize: 12, fontWeight: FontWeight.bold)),
+                    decoration: BoxDecoration(color: isCompleted ? AfterlifeColors.acidGreen.withOpacity(0.2) : AfterlifeColors.neonOrange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                    child: Text('${challenge['points'] ?? 0} pts', style: TextStyle(color: isCompleted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),

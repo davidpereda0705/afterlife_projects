@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/enums.dart';
 import '../services/night_service.dart';
 import '../services/achievement_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/colors.dart';
+import '../data/challenge_bank.dart';
 import 'night_game_screen.dart';
 
 class CreateNightScreen extends StatefulWidget {
@@ -44,9 +46,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -65,7 +67,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
               child: Text(
                 'NUEVA NOCHE',
                 style: TextStyle(
-                  color: Color(0xFF7B1FA2),
+                  color: AfterlifeColors.electricLilac,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
@@ -74,33 +76,35 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             ),
             const SizedBox(height: 30),
 
-            _buildLabel('NOMBRE DE LA NOCHE', const Color(0xFF7B1FA2)),
+            _buildLabel('NOMBRE DE LA NOCHE', AfterlifeColors.electricLilac),
             const SizedBox(height: 8),
             _buildTextField(
               controller: _nightNameController,
               hint: 'Ej: Viernes de Locura',
               icon: Icons.nightlife,
-              color: const Color(0xFF7B1FA2),
+              color: AfterlifeColors.electricLilac,
             ),
             const SizedBox(height: 25),
 
-            _buildLabel('CUÁNDO EMPIEZA', const Color(0xFF06B6D4)),
+            _buildLabel('CUÁNDO EMPIEZA', AfterlifeColors.cyanBlue),
             const SizedBox(height: 8),
             _buildDayTimeSelector(),
             const SizedBox(height: 25),
 
-            _buildLabel('TOTAL DE JUGADORES', const Color(0xFFEC4899)),
+            _buildLabel('TOTAL DE JUGADORES', AfterlifeColors.neonPink),
             const SizedBox(height: 8),
             _buildPlayersSlider(),
             const SizedBox(height: 25),
 
-            _buildLabel('CREA TUS RETOS', const Color(0xFF06B6D4)),
+            _buildLabel('CREA TUS RETOS', AfterlifeColors.cyanBlue),
             const SizedBox(height: 8),
+            _buildCategoryChips(),
+            const SizedBox(height: 12),
             _buildCreateChallengeCard(),
             const SizedBox(height: 20),
 
             if (_customChallenges.isNotEmpty) ...[
-              _buildLabel('RETOS CREADOS (${_customChallenges.length})', const Color(0xFF84CC16)),
+              _buildLabel('RETOS CREADOS (${_customChallenges.length})', AfterlifeColors.acidGreen),
               const SizedBox(height: 8),
               _buildChallengesList(),
             ],
@@ -165,7 +169,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF06B6D4).withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -173,8 +177,8 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             child: DropdownButtonFormField<String>(
               value: _selectedDay,
               hint: const Text('Día', style: TextStyle(color: Colors.white54)),
-              dropdownColor: const Color(0xFF1A1A1A),
-              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF06B6D4)),
+              dropdownColor: AfterlifeColors.surfaceDark,
+              icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.cyanBlue),
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
               items: _days.map((day) => DropdownMenuItem(value: day, child: Text(day))).toList(),
@@ -186,8 +190,8 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             child: DropdownButtonFormField<String>(
               value: _selectedHour,
               hint: const Text('Hora', style: TextStyle(color: Colors.white54)),
-              dropdownColor: const Color(0xFF1A1A1A),
-              icon: const Icon(Icons.access_time, color: Color(0xFF06B6D4), size: 20),
+              dropdownColor: AfterlifeColors.surfaceDark,
+              icon: const Icon(Icons.access_time, color: AfterlifeColors.cyanBlue, size: 20),
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
               items: _hours.map((hour) => DropdownMenuItem(value: hour, child: Text(hour))).toList(),
@@ -210,7 +214,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -221,10 +225,10 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.2),
+                  color: AfterlifeColors.neonPink.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('$_maxPlayers', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold, fontSize: 18)),
+                child: Text('$_maxPlayers', style: const TextStyle(color: AfterlifeColors.neonPink, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
             ],
           ),
@@ -233,8 +237,8 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             min: 2,
             max: 20,
             divisions: 18,
-            activeColor: const Color(0xFFEC4899),
-            inactiveColor: const Color(0xFFEC4899).withOpacity(0.2),
+            activeColor: AfterlifeColors.neonPink,
+            inactiveColor: AfterlifeColors.neonPink.withOpacity(0.2),
             onChanged: (value) => setState(() => _maxPlayers = value.round()),
           ),
         ],
@@ -248,13 +252,13 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF06B6D4).withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const Icon(Icons.add_task, color: Color(0xFF06B6D4), size: 20),
+              const Icon(Icons.add_task, color: AfterlifeColors.cyanBlue, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
@@ -272,7 +276,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           const Divider(color: Colors.white10, height: 16),
           Row(
             children: [
-              const Icon(Icons.star, color: Color(0xFFF59E0B), size: 20),
+              const Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
@@ -290,7 +294,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
               ElevatedButton(
                 onPressed: _addCustomChallenge,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF06B6D4),
+                  backgroundColor: AfterlifeColors.cyanBlue,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(80, 40),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -321,7 +325,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF84CC16).withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.acidGreen.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -329,10 +333,10 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF84CC16).withOpacity(0.2),
+              color: AfterlifeColors.acidGreen.withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.emoji_events, color: Color(0xFF84CC16), size: 20),
+            child: const Icon(Icons.emoji_events, color: AfterlifeColors.acidGreen, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -343,8 +347,8 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                  child: Text('${challenge['points']} pts', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 12, fontWeight: FontWeight.bold)),
+                  decoration: BoxDecoration(color: AfterlifeColors.neonOrange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: Text('${challenge['points']} pts', style: const TextStyle(color: AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -364,7 +368,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         ElevatedButton(
           onPressed: _isCreating ? null : _createNight,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7B1FA2),
+            backgroundColor: AfterlifeColors.electricLilac,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 55),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -376,7 +380,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         if (_customChallenges.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text('${_customChallenges.length} retos personalizados', style: TextStyle(color: const Color(0xFF84CC16), fontSize: 12)),
+            child: Text('${_customChallenges.length} retos personalizados', style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 12)),
           ),
       ],
     );
@@ -387,38 +391,76 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     String pointsText = _challengePointsController.text.trim();
 
     if (name.isEmpty) {
-      _showMessage('Escribe un nombre para el reto', const Color(0xFFF59E0B));
+      _showMessage('Escribe un nombre para el reto', AfterlifeColors.neonOrange);
       return;
     }
     int points = int.tryParse(pointsText) ?? 0;
     if (points <= 0) {
-      _showMessage('Pon puntos válidos (ej: 100)', const Color(0xFFF59E0B));
+      _showMessage('Pon puntos válidos (ej: 100)', AfterlifeColors.neonOrange);
       return;
     }
     setState(() {
-      _customChallenges.add({'name': name, 'points': points});
+      _customChallenges.add({'name': name, 'points': points, 'type': ChallengeType.individual});
       _challengeNameController.clear();
       _challengePointsController.clear();
     });
   }
 
+  void _addSuggestedChallenges(ChallengeType? type) {
+    final suggestions = type != null
+        ? ChallengeBank.getByType(type)
+        : ChallengeBank.all;
+    final random = List<Challenge>.from(suggestions)..shuffle();
+    final selected = random.take(3).toList();
+    for (final c in selected) {
+      if (!_customChallenges.any((existing) => existing['name'] == c.name)) {
+        _customChallenges.add({'name': c.name, 'points': c.points, 'type': c.type});
+      }
+    }
+    setState(() {});
+  }
+
+  Widget _buildCategoryChips() {
+    final categories = [
+      {'label': 'Aleatorio', 'type': null, 'color': AfterlifeColors.electricLilac},
+      {'label': 'Grupal', 'type': ChallengeType.group, 'color': AfterlifeColors.acidGreen},
+      {'label': 'Individual', 'type': ChallengeType.individual, 'color': AfterlifeColors.cyanBlue},
+      {'label': 'Competitivo', 'type': ChallengeType.competitive, 'color': AfterlifeColors.neonOrange},
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: categories.map((cat) {
+        return ActionChip(
+          backgroundColor: (cat['color'] as Color).withOpacity(0.15),
+          side: BorderSide(color: (cat['color'] as Color).withOpacity(0.4)),
+          label: Text(
+            cat['label'] as String,
+            style: TextStyle(color: cat['color'] as Color, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          onPressed: () => _addSuggestedChallenges(cat['type'] as ChallengeType?),
+        );
+      }).toList(),
+    );
+  }
+
   Future<void> _createNight() async {
     // Validaciones
     if (_nightNameController.text.trim().isEmpty) {
-      _showMessage('Pon un nombre a la noche', const Color(0xFFF59E0B));
+      _showMessage('Pon un nombre a la noche', AfterlifeColors.neonOrange);
       return;
     }
     if (_selectedDay == null) {
-      _showMessage('Selecciona el día', const Color(0xFFF59E0B));
+      _showMessage('Selecciona el día', AfterlifeColors.neonOrange);
       return;
     }
     if (_selectedHour == null) {
-      _showMessage('Selecciona la hora', const Color(0xFFF59E0B));
+      _showMessage('Selecciona la hora', AfterlifeColors.neonOrange);
       return;
     }
     if (_customChallenges.isEmpty) {
-      _showMessage('Crea al menos 1 reto personalizado', const Color(0xFFF59E0B));
-      return;
+      _addSuggestedChallenges(null);
     }
 
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -487,14 +529,14 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
-            backgroundColor: const Color(0xFF84CC16),
+            backgroundColor: AfterlifeColors.acidGreen,
             duration: const Duration(seconds: 3),
           ),
         );
         await userProvider.refresh(); // Refrescar de nuevo para mostrar los nuevos logros
       }
 
-      _showMessage('¡Noche creada con éxito!', const Color(0xFF84CC16));
+      _showMessage('¡Noche creada con éxito!', AfterlifeColors.acidGreen);
 
       if (mounted) {
         Navigator.pushReplacement(

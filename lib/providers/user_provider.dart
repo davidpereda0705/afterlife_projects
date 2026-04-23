@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
+
+import '../core/level_calculator.dart';
 
 class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? _userData;
@@ -81,9 +84,8 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// Calcula el nivel según los puntos totales.
-  /// Fórmula: nivel = 1 + (puntos / 100). Ajusta según tu diseño.
   int _calculateLevel(int points) {
-    return 1 + (points ~/ 100);
+    return LevelCalculator.calculate(points);
   }
 
   /// Establece la noche activa para el usuario

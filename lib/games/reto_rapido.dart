@@ -224,13 +224,13 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.5)),
+                  border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
                 ),
                 child: Column(
                   children: [
                     const Text(
                       '🎲 TURNO DE',
-                      style: TextStyle(color: Color(0xFFEC4899), fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -244,7 +244,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     const SizedBox(height: 4),
                     Text(
                       '${currentPlayer['completed']} ✅ / ${currentPlayer['failed']} ❌',
-                      style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 14),
+                      style: const TextStyle(color: AfterlifeColors.neonOrange, fontSize: 14),
                     ),
                   ],
                 ),
@@ -261,7 +261,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     child: CircularProgressIndicator(
                       value: _secondsLeft / 30,
                       strokeWidth: 8,
-                      color: _secondsLeft <= 5 ? Colors.redAccent : const Color(0xFF06B6D4),
+                      color: _secondsLeft <= 5 ? Colors.redAccent : AfterlifeColors.cyanBlue,
                       backgroundColor: Colors.white10,
                     ),
                   ),
@@ -290,7 +290,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.bolt, color: Color(0xFF06B6D4), size: 40),
+                        const Icon(Icons.bolt, color: AfterlifeColors.cyanBlue, size: 40),
                         const SizedBox(height: 20),
                         Text(
                           _retos[_currentRetoIndex],
@@ -312,7 +312,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                   if (!_isTimerRunning && !_gameFinished)
                     AfterButton(
                       label: '¡DALE!',
-                      color: const Color(0xFF06B6D4),
+                      color: AfterlifeColors.cyanBlue,
                       onPressed: _startTimer,
                     ),
                   if (_isTimerRunning)
@@ -364,17 +364,17 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.emoji_events, size: 80, color: Color(0xFFF59E0B)),
+              const Icon(Icons.emoji_events, size: 80, color: AfterlifeColors.neonOrange),
               const SizedBox(height: 20),
               Text(
                 '🏆 GANADOR 🏆',
-                style: TextStyle(color: Color(0xFFF59E0B), fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               Text(
                 sorted[0]['name'],
                 style: AfterlifeTextTheme.headlineMedium.copyWith(
-                  color: Color(0xFFF59E0B),
+                  color: AfterlifeColors.neonOrange,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -385,7 +385,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               const SizedBox(height: 30),
               const Text(
                 'CLASIFICACIÓN FINAL',
-                style: TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(color: AfterlifeColors.neonPink, fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 20),
               ...sorted.map((player) {
@@ -396,7 +396,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     children: [
                       Text(player['name'], style: const TextStyle(color: Colors.white, fontSize: 16)),
                       Text('${player['completed']} ✅ / ${player['failed']} ❌',
-                          style: const TextStyle(color: Color(0xFFF59E0B))),
+                          style: const TextStyle(color: AfterlifeColors.neonOrange)),
                     ],
                   ),
                 );

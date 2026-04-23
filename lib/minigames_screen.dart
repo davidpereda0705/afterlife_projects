@@ -1,7 +1,4 @@
-import 'package:afterlife_projects/games/truth_or_drinks_game.dart';
-import 'package:afterlife_projects/games/would_you_rether_game.dart';
-import 'package:afterlife_projects/games/yo_nunca_nunca.dart';
-import 'package:afterlife_projects/games/reto_rapido.dart';
+import 'package:afterlife_projects/screens/game_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
@@ -12,72 +9,40 @@ class MinigamesScreen extends StatelessWidget {
 
   final List<Map<String, dynamic>> _games = const [
     {
-      'title': 'VERDAD O BEBIDA',
-      'description': 'Responde con honestidad… o bebe',
+      'title': 'VERDAD O RETO',
+      'description': 'Responde con honestidad… o acepta el castigo',
       'icon': Icons.psychology_alt_outlined,
-      'color': Color(0xFFA855F7),
+      'color': AfterlifeColors.electricPurple,
       'route': 'truth_or_drink',
     },
     {
       'title': 'YO NUNCA',
       'description': 'El juego que destruye amistades',
       'icon': Icons.water_drop_outlined,
-      'color': Color(0xFFEC4899),
+      'color': AfterlifeColors.neonPink,
       'route': 'yo_nunca',
     },
     {
       'title': 'RETO RÁPIDO',
       'description': '30 segundos para hacer el ridículo',
       'icon': Icons.timer_outlined,
-      'color': Color(0xFF06B6D4),
+      'color': AfterlifeColors.cyanBlue,
       'route': 'reto_rapido',
     },
     {
       'title': '¿QUÉ PREFIERES?',
       'description': 'El dilema donde todos pierden',
       'icon': Icons.balance_outlined,
-      'color': Color(0xFF84CC16),
-      'route': 'would_you_rather', // Cambiado el identificador
+      'color': AfterlifeColors.acidGreen,
+      'route': 'would_you_rather',
     },
   ];
 
   void _navigateToGame(BuildContext context, String route) {
-    switch (route) {
-      case 'truth_or_drink':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const TruthOrDrinkGame()),
-        );
-        break;
-      case 'yo_nunca':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const YoNuncaGame()),
-        );
-        break;
-      case 'reto_rapido':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RetoRapidoGame()),
-        );
-        break;
-      case 'would_you_rather': // ¡NUEVO CASO!
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const WouldYouRatherGame()),
-        );
-        break;
-      default:
-        // Para cualquier otro juego no implementado
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('¡Próximamente! Este juego llegará muy pronto...'),
-            backgroundColor: AfterlifeColors.electricPurple,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        break;
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => GameSetupScreen(gameRoute: route)),
+    );
   }
 
   @override
@@ -161,7 +126,7 @@ class MinigamesScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Bebe con responsabilidad. Conoce tus límites y cuida de tus amigos.',
+                      'Juega con responsabilidad. Respeta tus límites y cuida de tus amigos.',
                       style: AfterlifeTextTheme.bodySmall.copyWith(
                         color: AfterlifeColors.textSecondary,
                         fontSize: 11,

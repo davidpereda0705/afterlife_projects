@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Refrescar UserProvider para actualizar el badge
       await userProvider.refresh();
 
-      _showSnackBar('Te has unido a ${night['name']}', const Color(0xFF84CC16));
+      _showSnackBar('Te has unido a ${night['name']}', AfterlifeColors.acidGreen);
 
       if (mounted) {
         Navigator.pushReplacement(
