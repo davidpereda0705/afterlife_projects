@@ -1,4 +1,5 @@
 // lib/features/home/home_screen.dart
+import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
@@ -345,16 +346,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: _upcomingAchievements.map((achievement) {
-        return _buildAchievementProgress(
-          icon: achievement['icon'],
-          title: achievement['title'],
-          progress: achievement['progress'],
+ return Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: _upcomingAchievements.map((achievement) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AchievementsScreen(
+              highlightTitle: achievement['title'],
+            ),
+          ),
         );
-      }).toList(),
+      },
+      child: _buildAchievementProgress(
+        icon: achievement['icon'],
+        title: achievement['title'],
+        progress: achievement['progress'],
+      ),
     );
+  }).toList(),
+);
   }
 
   // ===== SECCIÓN DE NOCHES EN ESPERA =====
