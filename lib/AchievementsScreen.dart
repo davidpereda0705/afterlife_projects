@@ -1,4 +1,5 @@
 // lib/screens/achievements_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,8 @@ import '../components/AfterLifeCard.dart';
 import '../components/AchievementBadge.dart';
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({super.key});
+  final String? highlightTitle;
+  const AchievementsScreen({super.key, this.highlightTitle});
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
@@ -22,11 +24,22 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   List<Achievement> _allAchievements = [];
   bool _isLoading = true;
   String? _error;
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _achievementKeys = {};
+  String? _highlightedId;
+  Timer? _highlightTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAchievements();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _highlightTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAchievements() async {
@@ -40,11 +53,50 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         _allAchievements = achievements;
         _isLoading = false;
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _processHighlight();
+      });
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  void _processHighlight() {
+    if (widget.highlightTitle != null && _allAchievements.isNotEmpty) {
+      Achievement? achievement;
+      for (var a in _allAchievements) {
+        if (a.title == widget.highlightTitle) {
+          achievement = a;
+          break;
+        }
+      }
+      if (achievement != null) {
+        final id = achievement.id;
+        if (_achievementKeys.containsKey(id)) {
+          setState(() {
+            _highlightedId = id;
+          });
+          final key = _achievementKeys[id];
+          if (key?.currentContext != null) {
+            Scrollable.ensureVisible(
+              key!.currentContext!,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
+          _highlightTimer?.cancel();
+          _highlightTimer = Timer(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() {
+                _highlightedId = null;
+              });
+            }
+          });
+        }
+      }
     }
   }
 
@@ -103,6 +155,18 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
         return Scaffold(
           backgroundColor: AfterlifeColors.background,
+          appBar: AppBar(
+            backgroundColor: AfterlifeColors.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Logros',
+              style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
           body: Column(
             children: [
               _buildSummaryCard(
@@ -251,7 +315,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     final unlocked = _allAchievements.where((a) => unlockedIds.contains(a.id)).toList();
     final locked = _allAchievements.where((a) => !unlockedIds.contains(a.id)).toList();
 
+    for (var a in locked) {
+      if (!_achievementKeys.containsKey(a.id)) {
+        _achievementKeys[a.id] = GlobalKey();
+      }
+    }
+
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       children: [
         if (unlocked.isNotEmpty) ...[
@@ -325,56 +396,70 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       nightsCreated: nightsCreated,
     );
 
+    final isHighlighted = (_highlightedId == achievement.id);
+
     return Container(
+      key: _achievementKeys[achievement.id],
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AfterlifeColors.electricPurple.withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1),
-            ),
-            child: Icon(achievement.icon, color: AfterlifeColors.neonOrange.withOpacity(0.5), size: 24),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: isHighlighted ? AfterlifeColors.acidGreen.withOpacity(0.3) : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isHighlighted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange.withOpacity(0.2),
+            width: isHighlighted ? 2 : 1,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(achievement.title, style: TextStyle(color: AfterlifeColors.textPrimary, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(achievement.description, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
-                const SizedBox(height: 8),
-                Row(
+          boxShadow: isHighlighted
+              ? [BoxShadow(color: AfterlifeColors.acidGreen.withOpacity(0.5), blurRadius: 8)]
+              : [],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AfterlifeColors.electricPurple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1),
+                ),
+                child: Icon(achievement.icon, color: AfterlifeColors.neonOrange.withOpacity(0.5), size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
-                          minHeight: 4,
+                    Text(achievement.title, style: TextStyle(color: AfterlifeColors.textPrimary, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(achievement.description, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.white.withOpacity(0.1),
+                              valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
+                              minHeight: 4,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text('${(progress * 100).toInt()}%', style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text('${(progress * 100).toInt()}%', style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
