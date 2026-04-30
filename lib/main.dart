@@ -87,16 +87,33 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
     final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-    setState(() {
-      _showOnboarding = !hasSeenOnboarding;
-      _isLoading = false;
-    });
+    
+    // Si ya hay una sesión activa, marcamos el tutorial como visto automáticamente
+    if (FirebaseAuth.instance.currentUser != null && !hasSeenOnboarding) {
+      await prefs.setBool('has_seen_onboarding', true);
+      if (mounted) {
+        setState(() {
+          _showOnboarding = false;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _showOnboarding = !hasSeenOnboarding;
+        _isLoading = false;
+      });
+    }
   }
 
   void _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_onboarding', true);
-    setState(() => _showOnboarding = false);
+    if (mounted) {
+      setState(() => _showOnboarding = false);
+    }
   }
 
   @override
@@ -104,18 +121,26 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_showOnboarding) {
-      return OnboardingScreen(onDone: _completeOnboarding);
-    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        if (snapshot.hasData) {
+
+        final user = snapshot.data;
+
+        // Si el usuario está logueado, vamos directo a MainScreen
+        if (user != null) {
           return const MainScreen();
         }
+
+        // Si no está logueado, decidimos entre Onboarding o Login
+        if (_showOnboarding) {
+          return OnboardingScreen(onDone: _completeOnboarding);
+        }
+
         return const LoginPage();
       },
     );
