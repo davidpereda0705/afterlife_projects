@@ -206,13 +206,11 @@ final List<String> _spicyQuestions = [
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         title: const Text(
           "Verdad o Bebida 🔥",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: ListView(
@@ -223,12 +221,19 @@ final List<String> _spicyQuestions = [
               children: [
                 Text(
                   "Turno de",
-                  style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   _currentPlayer.toUpperCase(),
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -240,7 +245,11 @@ final List<String> _spicyQuestions = [
                   ),
                   child: Text(
                     "⚡ $_currentPenalty Bebida${_currentPenalty != 1 ? 's' : ''} acumulada${_currentPenalty != 1 ? 's' : ''}",
-                    style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: AfterlifeColors.neonPink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -252,11 +261,15 @@ final List<String> _spicyQuestions = [
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Icon(Icons.local_fire_department, color: Colors.orange, size: 40),
+          Icon(Icons.local_fire_department, color: Theme.of(context).colorScheme.error, size: 40),
                   const SizedBox(height: 16),
                   Text(
                     _currentQuestion,
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -287,7 +300,10 @@ final List<String> _spicyQuestions = [
           Center(
             child: Text(
               "Si no respondes, bebes y tus bebidas acumuladas aumentan ⚡",
-              style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                fontSize: 12,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -300,7 +316,11 @@ final List<String> _spicyQuestions = [
                 children: [
                   Text(
                     "ESTADO DE BEBIDAS ⚡",
-                    style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ..._players.map((player) {
@@ -310,7 +330,13 @@ final List<String> _spicyQuestions = [
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(player, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                          Text(
+                            player,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 16,
+                            ),
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                             decoration: BoxDecoration(
@@ -321,7 +347,7 @@ final List<String> _spicyQuestions = [
                               border: Border.all(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen
-                                    : AfterlifeColors.textSecondary.withOpacity(0.3),
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                               ),
                             ),
                             child: Text(
@@ -329,7 +355,7 @@ final List<String> _spicyQuestions = [
                               style: TextStyle(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen
-                                    : AfterlifeColors.textSecondary,
+                                    : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                                 fontWeight: player == _currentPlayer ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),

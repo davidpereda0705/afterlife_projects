@@ -21,8 +21,10 @@ class AfterlifeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardColor =
-        backgroundColor ?? AfterlifeColors.electricLilac.withOpacity(0.15);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = backgroundColor ?? Theme.of(context).cardColor;
+    final shadowColor =
+        isDark ? Colors.black : Theme.of(context).colorScheme.onSurface.withOpacity(0.08);
 
     final radius = borderRadius ?? BorderRadius.circular(16);
 
@@ -41,14 +43,14 @@ class AfterlifeCard extends StatelessWidget {
               color: cardColor,
               borderRadius: radius,
               border: Border.all(
-                color: AfterlifeColors.electricLilac,
+                color: AfterlifeColors.electricLilac.withOpacity(isDark ? 0.5 : 0.4),
                 width: 1.5,
               ),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
+                  color: shadowColor,
                   blurRadius: 8,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),

@@ -13,9 +13,9 @@ class NightSelectionScreen extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.activeNightId != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ya tienes una noche activa. Finalízala antes de crear o unirte a otra.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Ya tienes una noche activa. Finalízala antes de crear o unirte a otra.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -27,7 +27,7 @@ class NightSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Eliminamos Scaffold y AppBar
     return Container(
-      color: AfterlifeColors.background,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -65,7 +65,7 @@ class NightSelectionScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('CREAR NOCHE', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 18)),
-                          Text('Organiza una nueva noche', style: TextStyle(color: AfterlifeColors.textSecondary)),
+                          Text('Organiza una nueva noche', style: Theme.of(context).textTheme.bodyMedium),
                         ],
                       ),
                     ),
@@ -96,7 +96,7 @@ class NightSelectionScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('UNIRSE A NOCHE', style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 18)),
-                          Text('Únete a una noche en espera', style: TextStyle(color: AfterlifeColors.textSecondary)),
+                          Text('Únete a una noche en espera', style: Theme.of(context).textTheme.bodyMedium),
                         ],
                       ),
                     ),

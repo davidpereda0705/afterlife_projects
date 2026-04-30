@@ -46,24 +46,22 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Crear Noche',
-          style: TextStyle(color: Colors.white, fontSize: 22),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 22),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            const Center(
+            Center(
               child: Text(
                 'NUEVA NOCHE',
                 style: TextStyle(
@@ -139,7 +137,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -150,10 +148,10 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           Expanded(
             child: TextField(
               controller: controller,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                 border: InputBorder.none,
               ),
             ),
@@ -167,7 +165,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
       ),
@@ -175,11 +173,11 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         children: [
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedDay,
-              hint: const Text('Día', style: TextStyle(color: Colors.white54)),
-              dropdownColor: AfterlifeColors.surfaceDark,
+              initialValue: _selectedDay,
+              hint: Text('Día', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+              dropdownColor: Theme.of(context).colorScheme.surface,
               icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.cyanBlue),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
               items: _days.map((day) => DropdownMenuItem(value: day, child: Text(day))).toList(),
               onChanged: (value) => setState(() => _selectedDay = value),
@@ -188,20 +186,20 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedHour,
-              hint: const Text('Hora', style: TextStyle(color: Colors.white54)),
-              dropdownColor: AfterlifeColors.surfaceDark,
+              initialValue: _selectedHour,
+              hint: Text('Hora', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+              dropdownColor: Theme.of(context).colorScheme.surface,
               icon: const Icon(Icons.access_time, color: AfterlifeColors.cyanBlue, size: 20),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
               items: _hours.map((hour) => DropdownMenuItem(value: hour, child: Text(hour))).toList(),
               onChanged: (value) => setState(() => _selectedHour = value),
             ),
           ),
           const SizedBox(width: 8),
-          const Tooltip(
+          Tooltip(
             message: 'Hora de inicio. La noche termina cuando queráis',
-            child: Icon(Icons.info_outline, color: Colors.white54, size: 18),
+            child: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 18),
           ),
         ],
       ),
@@ -212,7 +210,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.3)),
       ),
@@ -221,7 +219,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Jugadores:', style: TextStyle(color: Colors.white70)),
+              Text('Jugadores:', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
@@ -250,7 +248,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
       ),
@@ -263,17 +261,17 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
               Expanded(
                 child: TextField(
                   controller: _challengeNameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Ej: Selfie con el grupo',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                     border: InputBorder.none,
                   ),
                 ),
               ),
             ],
           ),
-          const Divider(color: Colors.white10, height: 16),
+      Divider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), height: 16),
           Row(
             children: [
               const Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 20),
@@ -281,11 +279,11 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
               Expanded(
                 child: TextField(
                   controller: _challengePointsController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Puntos (ej: 100)',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                     border: InputBorder.none,
                   ),
                 ),
@@ -295,7 +293,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 onPressed: _addCustomChallenge,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AfterlifeColors.cyanBlue,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
                   minimumSize: const Size(80, 40),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
@@ -323,7 +321,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AfterlifeColors.acidGreen.withOpacity(0.3)),
       ),
@@ -343,7 +341,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(challenge['name'], style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                Text(challenge['name'], style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -354,7 +352,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.redAccent),
+      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
             onPressed: () => setState(() => _customChallenges.removeAt(index)),
           ),
         ],
@@ -369,12 +367,12 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           onPressed: _isCreating ? null : _createNight,
           style: ElevatedButton.styleFrom(
             backgroundColor: AfterlifeColors.electricLilac,
-            foregroundColor: Colors.white,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
             minimumSize: const Size(double.infinity, 55),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           child: _isCreating
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+       ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface))
               : const Text('CREAR NOCHE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
         if (_customChallenges.isNotEmpty)
@@ -465,7 +463,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showMessage('Debes iniciar sesión', Colors.red);
+      _showMessage('Debes iniciar sesión', Theme.of(context).colorScheme.error);
       return;
     }
 
@@ -547,7 +545,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         );
       }
     } catch (e) {
-      _showMessage('Error al crear la noche: $e', Colors.red);
+      _showMessage('Error al crear la noche: $e', Theme.of(context).colorScheme.error);
     } finally {
       if (mounted) setState(() => _isCreating = false);
     }

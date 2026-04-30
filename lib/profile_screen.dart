@@ -11,7 +11,6 @@ import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -98,21 +97,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, userProvider, child) {
         if (userProvider.isLoading) {
           return const Scaffold(
-            backgroundColor: AfterlifeColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (userProvider.error != null) {
           return Scaffold(
-            backgroundColor: AfterlifeColors.background,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
                   const SizedBox(height: 16),
-                  Text('Error al cargar perfil: ${userProvider.error}',
-                      style: const TextStyle(color: Colors.white)),
+                  Text('Error al cargar perfil: ${userProvider.error}'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => userProvider.refresh(),
@@ -137,14 +133,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final achievementsCount = userProvider.unlockedAchievements.length;
 
         return Scaffold(
-          backgroundColor: AfterlifeColors.background,
           appBar: AppBar(
-            backgroundColor: AfterlifeColors.background,
             elevation: 0,
             title: Text(
               'Perfil',
-              style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.bold),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/settings');
+                },
+              ),
+            ],
           ),
           body: ListView(
             padding: const EdgeInsets.all(16),
@@ -181,12 +183,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   userName,
-                  style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   userHandle,
-                  style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -198,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
                       ),
-                      child: Text('NIVEL $userLevel', style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
+                      child: Text('NIVEL $userLevel', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 10),
                     Container(
@@ -247,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Icon(icon, color: color, size: 28),
           const SizedBox(height: 8),
           Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(label, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -277,16 +279,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Center(
             child: Column(
               children: [
-                Icon(Icons.lock_outline, color: AfterlifeColors.textDisabled, size: 32),
+                Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3), size: 32),
                 const SizedBox(height: 8),
                 Text(
                   'Aún no has desbloqueado logros',
-                  style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '¡Juega noches y completa retos para conseguirlos!',
-                  style: TextStyle(color: AfterlifeColors.textDisabled, fontSize: 12),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -359,6 +361,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () {
+            Navigator.pushNamed(context, '/settings');
+          },
+          icon: const Icon(Icons.settings, color: AfterlifeColors.electricPurple),
+          label: const Text('AJUSTES', style: TextStyle(color: AfterlifeColors.electricPurple)),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AfterlifeColors.electricPurple.withOpacity(0.5)),
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
           },
           icon: Icon(Icons.edit, color: AfterlifeColors.cyanBlue),
@@ -388,13 +403,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
-        content: const Text('¿Seguro que quieres salir?', style: TextStyle(color: Colors.white70)),
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que quieres salir?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancelar', style: TextStyle(color: AfterlifeColors.textSecondary)),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -403,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await authService.signOut();
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error al cerrar sesión: $e'), backgroundColor: Colors.red),
+                  SnackBar(content: Text('Error al cerrar sesión: $e'), backgroundColor: Theme.of(context).colorScheme.error),
                 );
               }
             },

@@ -23,12 +23,10 @@ class NightSummaryDetailScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -49,14 +47,14 @@ class NightSummaryDetailScreen extends StatelessWidget {
                   children: [
                     Text(
                       '${entry.day} · ${entry.time} · ${entry.groupName}',
-                      style: TextStyle(color: AfterlifeColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('MVP', style: TextStyle(color: AfterlifeColors.neonOrange)),
-                        Text(mvp['name'], style: TextStyle(color: Colors.white)),
+                        Text(mvp['name'], style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                         Text('${mvp['points']} pts', style: TextStyle(color: AfterlifeColors.neonOrange)),
                       ],
                     ),
@@ -82,18 +80,18 @@ class NightSummaryDetailScreen extends StatelessWidget {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 '${players.indexOf(player) + 1}',
-                                style: const TextStyle(color: Colors.white54),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(player['name'], style: const TextStyle(color: Colors.white))),
+             Expanded(child: Text(player['name'], style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                           Text('${player['points']} pts', style: const TextStyle(color: AfterlifeColors.neonOrange)),
                         ],
                       ),
@@ -131,7 +129,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                               child: Image.memory(
                                 allPhotos[index],
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
+                                errorBuilder: (_, __, ___) => Container(color: Theme.of(context).colorScheme.surface),
                               ),
                             ),
                           );
@@ -171,7 +169,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                 top: 40,
                 right: 20,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+         icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 30),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),

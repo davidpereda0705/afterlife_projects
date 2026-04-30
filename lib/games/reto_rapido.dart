@@ -147,7 +147,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(completed ? '✅ ¡Reto completado!' : '❌ Tiempo agotado... fallo'),
-        backgroundColor: completed ? AfterlifeColors.acidGreen : Colors.redAccent,
+        backgroundColor: completed ? AfterlifeColors.acidGreen : Theme.of(context).colorScheme.error,
         duration: const Duration(milliseconds: 800),
       ),
     );
@@ -204,9 +204,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
     final currentPlayer = _currentPlayer;
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         title: Text('RETO RÁPIDO', style: AfterlifeTextTheme.headlineMedium.copyWith(fontSize: 20)),
         centerTitle: true,
@@ -222,7 +220,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
                 ),
@@ -238,7 +236,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                       style: AfterlifeTextTheme.headlineMedium.copyWith(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -261,8 +259,8 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                     child: CircularProgressIndicator(
                       value: _secondsLeft / 30,
                       strokeWidth: 8,
-                      color: _secondsLeft <= 5 ? Colors.redAccent : AfterlifeColors.cyanBlue,
-                      backgroundColor: Colors.white10,
+                      color: _secondsLeft <= 5 ? Theme.of(context).colorScheme.error : AfterlifeColors.cyanBlue,
+                      backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                     ),
                   ),
                   Column(
@@ -272,7 +270,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                         '$_secondsLeft',
                         style: AfterlifeTextTheme.headlineLarge.copyWith(
                           fontSize: 48,
-                          color: _secondsLeft <= 5 ? Colors.redAccent : Colors.white,
+                          color: _secondsLeft <= 5 ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text("SEG", style: AfterlifeTextTheme.bodySmall),
@@ -332,7 +330,9 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               const SizedBox(height: 20),
               Text(
                 'Pulsa COMPLETADO si has superado el reto a tiempo',
-                style: AfterlifeTextTheme.bodySmall.copyWith(color: Colors.white54),
+                style: AfterlifeTextTheme.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -348,12 +348,10 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
       ..sort((a, b) => (b['completed'] ?? 0).compareTo(a['completed'] ?? 0));
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('RESUMEN', style: AfterlifeTextTheme.headlineMedium),
@@ -380,7 +378,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               ),
               Text(
                 '${sorted[0]['completed']} retos completados',
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 16),
               ),
               const SizedBox(height: 30),
               const Text(
@@ -394,7 +392,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(player['name'], style: const TextStyle(color: Colors.white, fontSize: 16)),
+                      Text(player['name'], style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
                       Text('${player['completed']} ✅ / ${player['failed']} ❌',
                           style: const TextStyle(color: AfterlifeColors.neonOrange)),
                     ],
@@ -410,7 +408,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('VOLVER', style: TextStyle(color: AfterlifeColors.textSecondary)),
+                child: Text('VOLVER', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
               ),
             ],
           ),

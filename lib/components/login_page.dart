@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:afterlife_projects/components/AfterButton.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -97,8 +96,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.redAccent.withOpacity(0.9),
+        content: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -108,7 +107,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Fondo Dinámico
@@ -119,9 +117,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AfterlifeColors.background,
+                    Theme.of(context).scaffoldBackgroundColor,
                     AfterlifeColors.electricPurple.withOpacity(0.15),
-                    AfterlifeColors.background,
+                    Theme.of(context).scaffoldBackgroundColor,
                     AfterlifeColors.electricLilac.withOpacity(0.1),
                   ],
                 ),
@@ -169,9 +167,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           child: Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
                             ),
                             child: Form(
                               key: _formKey,
@@ -241,7 +239,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         child: RichText(
                           text: TextSpan(
                             text: isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? ',
-                            style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 14),
                             children: [
                               TextSpan(
                                 text: isLogin ? 'REGÍSTRATE' : 'ENTRA',
@@ -278,27 +276,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       controller: controller,
       obscureText: isPassword && !(showPassword ?? false),
       validator: validator,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
         prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withOpacity(0.7), size: 20),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   (showPassword ?? false) ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white38,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
                   size: 20,
                 ),
                 onPressed: togglePassword,
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -306,11 +304,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
         ),
       ),
     );

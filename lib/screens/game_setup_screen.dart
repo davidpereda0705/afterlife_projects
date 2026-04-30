@@ -25,7 +25,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     if (name.isEmpty) return;
     if (_players.any((p) => p['name'] == name)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ese nombre ya está en la lista'), backgroundColor: Colors.orange),
+     SnackBar(content: Text('Ese nombre ya está en la lista'), backgroundColor: Theme.of(context).colorScheme.error),
       );
       return;
     }
@@ -43,7 +43,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
   void _startGame() {
     if (_players.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mínimo 2 jugadores'), backgroundColor: Colors.red),
+    SnackBar(content: Text('Mínimo 2 jugadores'), backgroundColor: Theme.of(context).colorScheme.error),
       );
       return;
     }
@@ -91,12 +91,10 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+     icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -123,16 +121,16 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
                     ),
                     child: TextField(
                       controller: _nameController,
-                      style: const TextStyle(color: Colors.white),
+           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Nombre del jugador',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => _addPlayer(),
@@ -144,7 +142,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                   onPressed: _addPlayer,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AfterlifeColors.acidGreen,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   ),
@@ -158,11 +156,11 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    Icon(Icons.people_outline, size: 60, color: AfterlifeColors.textDisabled),
+                    Icon(Icons.people_outline, size: 60, color: Theme.of(context).disabledColor),
                     const SizedBox(height: 16),
                     Text(
                       'Añade al menos 2 jugadores',
-                      style: TextStyle(color: AfterlifeColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                     ),
                   ],
                 ),
@@ -177,7 +175,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
                       ),
@@ -193,7 +191,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                             child: Center(
                               child: Text(
                                 player['initials'],
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -201,11 +199,11 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                           Expanded(
                             child: Text(
                               player['name'],
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
+               style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Colors.redAccent),
+                            icon: Icon(Icons.close, color: Theme.of(context).colorScheme.error),
                             onPressed: () => _removePlayer(index),
                           ),
                         ],
@@ -224,7 +222,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
             Center(
               child: Text(
                 '${_players.length} jugador${_players.length != 1 ? 'es' : ''}',
-                style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
               ),
             ),
           ],

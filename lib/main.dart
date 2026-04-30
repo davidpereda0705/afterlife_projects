@@ -7,7 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
+import 'package:afterlife_projects/providers/settings_provider.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
+import 'package:afterlife_projects/edit_profile.dart';
+import 'package:afterlife_projects/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
@@ -21,7 +24,7 @@ void main() async {
   final achievementService = AchievementService();
   await achievementService.initializeDefaultAchievements();
 
-  debugPrint('✅ Firebase inicializado correctamente en ${defaultTargetPlatform}');
+  debugPrint('✅ Firebase inicializado correctamente en $defaultTargetPlatform');
 
   runApp(const MyApp());
 }
@@ -34,12 +37,31 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Afterlife',
-        theme: AfterlifeTheme.darkTheme,
-        home: const OnboardingWrapper(),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Afterlife',
+            theme: AfterlifeTheme.lightTheme,
+            darkTheme: AfterlifeTheme.darkTheme,
+            themeMode: settings.themeMode,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(settings.fontSizeFactor),
+                ),
+                child: child!,
+              );
+            },
+            home: const OnboardingWrapper(),
+            routes: {
+              '/edit-profile': (context) => const EditProfileScreen(),
+              '/settings': (context) => const SettingsScreen(),
+            },
+          );
+        },
       ),
     );
   }

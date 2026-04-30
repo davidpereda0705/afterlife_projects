@@ -214,12 +214,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
     final Color currentColor = _categoryColors[_selectedCategory]!;
     
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -258,7 +256,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Votación anónima por turnos. Pasa el móvil a cada persona.',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -392,7 +390,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     Text(
                       'Pulsa EMPEZAR para la primera ronda',
                       style: TextStyle(
-                        color: AfterlifeColors.textSecondary,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                         fontSize: 14,
                       ),
                     ),
@@ -418,7 +416,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'TURNO DE:',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -426,7 +424,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     _getCurrentVoter().toUpperCase(),
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -435,7 +433,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Vota en privado, nadie más mira',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
@@ -524,7 +522,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Text(
                   '$votedCount/${_players.length}',
                   style: TextStyle(
-                    color: AfterlifeColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -533,7 +531,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white10,
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
               color: AfterlifeColors.acidGreen,
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
@@ -608,7 +606,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Container(
                   height: 50,
                   width: 2,
-                  color: Colors.white24,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.24),
                 ),
                 Column(
                   children: [

@@ -78,15 +78,17 @@ class AfterlifeAvatar extends StatelessWidget {
             width: size * 0.3,
             height: size * 0.3,
             decoration: BoxDecoration(
-              color: _getStatusColor(status),
+              color: _getStatusColor(context, status),
               borderRadius: BorderRadius.circular(size * 0.15),
               border: Border.all(
-                color: AfterlifeColors.background,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.black.withOpacity(0.5) 
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                   blurRadius: 3,
                   offset: const Offset(0, 1),
                 ),
@@ -108,14 +110,14 @@ class AfterlifeAvatar extends StatelessWidget {
   }
 
   /// Retorna el color correspondiente al estado
-  Color _getStatusColor(AvatarStatus status) {
+  Color _getStatusColor(BuildContext context, AvatarStatus status) {
     switch (status) {
       case AvatarStatus.inNight:
         return AfterlifeColors.electricPurple;
       case AvatarStatus.online:
         return AfterlifeColors.acidGreen;
       case AvatarStatus.offline:
-        return AfterlifeColors.textDisabled;
+        return Theme.of(context).disabledColor;
     }
   }
 }

@@ -27,8 +27,6 @@ class _SplashLoadingState extends State<SplashLoading> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos el nuevo color de fondo negro puro
-      backgroundColor: AfterlifeColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,

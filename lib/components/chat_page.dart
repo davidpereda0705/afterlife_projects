@@ -36,7 +36,6 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A0B2E),
         title: Text(widget.userName, // Se usa widget.userName al ser Stateful
             style: const TextStyle(fontFamily: 'Syne', fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -80,14 +79,14 @@ class _ChatPageState extends State<ChatPage> {
         margin: const EdgeInsets.symmetric(vertical: 5),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFE040FB).withOpacity(0.8) : Colors.white10,
+     color: isMe ? Color(0xFFE040FB).withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.10),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isMe
-                  ? Colors.white24
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.24)
                   : const Color(0xFFE040FB).withOpacity(0.3)),
         ),
-        child: Text(message, style: const TextStyle(color: Colors.white, fontFamily: 'Syne')),
+        child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: 'Syne')),
       ),
     );
   }
@@ -95,19 +94,19 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildChatInput() {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.black26,
+      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _messageController, // Asignamos el controlador
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               onSubmitted: (_) => _handleSend(), // Enviar al pulsar 'Intro' en el teclado
               decoration: InputDecoration(
                 hintText: "Escribe un mensaje...",
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none),
@@ -118,7 +117,7 @@ class _ChatPageState extends State<ChatPage> {
           CircleAvatar(
             backgroundColor: const Color(0xFFE040FB),
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: Icon(Icons.send, color: Theme.of(context).colorScheme.onPrimary),
               onPressed: _handleSend, // Llamamos a la función de enviar
             ),
           ),

@@ -51,7 +51,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -94,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['subtitle'] as String,
                           style: AfterlifeTextTheme.bodyLarge.copyWith(
-                            color: AfterlifeColors.textSecondary,
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
                             height: 1.5,
                           ),
                           textAlign: TextAlign.center,
@@ -117,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   decoration: BoxDecoration(
                     color: _currentPage == index
                         ? AfterlifeColors.electricLilac
-                        : Colors.white.withOpacity(0.3),
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );

@@ -1,7 +1,6 @@
 import 'package:afterlife_projects/screens/game_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 
 class MinigamesScreen extends StatelessWidget {
@@ -49,7 +48,7 @@ class MinigamesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Eliminamos Scaffold y AppBar
     return Container(
-      color: AfterlifeColors.background,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -62,7 +61,7 @@ class MinigamesScreen extends StatelessWidget {
                 children: [
                   Text(
                     'PREVIA MODE',
-                    style: AfterlifeTextTheme.titleSmall.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       color: AfterlifeColors.electricLilac,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
@@ -71,9 +70,7 @@ class MinigamesScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Elige un juego y que empiece el caos',
-                    style: AfterlifeTextTheme.bodyLarge.copyWith(
-                      color: AfterlifeColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
@@ -98,13 +95,12 @@ class MinigamesScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () => _navigateToGame(context, game['route']),
                 child: _buildGameCard(
+                  context: context,
                   title: game['title'],
                   description: game['description'],
                   icon: game['icon'],
                   color: game['color'],
-                  isAvailable: game['route'] != 'would_you_rather'
-                      ? true
-                      : true, // ¡AHORA SÍ DISPONIBLE!
+                  isAvailable: true,
                 ),
               );
             },
@@ -127,10 +123,7 @@ class MinigamesScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Juega con responsabilidad. Respeta tus límites y cuida de tus amigos.',
-                      style: AfterlifeTextTheme.bodySmall.copyWith(
-                        color: AfterlifeColors.textSecondary,
-                        fontSize: 11,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 11),
                     ),
                   ),
                 ],
@@ -143,11 +136,12 @@ class MinigamesScreen extends StatelessWidget {
   }
 
   Widget _buildGameCard({
+    required BuildContext context,
     required String title,
     required String description,
     required IconData icon,
     required Color color,
-    required bool isAvailable, // Nuevo parámetro
+    required bool isAvailable,
   }) {
     return AfterlifeCard(
       child: Column(
@@ -165,7 +159,7 @@ class MinigamesScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title,
-            style: AfterlifeTextTheme.titleSmall.copyWith(
+            style: Theme.of(context).textTheme.titleSmall!.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -196,10 +190,7 @@ class MinigamesScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             description,
-            style: AfterlifeTextTheme.bodySmall.copyWith(
-              color: AfterlifeColors.textSecondary,
-              fontSize: 10,
-            ),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 10),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

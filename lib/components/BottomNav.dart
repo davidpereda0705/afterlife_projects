@@ -16,12 +16,16 @@ class AfterlifeBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBg = Theme.of(context).colorScheme.surface;
+    final unselectedColor = isDark ? Theme.of(context).disabledColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+
     return Container(
       decoration: BoxDecoration(
-        color: AfterlifeColors.surfaceDark,
+        color: navBg,
         border: Border(
           top: BorderSide(
-            color: AfterlifeColors.electricLilac.withOpacity(0.2),
+            color: AfterlifeColors.electricLilac.withOpacity(isDark ? 0.2 : 0.15),
             width: 1,
           ),
         ),
@@ -35,13 +39,14 @@ class AfterlifeBottomNav extends StatelessWidget {
             children: List.generate(items.length, (index) {
               final item = items[index];
               final isSelected = currentIndex == index;
-              
+
               return _buildNavItem(
                 icon: item.icon,
                 selectedIcon: item.selectedIcon,
                 label: item.label,
                 isSelected: isSelected,
                 onTap: () => onTap(index),
+                unselectedColor: unselectedColor,
               );
             }),
           ),
@@ -56,6 +61,7 @@ class AfterlifeBottomNav extends StatelessWidget {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    required Color unselectedColor,
   }) {
     return Expanded(
       child: GestureDetector(
@@ -74,18 +80,14 @@ class AfterlifeBottomNav extends StatelessWidget {
             children: [
               Icon(
                 isSelected ? selectedIcon : icon,
-                color: isSelected
-                    ? AfterlifeColors.electricLilac
-                    : AfterlifeColors.textDisabled,
+                color: isSelected ? AfterlifeColors.electricLilac : unselectedColor,
                 size: 24,
               ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected
-                      ? AfterlifeColors.electricLilac
-                      : AfterlifeColors.textDisabled,
+                  color: isSelected ? AfterlifeColors.electricLilac : unselectedColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

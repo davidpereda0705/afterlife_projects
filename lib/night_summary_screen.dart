@@ -217,12 +217,10 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         return false;
       },
       child: Scaffold(
-        backgroundColor: AfterlifeColors.background,
         appBar: AppBar(
-          backgroundColor: AfterlifeColors.background,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
             onPressed: _goToMainScreen,
           ),
           title: Text(
@@ -244,7 +242,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       end: Alignment.bottomCenter,
                       colors: [
                         AfterlifeColors.electricLilac.withOpacity(0.3),
-                        AfterlifeColors.background,
+                        Theme.of(context).scaffoldBackgroundColor,
                       ],
                     ),
                   ),
@@ -287,7 +285,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                             shape: BoxShape.circle,
                             color: index == _currentStep
                                 ? AfterlifeColors.electricLilac
-                                : Colors.white.withOpacity(0.3),
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                           ),
                         );
                       }),
@@ -347,7 +345,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             child: Text(
               '¡Qué noche!',
               style: AfterlifeTextTheme.bodyLarge.copyWith(
-                color: AfterlifeColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
@@ -362,7 +360,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay participantes',
-          style: TextStyle(color: AfterlifeColors.textSecondary),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
@@ -373,8 +371,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     final Color color = position == 1
         ? AfterlifeColors.neonOrange
         : position == 2
-            ? Colors.grey[400]!
-            : Colors.brown[300]!;
+            ? Theme.of(context).disabledColor
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4);
 
     return Center(
       child: Column(
@@ -420,7 +418,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             child: Text(
               player['name'] ?? 'Jugador',
               style: AfterlifeTextTheme.headlineMedium.copyWith(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ),
@@ -475,7 +473,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       decoration: BoxDecoration(
                         color: index == 0
                             ? AfterlifeColors.neonOrange.withOpacity(0.2)
-                            : Colors.white.withOpacity(0.1),
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -484,7 +482,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                           style: TextStyle(
                             color: index == 0
                                 ? AfterlifeColors.neonOrange
-                                : Colors.white54,
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -494,7 +492,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     Expanded(
                       child: Text(
                         player['name'] ?? 'Jugador',
-                        style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                     Container(
@@ -529,7 +527,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay fotos de retos',
-          style: TextStyle(color: AfterlifeColors.textSecondary),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
@@ -583,7 +581,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     const SizedBox(height: 4),
                     Text(
                       'Completado por: ${item['completedBy']}',
-                      style: TextStyle(color: AfterlifeColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                     ),
                   ],
                 ),
@@ -602,7 +600,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay fotos de la noche',
-          style: TextStyle(color: AfterlifeColors.textSecondary),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
@@ -702,7 +700,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     decoration: BoxDecoration(
                       color: index == 0
                           ? AfterlifeColors.neonOrange.withOpacity(0.2)
-                          : Colors.white.withOpacity(0.1),
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -711,7 +709,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                         style: TextStyle(
                           color: index == 0
                               ? AfterlifeColors.neonOrange
-                              : Colors.white54,
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -722,7 +720,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                   Expanded(
                     child: Text(
                       player['name'] ?? 'Jugador',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+           style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                     ),
                   ),
                   Text(
@@ -804,7 +802,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              color: Colors.black.withOpacity(0.9),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
             ),
           ),
           Center(
@@ -821,7 +819,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             top: 40,
             right: 20,
             child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+       icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 30),
               onPressed: () => Navigator.pop(context),
             ),
           ),

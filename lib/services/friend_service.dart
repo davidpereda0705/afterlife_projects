@@ -22,7 +22,7 @@ class FriendService {
     final results = await _firestore
         .collection(AppConstants.usersCollection)
         .where(AppConstants.fieldUsername, isGreaterThanOrEqualTo: query)
-        .where(AppConstants.fieldUsername, isLessThanOrEqualTo: query + '\uf8ff')
+        .where(AppConstants.fieldUsername, isLessThanOrEqualTo: '$query\uf8ff')
         .limit(20)
         .get();
     

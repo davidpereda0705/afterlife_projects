@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:afterlife_projects/components/BottomNav.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 
@@ -65,9 +64,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Consumer<UserProvider>(
@@ -95,9 +92,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     children: [
                       const Icon(Icons.nightlight_round, size: 20, color: AfterlifeColors.acidGreen),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         'Noche activa',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -106,7 +106,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             } else {
               return Text(
                 'Afterlife',
-                style: AfterlifeTextTheme.headlineMedium.copyWith(
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               );

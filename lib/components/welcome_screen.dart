@@ -8,8 +8,6 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos tu nuevo fondo negro profundo como base
-      backgroundColor: AfterlifeColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,

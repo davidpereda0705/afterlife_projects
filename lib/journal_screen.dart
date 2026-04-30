@@ -20,12 +20,10 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -48,11 +46,11 @@ class _JournalScreenState extends State<JournalScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.book, size: 80, color: AfterlifeColors.textDisabled),
+                  Icon(Icons.book, size: 80, color: Theme.of(context).disabledColor),
                   const SizedBox(height: 16),
                   Text(
                     'Aún no hay noches registradas',
-                    style: TextStyle(color: AfterlifeColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                   ),
                 ],
               ),
@@ -111,10 +109,10 @@ class _JournalScreenState extends State<JournalScreen> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: Colors.redAccent,
+          color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+    child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
       ),
       onDismissed: (_) async {
         await _journalService.deleteEntry(entry.id);
@@ -138,7 +136,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         entry.name,
                         style: AfterlifeTextTheme.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -146,7 +144,7 @@ class _JournalScreenState extends State<JournalScreen> {
                     ),
                     Text(
                       '${entry.day} · ${entry.time}',
-                      style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
                     ),
                   ],
                 ),
@@ -183,7 +181,7 @@ class _JournalScreenState extends State<JournalScreen> {
       children: [
         Icon(icon, color: color, size: 14),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
+        Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
       ],
     );
   }

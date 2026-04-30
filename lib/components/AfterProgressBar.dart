@@ -23,10 +23,10 @@ class AfterProgressBar extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               label.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Syne',
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 12,
                 letterSpacing: 1.2,
               ),
@@ -36,7 +36,7 @@ class AfterProgressBar extends StatelessWidget {
           width: double.infinity,
           height: 14,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
