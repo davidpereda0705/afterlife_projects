@@ -4,6 +4,7 @@ import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -58,6 +59,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _markOnboardingAsSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+  }
+
   void _intentarAcceder() async {
     // Si no es login, validamos el formulario normalmente
     if (!isLogin && !_formKey.currentState!.validate()) return;
@@ -80,6 +86,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _userController.text.trim(),
         );
       }
+      await _markOnboardingAsSeen();
     } on FirebaseAuthException catch (e) {
       if (isLogin) {
         _showError('Nombre / contraseña incorrecto, inténtalo de nuevo');
