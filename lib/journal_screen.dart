@@ -1,12 +1,11 @@
-import 'dart:convert';
-import 'package:afterlife_projects/journal_storage.dart';
+
 import 'package:afterlife_projects/night_summary.dart';
-import 'package:afterlife_projects/night_summary_detail_screen.dart';
+import 'package:afterlife_projects/services/journal_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'night_summary_detail_screen.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -16,63 +15,10 @@ class JournalScreen extends StatefulWidget {
 }
 
 class _JournalScreenState extends State<JournalScreen> {
-  List<NightSummary> _entries = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadEntries();
-  }
-
-  Future<void> _loadEntries() async {
-    final storage = JournalStorage();
-    final entries = await storage.loadEntries();
-    setState(() {
-      _entries = entries;
-      _loading = false;
-    });
-  }
-
-  Future<void> _deleteEntry(NightSummary entry) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text('Eliminar entrada', style: TextStyle(color: Colors.white)),
-        content: Text('¿Seguro que quieres borrar "${entry.name}"?', style: const TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      final storage = JournalStorage();
-      final all = await storage.loadEntries();
-      all.removeWhere((e) => e.id == entry.id);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(
-        'journal_entries',
-        all.map((e) => jsonEncode(e.toJson())).toList(),
-      );
-      _loadEntries();
-    }
-  }
+  final JournalService _journalService = JournalService();
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        backgroundColor: AfterlifeColors.background,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
@@ -87,8 +33,18 @@ class _JournalScreenState extends State<JournalScreen> {
           style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      body: _entries.isEmpty
-          ? Center(
+      body: StreamBuilder<List<NightSummary>>(
+        stream: _journalService.getEntriesStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white)));
+          }
+          final entries = snapshot.data ?? [];
+          if (entries.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -100,19 +56,48 @@ class _JournalScreenState extends State<JournalScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _entries.length,
-              itemBuilder: (context, index) {
-                final entry = _entries[index];
-                return _buildJournalCard(entry);
-              },
-            ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: entries.length,
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              return _buildJournalCard(entry);
+            },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildJournalCard(NightSummary entry) {
+    // --- Manejar el caso de que no haya jugadores ---
+    if (entry.players.isEmpty) {
+      return AfterlifeCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                entry.name,
+                style: AfterlifeTextTheme.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sin datos de jugadores',
+                style: TextStyle(color: AfterlifeColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final mvp = entry.players.reduce(
       (a, b) => ((a['points'] ?? 0) as num) > ((b['points'] ?? 0) as num) ? a : b,
     );
@@ -131,7 +116,9 @@ class _JournalScreenState extends State<JournalScreen> {
         ),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) => _deleteEntry(entry),
+      onDismissed: (_) async {
+        await _journalService.deleteEntry(entry.id);
+      },
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
