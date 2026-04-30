@@ -1,6 +1,7 @@
 // lib/screens/night_game_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:afterlife_projects/night_summary.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/night_service.dart';
 import '../services/achievement_service.dart';
+import '../services/journal_service.dart';
 import '../providers/user_provider.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
@@ -25,6 +27,7 @@ class NightGameScreen extends StatefulWidget {
 class _NightGameScreenState extends State<NightGameScreen> {
   final NightService _nightService = NightService();
   final AchievementService _achievementService = AchievementService();
+  final JournalService _journalService = JournalService();
   late Stream<Map<String, dynamic>?> _nightStream;
   int _currentChallengeIndex = 0;
   bool _isFinishing = false;
@@ -104,10 +107,72 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return challenges.where((c) => c['completed'] == true).length;
   }
 
+  // Convierte cualquier tipo de lista a Uint8List para evitar errores de tipo
+  Uint8List _toUint8List(dynamic data) {
+    if (data == null) return Uint8List(0);
+    if (data is Uint8List) return data;
+    if (data is List<int>) return Uint8List.fromList(data);
+    if (data is List<dynamic>) {
+      try {
+        return Uint8List.fromList(data.cast<int>().toList());
+      } catch (e) {
+        return Uint8List(0);
+      }
+    }
+    return Uint8List(0);
+  }
+
   Future<void> _finishNight(String nightId, Map<String, dynamic> nightData) async {
     if (_isFinishing) return;
     _isFinishing = true;
 
+    // --------------------------------------------------------------
+    // 1. Guardar el diario (independiente del resto)
+    // --------------------------------------------------------------
+    print('🔵 [DIARIO] Iniciando guardado...');
+    try {
+      if (_currentUserId == null) {
+        print('❌ [DIARIO] Usuario no autenticado');
+      } else {
+        final rawNightPhotos = nightData['nightPhotos'] as List? ?? [];
+        final convertedNightPhotos = rawNightPhotos.map((p) => _toUint8List(p)).toList();
+
+        final rawChallenges = nightData['challenges'] as List? ?? [];
+        final convertedChallenges = rawChallenges.map((c) {
+          final copy = Map<String, dynamic>.from(c);
+          if (copy['proofBytes'] != null) {
+            copy['proofBytes'] = _toUint8List(copy['proofBytes']).toList();
+          }
+          return copy;
+        }).toList();
+
+        final summary = NightSummary(
+          id: nightId,
+          name: nightData['name'] ?? '',
+          day: nightData['day'] ?? '',
+          time: nightData['time'] ?? '',
+          groupName: nightData['groupName'] ?? '',
+          players: List<Map<String, dynamic>>.from(nightData['players'] ?? []),
+          challenges: convertedChallenges,
+          nightPhotos: convertedNightPhotos,
+          timestamp: DateTime.now(),
+        );
+        await _journalService.saveEntry(summary);
+        print('✅ [DIARIO] Resumen guardado correctamente');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Noche guardada en el diario'), backgroundColor: Colors.green, duration: Duration(seconds: 1)),
+          );
+        }
+      }
+    } catch (e, stack) {
+      print('❌ [DIARIO] Error guardando resumen: $e');
+      print(stack);
+    }
+
+    // --------------------------------------------------------------
+    // 2. Operaciones de finalización de noche
+    // --------------------------------------------------------------
     try {
       await _nightService.finishNight(nightId);
 
@@ -127,7 +192,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
         challengesCompletedIncrement: completedChallenges,
       );
 
-      // Verificar logros después de actualizar estadísticas
       final updatedUserData = userProvider.userData;
       final nightsCompleted = updatedUserData?['nightsCompleted'] ?? 0;
       final challengesCompletedTotal = updatedUserData?['challengesCompleted'] ?? 0;
@@ -191,8 +255,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     if (result != null && mounted) {
       final playerName = result['player'];
       final imageBytes = result['image'] as Uint8List?;
-      
-      // Completar el reto (esto suma puntos al jugador y marca el reto como completado)
+
       await _nightService.completeChallenge(
         nightId,
         _currentChallengeIndex,
@@ -200,18 +263,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
         imageBytes,
       );
 
-      // Si se subió una foto, incrementar photosUploaded y verificar logros
       if (imageBytes != null && _currentUserId != null) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final userDocRef = FirebaseFirestore.instance.collection('users').doc(_currentUserId);
         final userDoc = await userDocRef.get();
         final currentPhotos = userDoc.data()?['photosUploaded'] ?? 0;
         await userDocRef.update({'photosUploaded': currentPhotos + 1});
-        
-        // Refrescar para obtener los nuevos datos
         await userProvider.refresh();
-        
-        // Obtener estadísticas actualizadas
+
         final updatedData = userProvider.userData;
         final nightsCompleted = updatedData?['nightsCompleted'] ?? 0;
         final challengesCompletedTotal = updatedData?['challengesCompleted'] ?? 0;
@@ -219,8 +278,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         final friendsCount = updatedData?['friendsCount'] ?? 0;
         final photosUploaded = currentPhotos + 1;
         final nightsCreated = updatedData?['nightsCreated'] ?? 0;
-        
-        // Verificar logros
+
         final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
           userId: _currentUserId!,
           nightsCompleted: nightsCompleted,
@@ -230,7 +288,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           photosUploaded: photosUploaded,
           nightsCreated: nightsCreated,
         );
-        
+
         if (newlyUnlocked.isNotEmpty && mounted) {
           final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -243,8 +301,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
           await userProvider.refresh();
         }
       }
-      
-      // El StreamBuilder actualizará la UI automáticamente
     }
   }
 
@@ -405,6 +461,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
+  // ==================== MÉTODOS DE CONSTRUCCIÓN DE UI ====================
   Widget _buildHostInfo(Map<String, dynamic> nightData) {
     return Container(
       padding: const EdgeInsets.all(12),

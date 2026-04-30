@@ -1,6 +1,7 @@
+// lib/screens/night_summary_screen.dart
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:afterlife_projects/main_screen.dart'; // 👈 Importar MainScreen
+import 'package:afterlife_projects/main_screen.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
@@ -32,6 +33,21 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   int _currentImageIndex = 0;
 
   late ConfettiController _confettiController;
+
+  // Convierte cualquier tipo de lista a Uint8List para evitar errores
+  Uint8List _toUint8List(dynamic data) {
+    if (data == null) return Uint8List(0);
+    if (data is Uint8List) return data;
+    if (data is List<int>) return Uint8List.fromList(data);
+    if (data is List<dynamic>) {
+      try {
+        return Uint8List.fromList(data.cast<int>().toList());
+      } catch (e) {
+        return Uint8List(0);
+      }
+    }
+    return Uint8List(0);
+  }
 
   @override
   void initState() {
@@ -506,7 +522,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 3: FOTOS DE LOS RETOS ----
+  // ---- PASO 3: FOTOS DE LOS RETOS (CORREGIDO) ----
   Widget _buildChallengePhotos() {
     final photos = _getChallengePhotos();
     if (photos.isEmpty) {
@@ -538,6 +554,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             itemCount: photos.length,
             itemBuilder: (context, index) {
               final item = photos[index];
+              final bytes = _toUint8List(item['bytes']);
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -545,22 +562,14 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: Image.memory(
-                          item['bytes'],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[900],
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.white54,
-                                  size: 50,
+                        child: bytes.isEmpty
+                            ? Container(
+                                color: Colors.grey[900],
+                                child: const Center(
+                                  child: Icon(Icons.broken_image, color: Colors.white54, size: 50),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              )
+                            : Image.memory(bytes, fit: BoxFit.cover),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -586,7 +595,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 4: FOTOS DE LA NOCHE ----
+  // ---- PASO 4: FOTOS DE LA NOCHE (CORREGIDO) ----
   Widget _buildNightPhotos() {
     final photos = _getNightPhotos();
     if (photos.isEmpty) {
@@ -618,6 +627,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             itemCount: photos.length,
             itemBuilder: (context, index) {
               final item = photos[index];
+              final bytes = _toUint8List(item['bytes']);
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -625,22 +635,14 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: Image.memory(
-                          item['bytes'],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[900],
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.white54,
-                                  size: 50,
+                        child: bytes.isEmpty
+                            ? Container(
+                                color: Colors.grey[900],
+                                child: const Center(
+                                  child: Icon(Icons.broken_image, color: Colors.white54, size: 50),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              )
+                            : Image.memory(bytes, fit: BoxFit.cover),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -760,25 +762,19 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
               itemCount: allPhotos.length,
               itemBuilder: (context, index) {
                 final item = allPhotos[index];
+                final bytes = _toUint8List(item['bytes']);
                 return GestureDetector(
-                  onTap: () => _showFullscreenImage(context, item['bytes']),
+                  onTap: () => _showFullscreenImage(context, bytes),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(
-                      item['bytes'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[900],
-                          child: const Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              color: Colors.white54,
+                    child: bytes.isEmpty
+                        ? Container(
+                            color: Colors.grey[900],
+                            child: const Center(
+                              child: Icon(Icons.broken_image, color: Colors.white54),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          )
+                        : Image.memory(bytes, fit: BoxFit.cover),
                   ),
                 );
               },
@@ -799,6 +795,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
   }
 
   void _showFullscreenImage(BuildContext context, Uint8List imageBytes) {
+    if (imageBytes.isEmpty) return;
     showDialog(
       context: context,
       barrierDismissible: false,
