@@ -1,5 +1,4 @@
 // lib/features/home/home_screen.dart
-import 'package:afterlife_projects/AchievementsScreen.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
 import 'package:afterlife_projects/create_night_screen.dart';
@@ -7,13 +6,16 @@ import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/services/night_service.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
+import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../AchievementsScreen.dart'; // Ajusta la ruta si es necesario
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onNavigateToNights; // Añadido
+  const HomeScreen({super.key, this.onNavigateToNights});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -75,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final photosUploaded = userData['photosUploaded'] ?? 0;
       final nightsCreated = userData['nightsCreated'] ?? 0;
 
-      // Calcular progreso de cada logro y filtrar los completados
       List<Map<String, dynamic>> achievementsWithProgress = [];
       for (final ach in allAchievements) {
         final progress = _achievementService.getProgress(
@@ -87,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
           photosUploaded: photosUploaded,
           nightsCreated: nightsCreated,
         );
-        // Solo mostrar logros NO completados (progreso < 1.0)
         if (progress < 1.0) {
           achievementsWithProgress.add({
             'title': ach.title,
@@ -97,13 +97,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      // Ordenar por progreso descendente (mayor progreso primero)
       achievementsWithProgress.sort((a, b) {
         final progressA = (a['progress'] as double?) ?? 0.0;
         final progressB = (b['progress'] as double?) ?? 0.0;
         return progressB.compareTo(progressA);
       });
-      // Tomar los primeros 3
       final topThree = achievementsWithProgress.take(3).toList();
 
       setState(() {
@@ -119,13 +117,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _joinNight(Map<String, dynamic> night) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showSnackBar('Debes iniciar sesión', Theme.of(context).colorScheme.error);
+      _showSnackBar('Debes iniciar sesión', Colors.red);
       return;
     }
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.activeNightId != null) {
-      _showSnackBar('Ya tienes una noche activa', Theme.of(context).colorScheme.error);
+      _showSnackBar('Ya tienes una noche activa', Colors.orange);
       return;
     }
 
@@ -137,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final nightDoc = await _nightService.getNightById(night['id']);
       if (nightDoc == null) {
-        _showSnackBar('La noche ya no existe', Theme.of(context).colorScheme.error);
+        _showSnackBar('La noche ya no existe', Colors.red);
         _loadAvailableNights();
         return;
       }
@@ -145,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final currentPlayers = (nightDoc['players'] as List? ?? []).length;
       final maxPlayers = nightDoc['maxPlayers'] ?? 0;
       if (currentPlayers >= maxPlayers) {
-        _showSnackBar('La noche está llena', Theme.of(context).colorScheme.error);
+        _showSnackBar('La noche está llena', Colors.red);
         _loadAvailableNights();
         return;
       }
@@ -165,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      _showSnackBar('Error al unirse: $e', Theme.of(context).colorScheme.error);
+      _showSnackBar('Error al unirse: $e', Colors.red);
     }
   }
 
@@ -181,18 +179,23 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, userProvider, child) {
         if (userProvider.isLoading) {
           return const Scaffold(
+            backgroundColor: AfterlifeColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (userProvider.error != null) {
           return Scaffold(
+            backgroundColor: AfterlifeColors.background,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
-                  Text('Error al cargar perfil: ${userProvider.error}'),
+                  Text(
+                    'Error al cargar perfil: ${userProvider.error}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => userProvider.refresh(),
@@ -212,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final groupsCount = userData?['friendsCount'] ?? 0;
 
         return Scaffold(
+          backgroundColor: AfterlifeColors.background,
           body: RefreshIndicator(
             onRefresh: _loadAvailableNights,
             child: ListView(
@@ -263,9 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       userName,
-                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -277,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Text(
                         'NIVEL $userLevel',
-                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        style: AfterlifeTextTheme.labelSmall.copyWith(
                           color: AfterlifeColors.electricLilac,
                           fontWeight: FontWeight.bold,
                         ),
@@ -315,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
           Text(
             'PRÓXIMOS LOGROS',
-            style: Theme.of(context).textTheme.titleSmall!.copyWith(
+            style: AfterlifeTextTheme.titleSmall.copyWith(
               fontWeight: FontWeight.w600,
               letterSpacing: 1,
             ),
@@ -342,32 +344,34 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Text(
             'Completa más acciones para desbloquear logros',
+            style: TextStyle(color: AfterlifeColors.textSecondary),
           ),
         ),
       );
     }
- return Row(
-  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  children: _upcomingAchievements.map((achievement) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AchievementsScreen(
-              highlightTitle: achievement['title'],
-            ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: _upcomingAchievements.map((achievement) {
+        return GestureDetector(
+          onTap: () {
+            // Navegación a la pantalla de logros con resaltado
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AchievementsScreen(
+                  highlightTitle: achievement['title'],
+                ),
+              ),
+            );
+          },
+          child: _buildAchievementProgress(
+            icon: achievement['icon'],
+            title: achievement['title'],
+            progress: achievement['progress'],
           ),
         );
-      },
-      child: _buildAchievementProgress(
-        icon: achievement['icon'],
-        title: achievement['title'],
-        progress: achievement['progress'],
-      ),
+      }).toList(),
     );
-  }).toList(),
-);
   }
 
   // ===== SECCIÓN DE NOCHES EN ESPERA =====
@@ -379,16 +383,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AfterlifeColors.surfaceDark,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.2)),
         ),
         child: Column(
           children: [
-       Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 40),
+            const Icon(Icons.error_outline, color: Colors.red, size: 40),
             const SizedBox(height: 12),
             Text(
               'Error al cargar noches: $_errorNights',
+              style: const TextStyle(color: Colors.white),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -404,7 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AfterlifeColors.surfaceDark,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.2)),
         ),
@@ -418,13 +423,17 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Text(
               'No hay noches en espera',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: AfterlifeTextTheme.bodyLarge.copyWith(
+                color: AfterlifeColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Crea una nueva noche o espera a que tus amigos te inviten',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: AfterlifeTextTheme.bodySmall.copyWith(
+                color: AfterlifeColors.textDisabled,
+              ),
             ),
           ],
         ),
@@ -450,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Text(
                 'NOCHES EN ESPERA (${_availableNights.length})',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                style: AfterlifeTextTheme.titleLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1,
                   color: AfterlifeColors.neonOrange,
@@ -477,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: AfterlifeColors.surfaceDark,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1.5),
       ),
@@ -493,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   gradient: AfterlifeColors.electricLilacGradient,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.group, color: Theme.of(context).colorScheme.onSurface, size: 28),
+                child: Icon(Icons.group, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -502,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       night['groupName'] ?? 'Grupo',
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                      style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -511,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 4),
                         Text(
                           'Anfitrión: ${night['hostName'] ?? ''}',
-                          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: AfterlifeColors.neonOrange),
+                          style: AfterlifeTextTheme.bodySmall.copyWith(color: AfterlifeColors.neonOrange),
                         ),
                       ],
                     ),
@@ -526,7 +535,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Text(
                   night['time'] ?? '',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: AfterlifeTextTheme.labelSmall.copyWith(
+                    color: AfterlifeColors.neonOrange,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -538,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Text(
                 night['name'] ?? 'Noche sin nombre',
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500),
+                style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -548,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'Jugadores: $currentPlayers/$maxPlayers',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AfterlifeTextTheme.bodySmall.copyWith(color: AfterlifeColors.textSecondary),
               ),
               if (!isFull)
                 Container(
@@ -559,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Text(
                     'PLAZAS DISPONIBLES',
-                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                    style: AfterlifeTextTheme.labelSmall.copyWith(
                       color: AfterlifeColors.acidGreen,
                       fontWeight: FontWeight.bold,
                       fontSize: 8,
@@ -574,14 +586,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ElevatedButton(
               onPressed: isFull ? null : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFull ? Theme.of(context).disabledColor.withOpacity(0.3) : AfterlifeColors.neonOrange,
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                backgroundColor: isFull ? Colors.grey.withOpacity(0.3) : AfterlifeColors.neonOrange,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
                 isFull ? 'NOCHE COMPLETA' : 'UNIRSE A LA NOCHE',
-                style: Theme.of(context).textTheme.labelLarge!.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                style: AfterlifeTextTheme.labelLarge.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -591,15 +603,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCreateNightButton(BuildContext context, UserProvider userProvider) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
           if (userProvider.activeNightId != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
-                backgroundColor: Theme.of(context).colorScheme.error,
+              const SnackBar(
+                content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+                backgroundColor: Colors.orange,
               ),
             );
             return;
@@ -611,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: AfterlifeColors.electricLilac,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
@@ -622,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             Text(
               'CREAR NUEVA NOCHE',
-              style: Theme.of(context).textTheme.labelLarge!.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+              style: AfterlifeTextTheme.labelLarge.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -642,11 +654,11 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: color),
+          style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.bold, color: color),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall,
+          style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.textSecondary),
         ),
       ],
     );
@@ -684,8 +696,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text(title, style: Theme.of(context).textTheme.labelSmall),
-        Text('${(progress * 100).toInt()}%', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
+        Text(title, style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.textSecondary)),
+        Text('${(progress * 100).toInt()}%', style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
       ],
     );
   }
