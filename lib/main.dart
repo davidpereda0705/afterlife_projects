@@ -17,18 +17,12 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Inicializar logros por defecto (solo la primera vez)
   final achievementService = AchievementService();
   await achievementService.initializeDefaultAchievements();
-
   debugPrint('✅ Firebase inicializado correctamente en $defaultTargetPlatform');
-
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
