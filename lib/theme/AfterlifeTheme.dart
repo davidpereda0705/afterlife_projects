@@ -95,7 +95,7 @@ class AfterlifeTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: Colors.transparent,
       canvasColor: background,
       cardColor: card,
       dividerColor: divider,
@@ -106,7 +106,7 @@ class AfterlifeTheme {
       textTheme: textTheme,
 
       appBarTheme: AppBarTheme(
-        backgroundColor: background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,

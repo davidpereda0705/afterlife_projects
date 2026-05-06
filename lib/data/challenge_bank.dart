@@ -1,5 +1,5 @@
 // lib/data/challenge_bank.dart
-import '../core/enums.dart';
+import 'package:afterlife_projects/core/enums.dart';
 
 class Challenge {
   final String name;
@@ -27,6 +27,14 @@ class ChallengeBank {
     Challenge('Foto besándoos todos en la mejilla', 120, ChallengeType.group),
     Challenge('Imitad a un animal cada uno', 90, ChallengeType.group),
     Challenge('Haced una competición de limbo', 130, ChallengeType.group),
+    Challenge('Todos hacen el robot durante 30 segundos', 120, ChallengeType.group),
+    Challenge('El grupo inventa una coreografía de 10 segundos', 140, ChallengeType.group),
+    Challenge('Todos cantan el estribillo de una canción juntos', 130, ChallengeType.group),
+    Challenge('Foto grupal con todos saltando', 110, ChallengeType.group),
+    Challenge('El grupo hace una pirámide humana', 160, ChallengeType.group),
+    Challenge('Todos dan un aplauso sincronizado 10 veces', 90, ChallengeType.group),
+    Challenge('Cadena de chistes: cada uno cuenta uno', 120, ChallengeType.group),
+    Challenge('Todos imitan al jugador que indique el anfitrión', 100, ChallengeType.group),
 
     // Individual
     Challenge('Baila con un desconocido', 150, ChallengeType.individual),
@@ -44,6 +52,13 @@ class ChallengeBank {
     Challenge('Haz una voltereta (o inténtalo)', 130, ChallengeType.individual),
     Challenge('Pide la hora a 5 desconocidos', 100, ChallengeType.individual),
     Challenge('Hazte una foto haciendo el pino', 150, ChallengeType.individual),
+    Challenge('Baila durante 1 minuto sin parar', 140, ChallengeType.individual),
+    Challenge('Di 5 palabras en otro idioma', 100, ChallengeType.individual),
+    Challenge('Imita a un personaje famoso hasta que alguien te adivine', 130, ChallengeType.individual),
+    Challenge('Haz 10 sentadillas sin perder el ritmo', 110, ChallengeType.individual),
+    Challenge('Canta una canción en inglés con los ojos cerrados', 150, ChallengeType.individual),
+    Challenge('Di el alfabeto al revés lo más rápido que puedas', 120, ChallengeType.individual),
+    Challenge('Haz una postura de yoga por 30 segundos', 100, ChallengeType.individual),
 
     // Competitivo
     Challenge('Consigue que un extraño te dé su número', 180, ChallengeType.competitive),
@@ -66,6 +81,13 @@ class ChallengeBank {
     Challenge('Competición de no reír: el último en reír gana', 160, ChallengeType.competitive),
     Challenge('Quién encuentra algo redondo más rápido', 100, ChallengeType.competitive),
     Challenge('Duelo de freestyle (improvisación de rap)', 190, ChallengeType.competitive),
+    Challenge('¿Quién puede hacer más sentadillas en 30 segundos?', 150, ChallengeType.competitive),
+    Challenge('¿Quién adivina más canciones con solo 5 segundos?', 160, ChallengeType.competitive),
+    Challenge('¿Quién recuerda más nombres de películas del año pasado?', 130, ChallengeType.competitive),
+    Challenge('Concurso de mejor chiste: el grupo vota', 140, ChallengeType.competitive),
+    Challenge('¿Quién aguanta más tiempo con una postura graciosa?', 120, ChallengeType.competitive),
+    Challenge('Batalla de baile: 30 segundos cada uno, el grupo vota', 180, ChallengeType.competitive),
+    Challenge('¿Quién imita mejor a una persona famosa?', 160, ChallengeType.competitive),
   ];
 
   static List<Challenge> getByType(ChallengeType type) =>

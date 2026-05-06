@@ -1,5 +1,5 @@
 // lib/models/night_model.dart
-import '../core/enums.dart';
+import 'package:afterlife_projects/core/enums.dart';
 
 class NightModel {
   final String id;

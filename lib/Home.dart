@@ -1,20 +1,28 @@
 // lib/features/home/home_screen.dart
-import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart' as avatar;
+import 'package:afterlife_projects/components/animations/animated_entry.dart';
+import 'package:afterlife_projects/components/effects/glass_card.dart';
+import 'package:afterlife_projects/components/effects/neon_border.dart';
+import 'package:afterlife_projects/components/effects/shimmer_loading.dart';
+import 'package:afterlife_projects/components/effects/parallax_card.dart';
+import 'package:afterlife_projects/components/effects/confetti_blast.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:afterlife_projects/services/night_service.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
+import 'package:afterlife_projects/services/ranking_service.dart';
+import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../AchievementsScreen.dart'; // Ajusta la ruta si es necesario
+import 'package:confetti/confetti.dart';
+import '../AchievementsScreen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final VoidCallback? onNavigateToNights; // Añadido
+  final VoidCallback? onNavigateToNights;
   const HomeScreen({super.key, this.onNavigateToNights});
 
   @override
@@ -30,18 +38,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Map<String, dynamic>> _upcomingAchievements = [];
   bool _isLoadingAchievements = true;
+  bool _achievementsLoadedOnce = false;
+
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
     _loadAvailableNights();
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_achievementsLoadedOnce) return;
     final userProvider = Provider.of<UserProvider>(context);
     if (!userProvider.isLoading) {
+      _achievementsLoadedOnce = true;
       _loadAchievements(userProvider.userData);
     }
   }
@@ -175,26 +195,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         if (userProvider.isLoading) {
-          return const Scaffold(
-            backgroundColor: AfterlifeColors.background,
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: const Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerList(itemCount: 6, itemHeight: 100),
+            ),
           );
         }
         if (userProvider.error != null) {
           return Scaffold(
-            backgroundColor: AfterlifeColors.background,
+            backgroundColor: Colors.transparent,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Error al cargar perfil: ${userProvider.error}',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: textPrimary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -214,26 +240,64 @@ class _HomeScreenState extends State<HomeScreen> {
         final challengesCompleted = userData?['challengesCompleted'] ?? 0;
         final groupsCount = userData?['friendsCount'] ?? 0;
 
-        return Scaffold(
-          backgroundColor: AfterlifeColors.background,
-          body: RefreshIndicator(
-            onRefresh: _loadAvailableNights,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildProfileCard(
-                  userName,
-                  userLevel,
-                  nightsCompleted,
-                  challengesCompleted,
-                  groupsCount,
-                ),
-                const SizedBox(height: 24),
-                _buildPendingNightsSection(context),
-                const SizedBox(height: 16),
-                _buildCreateNightButton(context, userProvider),
-                const SizedBox(height: 20),
-              ],
+        return ConfettiBlast(
+          controller: _confettiController,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: RefreshIndicator(
+              onRefresh: _loadAvailableNights,
+              color: AfterlifeColors.electricPurple,
+              backgroundColor: isDark ? const Color(0xFF1A0533) : Colors.white,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  AnimatedEntry(
+                    child: ParallaxCard(
+                      intensity: 6,
+                      child: _buildProfileCard(
+                        userName,
+                        userLevel,
+                        nightsCompleted,
+                        challengesCompleted,
+                        groupsCount,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 100),
+                    child: ParallaxCard(
+                      intensity: 4,
+                      child: _buildMiniRankingCard(),
+                    ),
+                  ),
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 150),
+                    child: ParallaxCard(
+                      intensity: 4,
+                      child: _buildMinigamesCard(context),
+                    ),
+                  ),
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 200),
+                    child: ParallaxCard(
+                      intensity: 3,
+                      child: _buildMotivationalCard(nightsCompleted),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 250),
+                    child: _buildPendingNightsSection(context),
+                  ),
+                  const SizedBox(height: 16),
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 300),
+                    child: _buildCreateNightButton(context, userProvider),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
@@ -248,88 +312,181 @@ class _HomeScreenState extends State<HomeScreen> {
     int challengesCompleted,
     int groupsCount,
   ) {
-    return AfterlifeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              avatar.AfterlifeAvatar(
-                initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                status: avatar.AvatarStatus.online,
-                size: 70,
-                showStatusIndicator: true,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+
+    return NeonBorder(
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      strokeWidth: isDark ? 2.5 : 2,
+      blurRadius: isDark ? 16 : 10,
+      colors: const [
+        Color(0xFFA855F7),
+        Color(0xFFEC4899),
+        Color(0xFF06B6D4),
+        Color(0xFFA855F7),
+      ],
+      child: GlassCard(
+        padding: const EdgeInsets.all(20),
+        blur: isDark ? 12 : 20,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AfterlifeColors.electricLilac.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.5 : 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
                       ),
-                      child: Text(
-                        'NIVEL $userLevel',
-                        style: AfterlifeTextTheme.labelSmall.copyWith(
-                          color: AfterlifeColors.electricLilac,
-                          fontWeight: FontWeight.bold,
+                    ],
+                  ),
+                  child: avatar.AfterlifeAvatar(
+                    initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                    status: avatar.AvatarStatus.online,
+                    size: 66,
+                    showStatusIndicator: true,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: AfterlifeTextTheme.headlineMedium.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: textPrimary,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.4 : 0.25),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'NIVEL $userLevel',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.5 : 0.3),
+                    Colors.transparent,
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatColumn(
-                value: nightsCompleted.toString(),
-                label: 'Noches',
-                icon: Icons.nightlight_round,
-                color: AfterlifeColors.neonPink,
-              ),
-              _buildStatColumn(
-                value: challengesCompleted.toString(),
-                label: 'Retos',
-                icon: Icons.emoji_events,
-                color: AfterlifeColors.cyanBlue,
-              ),
-              _buildStatColumn(
-                value: groupsCount.toString(),
-                label: 'Grupos',
-                icon: Icons.group,
-                color: AfterlifeColors.acidGreen,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'PRÓXIMOS LOGROS',
-            style: AfterlifeTextTheme.titleSmall.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
             ),
-          ),
-          const SizedBox(height: 12),
-          _buildAchievementsRow(),
-        ],
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatColumn(
+                  value: nightsCompleted.toString(),
+                  label: 'Noches',
+                  icon: Icons.nightlight_round,
+                  color: AfterlifeColors.neonPink,
+                ),
+                _buildStatColumn(
+                  value: challengesCompleted.toString(),
+                  label: 'Retos',
+                  icon: Icons.emoji_events,
+                  color: AfterlifeColors.cyanBlue,
+                ),
+                _buildStatColumn(
+                  value: groupsCount.toString(),
+                  label: 'Grupos',
+                  icon: Icons.group,
+                  color: AfterlifeColors.acidGreen,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.35 : 0.2),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.emoji_events, color: Colors.white, size: 13),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'PRÓXIMOS LOGROS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildAchievementsRow(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildAchievementsRow() {
+    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
+
     if (_isLoadingAchievements) {
       return const Center(
         child: Padding(
@@ -339,12 +496,12 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     if (_upcomingAchievements.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Text(
             'Completa más acciones para desbloquear logros',
-            style: TextStyle(color: AfterlifeColors.textSecondary),
+            style: TextStyle(color: textSecondary),
           ),
         ),
       );
@@ -354,7 +511,6 @@ class _HomeScreenState extends State<HomeScreen> {
       children: _upcomingAchievements.map((achievement) {
         return GestureDetector(
           onTap: () {
-            // Navegación a la pantalla de logros con resaltado
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -374,8 +530,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ===== SECCIÓN DE NOCHES EN ESPERA =====
   Widget _buildPendingNightsSection(BuildContext context) {
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
+    final textDisabled = AfterlifeColors.textDisabledAdaptive(context);
+
     if (_isLoadingNights) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -383,17 +543,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AfterlifeColors.surfaceDark,
+          color: AfterlifeColors.card(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.2)),
+          border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 40),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 40),
             const SizedBox(height: 12),
             Text(
               'Error al cargar noches: $_errorNights',
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -409,22 +569,22 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AfterlifeColors.surfaceDark,
+          color: AfterlifeColors.card(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.2)),
+          border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
             Icon(
               Icons.nightlight_round,
-              color: AfterlifeColors.electricLilac.withOpacity(0.5),
+              color: AfterlifeColors.electricLilac.withValues(alpha: 0.5),
               size: 40,
             ),
             const SizedBox(height: 12),
             Text(
               'No hay noches en espera',
               style: AfterlifeTextTheme.bodyLarge.copyWith(
-                color: AfterlifeColors.textSecondary,
+                color: textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -432,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Crea una nueva noche o espera a que tus amigos te inviten',
               textAlign: TextAlign.center,
               style: AfterlifeTextTheme.bodySmall.copyWith(
-                color: AfterlifeColors.textDisabled,
+                color: textDisabled,
               ),
             ),
           ],
@@ -444,25 +604,40 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Row(
             children: [
               Container(
-                width: 24,
-                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AfterlifeColors.neonOrange.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AfterlifeColors.neonOrange.withValues(alpha: isDark ? 0.4 : 0.25),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.nightlight_round, color: AfterlifeColors.neonOrange, size: 14),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'NOCHES EN ESPERA (${_availableNights.length})',
-                style: AfterlifeTextTheme.titleLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                  color: AfterlifeColors.neonOrange,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.nightlight_round, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      'NOCHES EN ESPERA  ${_availableNights.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -477,166 +652,222 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNightCard(BuildContext context, Map<String, dynamic> night) {
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
+
     final players = night['players'] as List? ?? [];
     final currentPlayers = players.length;
     final maxPlayers = night['maxPlayers'] ?? 0;
     final bool isFull = currentPlayers >= maxPlayers;
 
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AfterlifeColors.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1.5),
+      borderRadius: BorderRadius.circular(16),
+      tint: AfterlifeColors.neonOrange.withValues(alpha: 0.06),
+      border: BorderSide(
+        color: AfterlifeColors.neonOrange.withValues(alpha: isDark ? 0.2 : 0.15),
+        width: 1,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: AfterlifeColors.electricLilacGradient,
-                  borderRadius: BorderRadius.circular(12),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 4,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                child: Icon(Icons.group, color: Colors.white, size: 28),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      night['groupName'] ?? 'Grupo',
-                      style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.person, color: AfterlifeColors.neonOrange, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Anfitrión: ${night['hostName'] ?? ''}',
-                          style: AfterlifeTextTheme.bodySmall.copyWith(color: AfterlifeColors.neonOrange),
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            gradient: AfterlifeColors.electricLilacGradient,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.group, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                night['groupName'] ?? 'Grupo',
+                                style: AfterlifeTextTheme.titleMedium.copyWith(fontWeight: FontWeight.w600, color: textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.person, color: AfterlifeColors.neonOrange, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Anfitrión: ${night['hostName'] ?? ''}',
+                                    style: AfterlifeTextTheme.bodySmall.copyWith(color: AfterlifeColors.neonOrange),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            night['time'] ?? '',
+                            style: AfterlifeTextTheme.labelSmall.copyWith(
+                              color: AfterlifeColors.neonOrange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.nightlife, color: AfterlifeColors.neonOrange, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          night['name'] ?? 'Noche sin nombre',
+                          style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.w500, color: textPrimary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Jugadores: $currentPlayers/$maxPlayers',
+                          style: AfterlifeTextTheme.bodySmall.copyWith(color: textSecondary),
+                        ),
+                        if (!isFull)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AfterlifeColors.acidGreen.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'PLAZAS DISPONIBLES',
+                              style: AfterlifeTextTheme.labelSmall.copyWith(
+                                color: AfterlifeColors.acidGreen,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 8,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isFull ? null : () => _joinNight(night),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isFull ? Colors.grey.withValues(alpha: 0.3) : AfterlifeColors.neonOrange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          isFull ? 'NOCHE COMPLETA' : 'UNIRSE A LA NOCHE',
+                          style: AfterlifeTextTheme.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AfterlifeColors.neonOrange.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  night['time'] ?? '',
-                  style: AfterlifeTextTheme.labelSmall.copyWith(
-                    color: AfterlifeColors.neonOrange,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.nightlife, color: AfterlifeColors.neonOrange, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                night['name'] ?? 'Noche sin nombre',
-                style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Jugadores: $currentPlayers/$maxPlayers',
-                style: AfterlifeTextTheme.bodySmall.copyWith(color: AfterlifeColors.textSecondary),
-              ),
-              if (!isFull)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AfterlifeColors.acidGreen.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'PLAZAS DISPONIBLES',
-                    style: AfterlifeTextTheme.labelSmall.copyWith(
-                      color: AfterlifeColors.acidGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 8,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isFull ? null : () => _joinNight(night),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isFull ? Colors.grey.withOpacity(0.3) : AfterlifeColors.neonOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(
-                isFull ? 'NOCHE COMPLETA' : 'UNIRSE A LA NOCHE',
-                style: AfterlifeTextTheme.labelLarge.copyWith(fontWeight: FontWeight.bold),
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCreateNightButton(BuildContext context, UserProvider userProvider) {
-    return Container(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          if (userProvider.activeNightId != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            return;
-          }
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateNightScreen()),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AfterlifeColors.electricLilac,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return NeonBorder(
+      borderRadius: BorderRadius.circular(16),
+      strokeWidth: 3,
+      blurRadius: 20,
+      colors: const [
+        Color(0xFFA855F7),
+        Color(0xFFEC4899),
+        Color(0xFF06B6D4),
+        Color(0xFFA855F7),
+      ],
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'CREAR NUEVA NOCHE',
-              style: AfterlifeTextTheme.labelLarge.copyWith(fontWeight: FontWeight.bold),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () {
+              if (userProvider.activeNightId != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Ya tienes una noche activa. Finalízala antes de crear una nueva.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              _confettiController.play();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreateNightScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                  Text(
+                    'CREAR NUEVA NOCHE',
+                    style: AfterlifeTextTheme.labelLarge.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -648,6 +879,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
+
     return Column(
       children: [
         Icon(icon, color: color, size: 24),
@@ -658,7 +891,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Text(
           label,
-          style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.textSecondary),
+          style: AfterlifeTextTheme.labelSmall.copyWith(color: textSecondary),
         ),
       ],
     );
@@ -679,7 +912,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 50,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3), width: 2),
+                border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3), width: 2),
               ),
             ),
             SizedBox(
@@ -688,17 +921,197 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CircularProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(AfterlifeColors.electricLilac),
+                valueColor: const AlwaysStoppedAnimation<Color>(AfterlifeColors.electricLilac),
                 strokeWidth: 3,
               ),
             ),
-            Icon(icon, color: AfterlifeColors.electricLilac.withOpacity(0.8), size: 20),
+            Icon(icon, color: AfterlifeColors.electricLilac.withValues(alpha: 0.8), size: 20),
           ],
         ),
         const SizedBox(height: 4),
-        Text(title, style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.textSecondary)),
+        Text(title, style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.textSecondaryAdaptive(context))),
         Text('${(progress * 100).toInt()}%', style: AfterlifeTextTheme.labelSmall.copyWith(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  Widget _buildMiniRankingCard() {
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+
+    return FutureBuilder<List<UserRankData>>(
+      future: RankingService().getFriendsRanking(
+        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
+        sortBy: 'points',
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || (snapshot.data?.isEmpty ?? true)) {
+          return const SizedBox.shrink();
+        }
+        final top3 = snapshot.data!.take(3).toList();
+        return GlassCard(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.leaderboard_rounded,
+                      color: AfterlifeColors.electricPurple, size: 18),
+                  const SizedBox(width: 8),
+                  ShaderMask(
+                    shaderCallback: (b) => const LinearGradient(
+                      colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
+                    ).createShader(b),
+                    child: const Text(
+                      'RANKING AMIGOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...top3.asMap().entries.map((entry) {
+                final i = entry.key;
+                final user = entry.value;
+                final medals = ['🥇', '🥈', '🥉'];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Text(medals[i], style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          user.username,
+                          style: TextStyle(
+                            color: user.isCurrentUser
+                                ? AfterlifeColors.electricPurple
+                                : textPrimary.withValues(alpha: 0.85),
+                            fontWeight: user.isCurrentUser
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${user.points} pts',
+                        style: const TextStyle(
+                          color: AfterlifeColors.neonPink,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMotivationalCard(int nightsCompleted) {
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+
+    final messages = [
+      ('🌙', '¡Crea una noche y empieza a ganar puntos!'),
+      ('🏆', '¡Completa retos para subir en el ranking!'),
+      ('👥', '¡Invita amigos para multiplicar la diversion!'),
+      ('⚡', '¡Cada reto completado te acerca al siguiente nivel!'),
+      ('🎯', '¡Desbloquea logros y sube en el ranking mundial!'),
+    ];
+    final msg = messages[nightsCompleted % messages.length];
+
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      tint: AfterlifeColors.acidGreen.withValues(alpha: 0.08),
+      border: BorderSide(
+        color: AfterlifeColors.acidGreen.withValues(alpha: isDark ? 0.2 : 0.25),
+        width: 1,
+      ),
+      child: Row(
+        children: [
+          Text(msg.$1, style: const TextStyle(fontSize: 22)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              msg.$2,
+              style: TextStyle(
+                color: textPrimary.withValues(alpha: 0.75),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMinigamesCard(BuildContext context) {
+    final isDark = AfterlifeColors.isDark(context);
+    final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
+    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MinigamesScreen()),
+      ),
+      child: GlassCard(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        tint: AfterlifeColors.cyanBlue.withValues(alpha: 0.08),
+        border: BorderSide(
+          color: AfterlifeColors.cyanBlue.withValues(alpha: isDark ? 0.25 : 0.3),
+          width: 1,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.sports_esports_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('MINIJUEGOS',
+                      style: TextStyle(
+                          color: textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          letterSpacing: 1.5)),
+                  const SizedBox(height: 3),
+                  Text('Verdad, Yo Nunca, Retos...',
+                      style: TextStyle(color: textSecondary, fontSize: 11)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                color: AfterlifeColors.cyanBlue.withValues(alpha: 0.6), size: 16),
+          ],
+        ),
+      ),
     );
   }
 }
