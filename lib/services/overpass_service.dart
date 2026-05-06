@@ -167,9 +167,15 @@ class OverpassService {
   static List<OsmClub>? _memCache;
   static DateTime? _memCacheTs;
 
+  // Per-province memory cache
+  static final Map<String, List<OsmClub>> _provinceCache = {};
+  static final Map<String, DateTime> _provinceCacheTs = {};
+
   static void invalidateCache() {
     _memCache = null;
     _memCacheTs = null;
+    _provinceCache.clear();
+    _provinceCacheTs.clear();
   }
 
   /// Loads all nightclubs in Spain.
@@ -236,6 +242,71 @@ out center;
     } catch (_) {
       // disk write failure is non-fatal
     }
+  }
+
+  /// Loads nightclubs for a specific Spanish province by its OSM name.
+  Future<List<OsmClub>> loadClubsByProvince(String osmName,
+      {bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      _provinceCache.remove(osmName);
+      _provinceCacheTs.remove(osmName);
+    }
+
+    // 1 — memory cache
+    final cached = _provinceCache[osmName];
+    final cachedTs = _provinceCacheTs[osmName];
+    if (cached != null && cachedTs != null) {
+      if (DateTime.now().difference(cachedTs) < _cacheDuration) {
+        return cached;
+      }
+    }
+
+    // 2 — disk cache
+    final diskKey = 'overpass_province_${osmName.replaceAll(' ', '_').toLowerCase()}_v1';
+    final diskTsKey = '${diskKey}_ts';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(diskKey);
+      final ts = prefs.getInt(diskTsKey);
+      if (raw != null && ts != null) {
+        final age = DateTime.now().millisecondsSinceEpoch - ts;
+        if (age < _cacheDuration.inMilliseconds) {
+          final list = (jsonDecode(raw) as List)
+              .map((e) => OsmClub.fromJson(e as Map<String, dynamic>))
+              .toList();
+          _provinceCache[osmName] = list;
+          _provinceCacheTs[osmName] = DateTime.fromMillisecondsSinceEpoch(ts);
+          return list;
+        }
+      }
+    } catch (_) {}
+
+    // 3 — network
+    final query = '''
+[out:json][timeout:45];
+area["name"="$osmName"]["admin_level"="6"]->.prov;
+(
+  node["amenity"="nightclub"](area.prov);
+  way["amenity"="nightclub"](area.prov);
+  relation["amenity"="nightclub"](area.prov);
+);
+out center;
+''';
+    final result =
+        await _runQuery(query, timeout: const Duration(seconds: 60));
+
+    _provinceCache[osmName] = result;
+    _provinceCacheTs[osmName] = DateTime.now();
+
+    // Persist to disk
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          diskKey, jsonEncode(result.map((c) => c.toJson()).toList()));
+      await prefs.setInt(diskTsKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
+
+    return result;
   }
 
   /// Name search across Spain (nightclub + bar + pub).
