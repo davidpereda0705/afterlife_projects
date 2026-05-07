@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class MomentsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -9,7 +8,8 @@ class MomentsService {
 
   String? get _currentUid => _auth.currentUser?.uid;
 
-  /// Crea un momento efímero (24h) para una noche
+  /// Crea un momento efímero (24h) para una noche.
+  /// La imagen se guarda directamente como bytes (List<int>) en Firestore.
   Future<void> createMoment({
     required String nightId,
     required String nightName,
@@ -19,26 +19,13 @@ class MomentsService {
     final uid = _currentUid;
     if (uid == null) throw Exception('No autenticado');
 
-    String? imageUrl;
-    if (imageBytes != null && imageBytes.isNotEmpty) {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('moments/$nightId/$fileName');
-      await ref.putData(
-        Uint8List.fromList(imageBytes),
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      imageUrl = await ref.getDownloadURL();
-    }
-
     final now = DateTime.now();
     await _firestore.collection('moments').add({
       'nightId': nightId,
       'nightName': nightName,
       'userId': uid,
       'text': text ?? '',
-      'imageUrl': imageUrl,
+      'imageBytes': imageBytes,   // ✅ Guardamos los bytes comprimidos
       'createdAt': FieldValue.serverTimestamp(),
       'expiresAt': Timestamp.fromDate(now.add(const Duration(hours: 24))),
     });
@@ -59,7 +46,7 @@ class MomentsService {
                 'id': doc.id,
                 'userId': data['userId'],
                 'text': data['text'],
-                'imageUrl': data['imageUrl'],
+                'imageBytes': data['imageBytes'], // ✅ Bytes
                 'createdAt': data['createdAt'],
                 'expiresAt': data['expiresAt'],
               };

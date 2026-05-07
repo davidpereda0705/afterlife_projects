@@ -1,6 +1,4 @@
-// lib/services/night_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:typed_data';
 
 import '../core/enums.dart';
@@ -49,10 +47,10 @@ class NightService {
           AppConstants.fieldPoints: c[AppConstants.fieldPoints],
           'completed': false,
           'completedBy': null,
-          'proofBytes': null, // Uint8List se guardará como array de números
+          'proofBytes': null,
         };
       }).toList(),
-      AppConstants.fieldNightPhotos: [], // Lista de Uint8List (se guardará como array de arrays)
+      AppConstants.fieldNightPhotos: [],
       AppConstants.fieldCreatedAt: FieldValue.serverTimestamp(),
     };
     final docRef = await _firestore.collection(AppConstants.nightsCollection).add(nightData);
@@ -147,7 +145,7 @@ class NightService {
         if (proofBytes.length > maxBytes) {
           throw Exception('La foto de prueba es demasiado grande (máx 300KB).');
         }
-        challenges[challengeIndex]['proofBytes'] = proofBytes.toList(); // Convertir a List<int>
+        challenges[challengeIndex]['proofBytes'] = proofBytes.toList();
       }
 
       // Sumar puntos al jugador
@@ -171,22 +169,18 @@ class NightService {
   }
 
   // --------------------------------------------------------------------------
-  // NIGHT PHOTOS
+  // NIGHT PHOTOS (ahora guarda bytes directamente en Firestore)
   // --------------------------------------------------------------------------
 
-  /// Añade una foto a la noche (en bytes).
-  /// ⚠️ NOTA DE SEGURIDAD: Las fotos se guardan como bytes en Firestore.
+  /// Añade una foto a la noche (en bytes). Los bytes se guardan en el array nightPhotos.
   Future<void> addNightPhoto(String nightId, Uint8List photoBytes) async {
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('nights/$nightId/photos/$fileName');
-    await ref.putData(photoBytes, SettableMetadata(contentType: 'image/jpeg'));
-    final url = await ref.getDownloadURL();
+    final bytesList = photoBytes.toList(); // Convertimos a List<int> para Firestore
     await _firestore
         .collection(AppConstants.nightsCollection)
         .doc(nightId)
-        .update({AppConstants.fieldNightPhotos: FieldValue.arrayUnion([url])});
+        .update({
+          AppConstants.fieldNightPhotos: FieldValue.arrayUnion([bytesList])
+        });
   }
 
   // --------------------------------------------------------------------------
