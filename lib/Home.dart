@@ -4,7 +4,6 @@ import 'package:afterlife_projects/components/animations/animated_entry.dart';
 import 'package:afterlife_projects/components/effects/glass_card.dart';
 import 'package:afterlife_projects/components/effects/neon_border.dart';
 import 'package:afterlife_projects/components/effects/shimmer_loading.dart';
-import 'package:afterlife_projects/components/effects/parallax_card.dart';
 import 'package:afterlife_projects/components/effects/confetti_blast.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';

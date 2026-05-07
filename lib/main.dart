@@ -9,7 +9,6 @@ import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/providers/settings_provider.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
-import 'package:afterlife_projects/services/biometric_service.dart';
 import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
@@ -145,7 +144,7 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
               if (!_hasSeenTutorial) {
                 return TutorialScreen(onDone: _completeTutorial);
               }
-              return const BiometricGate(child: MainScreen());
+              return const MainScreen();
             },
           );
         }
@@ -157,81 +156,3 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
   }
 }
 
-/// Pantalla intermedia que pide biometría al volver de segundo plano.
-/// En web se ignora automáticamente.
-class BiometricGate extends StatefulWidget {
-  final Widget child;
-  const BiometricGate({super.key, required this.child});
-
-  @override
-  State<BiometricGate> createState() => _BiometricGateState();
-}
-
-class _BiometricGateState extends State<BiometricGate>
-    with WidgetsBindingObserver {
-  bool _locked = false;
-  bool _supportsBio = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!kIsWeb) {
-      WidgetsBinding.instance.addObserver(this);
-      _checkSupport();
-    }
-  }
-
-  Future<void> _checkSupport() async {
-    final can = await BiometricService.canCheckBiometrics();
-    setState(() => _supportsBio = can);
-  }
-
-  @override
-  void dispose() {
-    if (!kIsWeb) {
-      WidgetsBinding.instance.removeObserver(this);
-    }
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (kIsWeb || !_supportsBio) return;
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
-      setState(() => _locked = true);
-    }
-    if (state == AppLifecycleState.resumed && _locked) {
-      _authenticate();
-    }
-  }
-
-  Future<void> _authenticate() async {
-    final ok = await BiometricService.authenticate();
-    if (ok && mounted) {
-      setState(() => _locked = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (kIsWeb || !_supportsBio || !_locked) return widget.child;
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.lock_outline, size: 64),
-            const SizedBox(height: 16),
-            const Text('Afterlife bloqueado', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _authenticate,
-              icon: const Icon(Icons.fingerprint),
-              label: const Text('DESBLOQUEAR'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

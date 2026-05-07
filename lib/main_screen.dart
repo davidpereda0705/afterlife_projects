@@ -1,6 +1,5 @@
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
-import 'package:afterlife_projects/clubs_screen.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:afterlife_projects/ranking_screen.dart';
@@ -29,7 +28,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     BottomNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Inicio'),
     BottomNavItem(icon: Icons.group_outlined, selectedIcon: Icons.group, label: 'Amigos'),
     BottomNavItem(icon: Icons.nightlight_outlined, selectedIcon: Icons.nightlight_round, label: 'Noches'),
-    BottomNavItem(icon: Icons.map_outlined, selectedIcon: Icons.map, label: 'Clubs'),
     BottomNavItem(icon: Icons.leaderboard_outlined, selectedIcon: Icons.leaderboard, label: 'Ranking'),
     BottomNavItem(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Perfil'),
   ];
@@ -38,7 +36,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     HomeScreen(onNavigateToNights: () => _onItemTapped(2)),
     const GroupPage(),
     const NightSelectionScreen(),
-    const ClubsScreen(),
     const RankingScreen(),
     const ProfileScreen(),
   ];
@@ -200,21 +197,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           },
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  Icons.notifications_outlined,
-                  color: textPrimary.withValues(alpha: 0.8),
-                  size: 26,
-                ),
-              ],
-            ),
-            onPressed: () {
-              // Notifications placeholder
-            },
-          ),
           const SizedBox(width: 4),
         ],
       ),

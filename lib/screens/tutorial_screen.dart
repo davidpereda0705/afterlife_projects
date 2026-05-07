@@ -347,7 +347,7 @@ class _Slide0Welcome extends StatelessWidget {
         children: [
           Image.asset(
             'assets/imatges/logo_afterlife.png',
-            width: size.width * 0.65,
+            height: size.height * 0.35,
             fit: BoxFit.contain,
           ),
           const SizedBox(height: 28),

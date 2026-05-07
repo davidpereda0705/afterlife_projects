@@ -1,10 +1,8 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 

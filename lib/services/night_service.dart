@@ -1,5 +1,6 @@
 // lib/services/night_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:typed_data';
 
 import '../core/enums.dart';
@@ -175,25 +176,17 @@ class NightService {
 
   /// Añade una foto a la noche (en bytes).
   /// ⚠️ NOTA DE SEGURIDAD: Las fotos se guardan como bytes en Firestore.
-  /// El límite de un documento es 1MB. Por eso limitamos a 5 fotos y 300KB cada una.
-  /// En producción, deberías usar Firebase Storage + URLs.
   Future<void> addNightPhoto(String nightId, Uint8List photoBytes) async {
-    const maxPhotos = 5;
-    const maxBytes = 300 * 1024; // 300KB
-    if (photoBytes.length > maxBytes) {
-      throw Exception('La foto es demasiado grande (máx 300KB). Reduce la calidad.');
-    }
-    final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
-    await _firestore.runTransaction((transaction) async {
-      final doc = await transaction.get(nightRef);
-      if (!doc.exists) throw Exception('La noche no existe');
-      final nightPhotos = List<dynamic>.from(doc.data()?[AppConstants.fieldNightPhotos] ?? []);
-      if (nightPhotos.length >= maxPhotos) {
-        throw Exception('Límite de $maxPhotos fotos alcanzado para esta noche.');
-      }
-      nightPhotos.add(photoBytes.toList()); // Convertir a List<int>
-      transaction.update(nightRef, {AppConstants.fieldNightPhotos: nightPhotos});
-    });
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('nights/$nightId/photos/$fileName');
+    await ref.putData(photoBytes, SettableMetadata(contentType: 'image/jpeg'));
+    final url = await ref.getDownloadURL();
+    await _firestore
+        .collection(AppConstants.nightsCollection)
+        .doc(nightId)
+        .update({AppConstants.fieldNightPhotos: FieldValue.arrayUnion([url])});
   }
 
   // --------------------------------------------------------------------------

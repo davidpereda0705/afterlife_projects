@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:afterlife_projects/services/moments_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -47,8 +45,8 @@ class MomentsViewer extends StatelessWidget {
                 itemCount: moments.length,
                 itemBuilder: (_, i) {
                   final moment = moments[i];
-                  final bytes = moment['imageBytes'] as List<dynamic>?;
-                  final hasImage = bytes != null && bytes.isNotEmpty;
+                  final imageUrl = moment['imageUrl'] as String?;
+                  final hasImage = imageUrl != null && imageUrl.isNotEmpty;
                   final expires = moment['expiresAt'] as Timestamp?;
                   final timeLeft = expires != null
                       ? expires.toDate().difference(DateTime.now())
@@ -69,8 +67,8 @@ class MomentsViewer extends StatelessWidget {
                         fit: StackFit.expand,
                         children: [
                           if (hasImage)
-                            Image.memory(
-                              Uint8List.fromList(bytes.cast<int>()),
+                            Image.network(
+                              imageUrl!,
                               fit: BoxFit.cover,
                             )
                           else

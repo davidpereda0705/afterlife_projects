@@ -1,9 +1,7 @@
 // lib/screens/night_game_screen.dart
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:afterlife_projects/components/challenge_wheel.dart';
 import 'package:afterlife_projects/components/expense_splitter.dart';
-import 'package:afterlife_projects/components/location_share_sheet.dart';
 import 'package:afterlife_projects/components/moments_viewer.dart';
 import 'package:afterlife_projects/components/night_chat_sheet.dart';
 import 'package:afterlife_projects/components/qr_invite.dart';
@@ -423,34 +421,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
             child: Text(_formatDuration(timeLeft), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
           ),
           IconButton(
-            icon: const Icon(Icons.location_on, color: AfterlifeColors.neonPink),
-            tooltip: 'Ubicación',
-            onPressed: () => _showLocationSheet(players),
-          ),
-          IconButton(
-            icon: const Icon(Icons.music_note, color: Color(0xFF1DB954)),
-            tooltip: 'Spotify',
-            onPressed: () => _showSpotifySheet(nightData),
-          ),
-          IconButton(
             icon: const Icon(Icons.chat, color: AfterlifeColors.acidGreen),
             tooltip: 'Chat del grupo',
             onPressed: () => _showNightChat(nightData),
-          ),
-          IconButton(
-            icon: const Icon(Icons.qr_code, color: AfterlifeColors.cyanBlue),
-            tooltip: 'Invitar',
-            onPressed: () => _showQrInvite(nightData),
-          ),
-          IconButton(
-            icon: const Icon(Icons.casino, color: AfterlifeColors.neonPink),
-            tooltip: 'Ruleta',
-            onPressed: () => _showChallengeWheel(players),
-          ),
-          IconButton(
-            icon: const Icon(Icons.receipt_long, color: AfterlifeColors.electricLilac),
-            tooltip: 'Gastos',
-            onPressed: () => _showExpenseSheet(players, nightData['expenses']),
           ),
           IconButton(
             icon: const Icon(Icons.flag, color: AfterlifeColors.acidGreen),
@@ -612,7 +585,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
   Widget _buildNightPhotos(List photos) {
-    if (photos.isEmpty) return const SizedBox();
+    final urls = photos.whereType<String>().toList();
+    if (urls.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -621,25 +595,14 @@ class _NightGameScreenState extends State<NightGameScreen> {
           height: 100,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: photos.length,
+            itemCount: urls.length,
             itemBuilder: (context, index) {
-              final photo = photos[index];
-              ImageProvider imageProvider;
-              if (photo is String) {
-                imageProvider = NetworkImage(photo);
-              } else if (photo is Uint8List) {
-                imageProvider = MemoryImage(photo);
-              } else if (photo is List<int>) {
-                imageProvider = MemoryImage(Uint8List.fromList(photo));
-              } else {
-                imageProvider = const AssetImage('assets/placeholder.png');
-              }
               return Container(
                 width: 100,
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
+                  image: DecorationImage(image: NetworkImage(urls[index]), fit: BoxFit.cover),
                 ),
               );
             },
@@ -938,18 +901,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  void _showLocationSheet(List<dynamic> players) {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => LocationShareSheet(
-        nightId: widget.nightId,
-        players: List<Map<String, dynamic>>.from(players),
-      ),
-    );
-  }
 
   void _showSpotifySheet(Map<String, dynamic> nightData) {
     HapticFeedback.lightImpact();
