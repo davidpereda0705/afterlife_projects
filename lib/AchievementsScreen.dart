@@ -330,7 +330,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             ),
           ),
           SizedBox(
-            height: 120,
+            height: 130,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: unlocked.length,
