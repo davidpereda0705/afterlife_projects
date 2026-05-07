@@ -1,10 +1,7 @@
 // lib/screens/night_game_screen.dart
 import 'dart:async';
-import 'package:afterlife_projects/components/challenge_wheel.dart';
-import 'package:afterlife_projects/components/expense_splitter.dart';
 import 'package:afterlife_projects/components/moments_viewer.dart';
 import 'package:afterlife_projects/components/night_chat_sheet.dart';
-import 'package:afterlife_projects/components/spotify_link.dart';
 import 'package:afterlife_projects/services/offline_service.dart';
 import 'package:afterlife_projects/night_summary.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -150,7 +147,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
         debugPrint('❌ [DIARIO] Usuario no autenticado');
       } else {
         final rawNightPhotos = nightData['nightPhotos'] as List? ?? [];
-        final convertedNightPhotos = rawNightPhotos.map((p) => _toUint8List(p)).toList();
+        final nightPhotoUrls = rawNightPhotos.whereType<String>().toList();
 
         final rawChallenges = nightData['challenges'] as List? ?? [];
         final convertedChallenges = rawChallenges.map((c) {
@@ -169,7 +166,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
           groupName: nightData['groupName'] ?? '',
           players: List<Map<String, dynamic>>.from(nightData['players'] ?? []),
           challenges: convertedChallenges,
-          nightPhotos: convertedNightPhotos,
+          nightPhotos: nightPhotoUrls,
           timestamp: DateTime.now(),
         );
         await _journalService.saveEntry(summary);
@@ -591,17 +588,34 @@ class _NightGameScreenState extends State<NightGameScreen> {
       children: [
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
         SizedBox(
-          height: 100,
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: urls.length,
             itemBuilder: (context, index) {
-              return Container(
-                width: 100,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(image: NetworkImage(urls[index]), fit: BoxFit.cover),
+              return GestureDetector(
+                onTap: () => _showFullscreenPhoto(context, urls[index]),
+                child: Container(
+                  width: 160,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      urls[index],
+                      fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) => progress == null
+                          ? child
+                          : Center(child: CircularProgressIndicator(strokeWidth: 2, color: AfterlifeColors.cyanBlue)),
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AfterlifeColors.cyanBlue.withValues(alpha: 0.1),
+                        child: const Icon(Icons.broken_image_outlined, color: AfterlifeColors.cyanBlue),
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
@@ -609,6 +623,36 @@ class _NightGameScreenState extends State<NightGameScreen> {
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  void _showFullscreenPhoto(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black87,
+        insetPadding: EdgeInsets.zero,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  child: Image.network(url, fit: BoxFit.contain),
+                ),
+              ),
+              Positioned(
+                top: 40,
+                right: 16,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -901,29 +945,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
   }
 
 
-  void _showSpotifySheet(Map<String, dynamic> nightData) {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => SpotifyLinkSheet(
-        currentUrl: nightData['spotifyUrl'],
-        onUrlChanged: (url) async {
-          try {
-            await _nightService.updateSpotifyUrl(widget.nightId, url);
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-              );
-            }
-          }
-        },
-      ),
-    );
-  }
-
   void _showNightChat(Map<String, dynamic> nightData) {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -937,63 +958,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-
-  void _showChallengeWheel(List<dynamic> players) {
-    HapticFeedback.lightImpact();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Ruleta del destino', textAlign: TextAlign.center),
-        content: ChallengeWheel(players: List<Map<String, dynamic>>.from(players)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CERRAR'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showExpenseSheet(List<dynamic> players, List<dynamic>? expenses) {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        builder: (_, scrollController) => Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: ExpenseSplitter(
-              players: List<Map<String, dynamic>>.from(players),
-              existingExpenses: expenses != null ? List<Map<String, dynamic>>.from(expenses) : null,
-              onExpensesChanged: (newExpenses) async {
-                try {
-                  await _nightService.updateExpenses(widget.nightId, newExpenses);
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error guardando gastos: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-                    );
-                  }
-                }
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Future<void> _toggleDriver(String userId, bool isDriver) async {
     HapticFeedback.mediumImpact();

@@ -209,14 +209,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AfterlifeColors.electricLilac.withOpacity(0.3),
-            AfterlifeColors.electricPurple.withOpacity(0.2),
+            AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+            AfterlifeColors.electricPurple.withValues(alpha: 0.2),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -240,7 +240,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AfterlifeColors.electricPurple.withOpacity(0.2),
+                  color: AfterlifeColors.electricPurple.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -259,7 +259,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             children: [
               Text(
                 'PROGRESO GENERAL',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12, fontWeight: FontWeight.w600),
               ),
               Text('$unlockedCount/$totalCount', style: TextStyle(color: AfterlifeColors.electricLilac, fontWeight: FontWeight.bold)),
             ],
@@ -269,7 +269,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation(AfterlifeColors.electricLilac),
               minHeight: 8,
             ),
@@ -294,7 +294,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         Icon(icon, color: AfterlifeColors.neonPink, size: 20),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 10)),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 10)),
       ],
     );
   }
@@ -402,14 +402,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isHighlighted ? AfterlifeColors.acidGreen.withOpacity(0.3) : Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: isHighlighted ? AfterlifeColors.acidGreen.withValues(alpha: 0.3) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isHighlighted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange.withOpacity(0.2),
+          color: isHighlighted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange.withValues(alpha: 0.2),
           width: isHighlighted ? 2 : 1,
         ),
         boxShadow: isHighlighted
-            ? [BoxShadow(color: AfterlifeColors.acidGreen.withOpacity(0.5), blurRadius: 8)]
+            ? [BoxShadow(color: AfterlifeColors.acidGreen.withValues(alpha: 0.5), blurRadius: 8)]
             : [],
       ),
       child: Padding(
@@ -420,11 +420,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: AfterlifeColors.electricPurple.withOpacity(0.1),
+                  color: AfterlifeColors.electricPurple.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AfterlifeColors.neonOrange.withOpacity(0.3), width: 1),
+                  border: Border.all(color: AfterlifeColors.neonOrange.withValues(alpha: 0.3), width: 1),
                 ),
-                child: Icon(achievement.icon, color: AfterlifeColors.neonOrange.withOpacity(0.5), size: 24),
+                child: Icon(achievement.icon, color: AfterlifeColors.neonOrange.withValues(alpha: 0.5), size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -442,7 +442,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             borderRadius: BorderRadius.circular(2),
                             child: LinearProgressIndicator(
                               value: progress,
-                              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                               valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
                               minHeight: 4,
                             ),
