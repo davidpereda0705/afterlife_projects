@@ -79,12 +79,12 @@ class _ChatPageState extends State<ChatPage> {
         margin: const EdgeInsets.symmetric(vertical: 5),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-     color: isMe ? Color(0xFFE040FB).withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.10),
+     color: isMe ? Color(0xFFE040FB).withValues(alpha: 0.8) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isMe
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.24)
-                  : const Color(0xFFE040FB).withOpacity(0.3)),
+                  ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)
+                  : const Color(0xFFE040FB).withValues(alpha: 0.3)),
         ),
         child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: 'Syne')),
       ),
@@ -94,7 +94,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildChatInput() {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.26),
       child: Row(
         children: [
           Expanded(
@@ -104,9 +104,9 @@ class _ChatPageState extends State<ChatPage> {
               onSubmitted: (_) => _handleSend(), // Enviar al pulsar 'Intro' en el teclado
               decoration: InputDecoration(
                 hintText: "Escribe un mensaje...",
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
+                fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none),

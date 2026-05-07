@@ -395,13 +395,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
       ),
       _ActionCard(
-        label: 'LOCALES',
-        icon: Icons.location_on,
-        gradientColors: const [Color(0xFFBE185D), Color(0xFFEC4899)],
-        glowColor: AfterlifeColors.neonPink,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VisitedClubsScreen())),
-      ),
-      _ActionCard(
         label: 'AJUSTES',
         icon: Icons.settings,
         gradientColors: const [Color(0xFF92400E), Color(0xFFF59E0B)],

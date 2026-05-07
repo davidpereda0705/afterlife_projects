@@ -121,16 +121,16 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+                      border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
                     ),
                     child: TextField(
                       controller: _nameController,
            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Nombre del jugador',
-                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => _addPlayer(),
@@ -160,7 +160,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Añade al menos 2 jugadores',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 ),
@@ -175,9 +175,9 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
+                        border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -185,7 +185,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AfterlifeColors.cyanBlue.withOpacity(0.2),
+                              color: AfterlifeColors.cyanBlue.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Center(
@@ -222,7 +222,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
             Center(
               child: Text(
                 '${_players.length} jugador${_players.length != 1 ? 'es' : ''}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
               ),
             ),
           ],

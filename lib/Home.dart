@@ -4,7 +4,6 @@ import 'package:afterlife_projects/components/animations/animated_entry.dart';
 import 'package:afterlife_projects/components/effects/glass_card.dart';
 import 'package:afterlife_projects/components/effects/neon_border.dart';
 import 'package:afterlife_projects/components/effects/shimmer_loading.dart';
-import 'package:afterlife_projects/components/effects/parallax_card.dart';
 import 'package:afterlife_projects/components/effects/confetti_blast.dart';
 import 'package:afterlife_projects/create_night_screen.dart';
 import 'package:afterlife_projects/night_game_screen.dart';
@@ -15,6 +14,7 @@ import 'package:afterlife_projects/minigames_screen.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
+import 'package:afterlife_projects/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingAchievements = true;
   bool _achievementsLoadedOnce = false;
 
+  Future<List<UserRankData>>? _rankingFuture;
+
   late ConfettiController _confettiController;
 
   @override
@@ -47,6 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 2));
     _loadAvailableNights();
+    _rankingFuture = RankingService().getFriendsRanking(
+      userId: FirebaseAuth.instance.currentUser?.uid ?? '',
+      sortBy: 'points',
+    );
   }
 
   @override
@@ -240,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final challengesCompleted = userData?['challengesCompleted'] ?? 0;
         final groupsCount = userData?['friendsCount'] ?? 0;
 
+        final compact = context.read<SettingsProvider>().compactMode;
         return ConfettiBlast(
           controller: _confettiController,
           child: Scaffold(
@@ -249,41 +256,29 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AfterlifeColors.electricPurple,
               backgroundColor: isDark ? const Color(0xFF1A0533) : Colors.white,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(compact ? 10 : 16),
                 children: [
                   AnimatedEntry(
-                    child: ParallaxCard(
-                      intensity: 6,
-                      child: _buildProfileCard(
-                        userName,
-                        userLevel,
-                        nightsCompleted,
-                        challengesCompleted,
-                        groupsCount,
-                      ),
+                    child: _buildProfileCard(
+                      userName,
+                      userLevel,
+                      nightsCompleted,
+                      challengesCompleted,
+                      groupsCount,
                     ),
                   ),
                   const SizedBox(height: 16),
                   AnimatedEntry(
                     delay: const Duration(milliseconds: 100),
-                    child: ParallaxCard(
-                      intensity: 4,
-                      child: _buildMiniRankingCard(),
-                    ),
+                    child: _buildMiniRankingCard(),
                   ),
                   AnimatedEntry(
                     delay: const Duration(milliseconds: 150),
-                    child: ParallaxCard(
-                      intensity: 4,
-                      child: _buildMinigamesCard(context),
-                    ),
+                    child: _buildMinigamesCard(context),
                   ),
                   AnimatedEntry(
                     delay: const Duration(milliseconds: 200),
-                    child: ParallaxCard(
-                      intensity: 3,
-                      child: _buildMotivationalCard(nightsCompleted),
-                    ),
+                    child: _buildMotivationalCard(nightsCompleted),
                   ),
                   const SizedBox(height: 8),
                   AnimatedEntry(
@@ -939,10 +934,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
 
     return FutureBuilder<List<UserRankData>>(
-      future: RankingService().getFriendsRanking(
-        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
-        sortBy: 'points',
-      ),
+      future: _rankingFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData || (snapshot.data?.isEmpty ?? true)) {
           return const SizedBox.shrink();

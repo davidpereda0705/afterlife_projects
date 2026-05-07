@@ -46,7 +46,7 @@ class _DiscoBackgroundState extends State<DiscoBackground>
       Color(0x408B5CF6),
     ];
 
-    for (int i = 0; i < 18; i++) {
+    for (int i = 0; i < 10; i++) {
       _particles.add(_LightParticle(
         x: _random.nextDouble(),
         y: _random.nextDouble(),
@@ -72,7 +72,7 @@ class _DiscoBackgroundState extends State<DiscoBackground>
       Color(0xFFC4B5FD), // violeta pastel
     ];
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 3; i++) {
       _spotlights.add(_Spotlight(
         originX: 0.1 + _random.nextDouble() * 0.8,
         originY: -0.2,
@@ -271,8 +271,7 @@ class _DiscoPainter extends CustomPainter {
           ],
           stops: const [0.0, 0.5, 1.0],
         ).createShader(Rect.fromPoints(origin, endPoint))
-        ..blendMode = BlendMode.srcOver
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+        ..blendMode = BlendMode.srcOver;
 
       canvas.drawPath(path, spotlightPaint);
 

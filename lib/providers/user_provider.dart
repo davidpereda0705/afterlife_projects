@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 
 import '../core/level_calculator.dart';
+import '../services/offline_service.dart';
 
 class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? _userData;
@@ -59,6 +60,10 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Forzar refresh del token para asegurar que Firestore reconoce la sesión
+      // (especialmente importante en Flutter Web justo después del login)
+      await _auth.currentUser?.getIdToken(true);
+
       final docRef = _firestore.collection('users').doc(userId);
       final doc = await docRef.get();
 
@@ -130,9 +135,17 @@ class UserProvider extends ChangeNotifier {
 
       _userData = data;
       _error = null;
+      await OfflineService.cacheUserData(data);
     } catch (e) {
       _error = e.toString();
-      _userData = null;
+      // Modo offline: intentar usar cache
+      final cached = await OfflineService.getCachedUserData();
+      if (cached != null) {
+        _userData = cached;
+        _error = null;
+      } else {
+        _userData = null;
+      }
       debugPrint('Error en _loadUserData: $e');
     } finally {
       _isLoading = false;
@@ -152,21 +165,30 @@ class UserProvider extends ChangeNotifier {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
     await _firestore.collection('users').doc(userId).update({'activeNightId': nightId});
-    await refresh();
+    if (_userData != null) {
+      _userData!['activeNightId'] = nightId;
+      notifyListeners();
+    }
   }
 
   Future<void> clearActiveNight() async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
     await _firestore.collection('users').doc(userId).update({'activeNightId': null});
-    await refresh();
+    if (_userData != null) {
+      _userData!['activeNightId'] = null;
+      notifyListeners();
+    }
   }
 
   Future<void> updateUnlockedAchievements(List<Map<String, dynamic>> newList) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('No hay usuario autenticado');
     await _firestore.collection('users').doc(userId).update({'unlockedAchievements': newList});
-    await refresh();
+    if (_userData != null) {
+      _userData!['unlockedAchievements'] = newList;
+      notifyListeners();
+    }
   }
 
   Future<void> updateUserProfile({
@@ -195,7 +217,10 @@ class UserProvider extends ChangeNotifier {
 
     try {
       await _firestore.collection('users').doc(userId).update(updateData);
-      await refresh();
+      if (_userData != null) {
+        _userData!.addAll(updateData);
+        notifyListeners();
+      }
     } catch (e) {
       throw Exception('Error al actualizar perfil: $e');
     }
@@ -214,20 +239,45 @@ class UserProvider extends ChangeNotifier {
       final doc = await docRef.get();
       if (!doc.exists) throw Exception('Usuario no encontrado');
 
-      final currentPoints = doc.data()?['points'] ?? 0;
-      final currentNights = doc.data()?['nightsCompleted'] ?? 0;
-      final currentChallenges = doc.data()?['challengesCompleted'] ?? 0;
-      final currentLevel = doc.data()?['level'] ?? 1;
+      final data = doc.data()!;
+      final currentPoints = data['points'] ?? 0;
+      final currentNights = data['nightsCompleted'] ?? 0;
+      final currentChallenges = data['challengesCompleted'] ?? 0;
+      final currentLevel = data['level'] ?? 1;
+      final currentStreak = data['streakCount'] ?? 0;
+      final lastNightDate = data['lastNightDate'];
 
       final newPoints = currentPoints + pointsEarned;
       final newNights = currentNights + nightsCompletedIncrement;
       final newChallenges = currentChallenges + challengesCompletedIncrement;
       final newLevel = _calculateLevel(newPoints);
 
-      final updates = {
+      // Lógica de racha
+      int newStreak = 1;
+      final now = DateTime.now();
+      if (lastNightDate != null) {
+        DateTime lastDate;
+        if (lastNightDate is Timestamp) {
+          lastDate = lastNightDate.toDate();
+        } else if (lastNightDate is DateTime) {
+          lastDate = lastNightDate;
+        } else {
+          lastDate = now.subtract(const Duration(days: 2));
+        }
+        final yesterday = DateTime(now.year, now.month, now.day - 1);
+        final today = DateTime(now.year, now.month, now.day);
+        final lastDay = DateTime(lastDate.year, lastDate.month, lastDate.day);
+        if (lastDay == yesterday || lastDay == today) {
+          newStreak = currentStreak + 1;
+        }
+      }
+
+      final updates = <String, dynamic>{
         'points': newPoints,
         'nightsCompleted': newNights,
         'challengesCompleted': newChallenges,
+        'streakCount': newStreak,
+        'lastNightDate': Timestamp.fromDate(now),
       };
       if (newLevel != currentLevel) {
         updates['level'] = newLevel;

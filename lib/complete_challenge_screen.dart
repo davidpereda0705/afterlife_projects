@@ -43,11 +43,12 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     } finally {
-      setState(() => _uploadingMedia = false);
+      if (mounted) setState(() => _uploadingMedia = false);
     }
   }
 
@@ -95,7 +96,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 4),
                 )
@@ -112,7 +113,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -142,13 +143,13 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+              border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
             ),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedPlayer,
-       hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54))),
+       hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
               dropdownColor: Theme.of(context).colorScheme.surface,
               icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.electricLilac),
        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -213,11 +214,11 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54), size: 40),
+                                Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 40),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Error al cargar la imagen',
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                                 ),
                               ],
                             ),
@@ -233,7 +234,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           shape: BoxShape.circle,
                         ),
             child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),

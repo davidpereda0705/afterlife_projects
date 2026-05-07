@@ -2,6 +2,7 @@
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
+import 'package:afterlife_projects/screens/how_to_play_screen.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -70,7 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           width: 120,
                           height: 120,
                           decoration: BoxDecoration(
-                            color: (page['color'] as Color).withOpacity(0.2),
+                            color: (page['color'] as Color).withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -113,7 +114,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: _nextPage,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HowToPlayScreen()),
+                );
+              },
+              child: Text(
+                '¿Cómo funciona Afterlife?',
+                style: TextStyle(
+                  fontFamily: 'Syne',
+                  fontSize: 13,
+                  color: AfterlifeColors.electricPurple,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AfterlifeColors.electricPurple,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

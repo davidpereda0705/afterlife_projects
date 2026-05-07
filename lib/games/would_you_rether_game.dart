@@ -256,7 +256,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Votación anónima por turnos. Pasa el móvil a cada persona.',
                     style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -279,7 +279,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: currentColor.withOpacity(0.2),
+                      color: currentColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -296,10 +296,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AfterlifeColors.cyanBlue.withOpacity(0.1),
+                      color: AfterlifeColors.cyanBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AfterlifeColors.cyanBlue.withOpacity(0.3),
+                        color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -333,7 +333,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: currentColor.withOpacity(0.2),
+                      color: currentColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -355,10 +355,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AfterlifeColors.neonPink.withOpacity(0.1),
+                      color: AfterlifeColors.neonPink.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AfterlifeColors.neonPink.withOpacity(0.3),
+                        color: AfterlifeColors.neonPink.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -390,7 +390,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     Text(
                       'Pulsa EMPEZAR para la primera ronda',
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                         fontSize: 14,
                       ),
                     ),
@@ -407,7 +407,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AfterlifeColors.electricPurple.withOpacity(0.1),
+                color: AfterlifeColors.electricPurple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AfterlifeColors.electricPurple),
               ),
@@ -416,7 +416,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'TURNO DE:',
                     style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -433,7 +433,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Vota en privado, nadie más mira',
                     style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
@@ -522,7 +522,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Text(
                   '$votedCount/${_players.length}',
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -531,7 +531,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,
-              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               color: AfterlifeColors.acidGreen,
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
@@ -563,8 +563,8 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              colorResultado.withOpacity(0.2),
-              AfterlifeColors.electricPurple.withOpacity(0.2),
+              colorResultado.withValues(alpha: 0.2),
+              AfterlifeColors.electricPurple.withValues(alpha: 0.2),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -606,7 +606,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Container(
                   height: 50,
                   width: 2,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.24),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
                 ),
                 Column(
                   children: [
@@ -633,7 +633,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorResultado.withOpacity(0.2),
+                color: colorResultado.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

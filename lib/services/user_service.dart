@@ -1,7 +1,6 @@
 // lib/services/user_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import '../core/app_constants.dart';
 
 class UserService {
@@ -21,11 +20,8 @@ class UserService {
   // Obtener datos una sola vez (Future)
   Future<Map<String, dynamic>?> getUserData() async {
     final uid = _auth.currentUser?.uid;
-    debugPrint('UID del usuario: $uid');
     if (uid == null) return null;
     final doc = await _firestore.collection(AppConstants.usersCollection).doc(uid).get();
-    debugPrint('Documento existe: ${doc.exists}');
-    debugPrint('Datos: ${doc.data()}');
     return doc.data();
   }
 

@@ -46,10 +46,33 @@ class MinigamesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Eliminamos Scaffold y AppBar
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: ListView(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = Theme.of(context).colorScheme.onSurface;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+          ).createShader(bounds),
+          child: const Text(
+            'MINIJUEGOS',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+      ),
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Tarjeta de bienvenida
@@ -151,7 +174,7 @@ class MinigamesScreen extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),
@@ -174,7 +197,7 @@ class MinigamesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

@@ -185,9 +185,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -202,7 +202,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 hintStyle: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.3),
+                  ).colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
                 border: InputBorder.none,
               ),
@@ -217,9 +217,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -234,7 +234,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AfterlifeColors.cyanBlue.withOpacity(0.5),
+                    color: AfterlifeColors.cyanBlue.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -264,7 +264,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.5),
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               dropdownColor: Theme.of(context).colorScheme.surface,
@@ -291,7 +291,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             message: 'Día y hora de inicio. La noche termina cuando queráis.',
             child: Icon(
               Icons.info_outline,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               size: 18,
             ),
           ),
@@ -304,9 +304,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.neonPink.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -318,7 +318,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               Container(
@@ -327,7 +327,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AfterlifeColors.neonPink.withOpacity(0.2),
+                  color: AfterlifeColors.neonPink.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -347,7 +347,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             max: 20,
             divisions: 18,
             activeColor: AfterlifeColors.neonPink,
-            inactiveColor: AfterlifeColors.neonPink.withOpacity(0.2),
+            inactiveColor: AfterlifeColors.neonPink.withValues(alpha: 0.2),
             onChanged: (value) => setState(() => _maxPlayers = value.round()),
           ),
         ],
@@ -359,9 +359,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -384,7 +384,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                     hintStyle: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.3),
+                      ).colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                     border: InputBorder.none,
                   ),
@@ -393,7 +393,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             ],
           ),
           Divider(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
             height: 16,
           ),
           Row(
@@ -416,7 +416,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                     hintStyle: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.3),
+                      ).colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                     border: InputBorder.none,
                   ),
@@ -457,9 +457,9 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AfterlifeColors.acidGreen.withOpacity(0.3)),
+        border: Border.all(color: AfterlifeColors.acidGreen.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -467,7 +467,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AfterlifeColors.acidGreen.withOpacity(0.2),
+              color: AfterlifeColors.acidGreen.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -496,7 +496,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AfterlifeColors.neonOrange.withOpacity(0.2),
+                    color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -636,8 +636,8 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
       runSpacing: 8,
       children: categories.map((cat) {
         return ActionChip(
-          backgroundColor: (cat['color'] as Color).withOpacity(0.15),
-          side: BorderSide(color: (cat['color'] as Color).withOpacity(0.4)),
+          backgroundColor: (cat['color'] as Color).withValues(alpha: 0.15),
+          side: BorderSide(color: (cat['color'] as Color).withValues(alpha: 0.4)),
           label: Text(
             cat['label'] as String,
             style: TextStyle(
@@ -761,6 +761,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       _showMessage(
         'Error al crear la noche: $e',
         Theme.of(context).colorScheme.error,

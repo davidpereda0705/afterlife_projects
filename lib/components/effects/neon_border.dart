@@ -57,6 +57,10 @@ class _NeonBorderState extends State<NeonBorder>
 
     return AnimatedBuilder(
       animation: _controller,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: widget.child,
+      ),
       builder: (context, child) {
         return Container(
           margin: widget.margin,
@@ -79,10 +83,7 @@ class _NeonBorderState extends State<NeonBorder>
               blurRadius: widget.blurRadius,
               radius: radius,
             ),
-            child: ClipRRect(
-              borderRadius: radius,
-              child: widget.child,
-            ),
+            child: child,
           ),
         );
       },
@@ -146,7 +147,7 @@ class _RunningGlowPainter extends CustomPainter {
 
     // We need to create a shader along the path. We'll approximate by drawing
     // many small segments with interpolated colors.
-    const steps = 120;
+    const steps = 60;
     for (int i = 0; i < steps; i++) {
       final t1 = i / steps;
       final t2 = (i + 1) / steps;

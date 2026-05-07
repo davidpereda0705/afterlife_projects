@@ -6,11 +6,13 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String get currentUserId => _auth.currentUser!.uid;
+  String? get currentUserId => _auth.currentUser?.uid;
 
   // Obtener o crear un chat con otro usuario
   Future<String> getOrCreateChat(String otherUserId, String otherUserName) async {
-    final chatId = _getChatId(currentUserId, otherUserId);
+    final uid = currentUserId;
+    if (uid == null) throw Exception('No hay usuario autenticado');
+    final chatId = _getChatId(uid, otherUserId);
     
     final chatRef = _firestore.collection('chats').doc(chatId);
     final chatDoc = await chatRef.get();
@@ -21,9 +23,9 @@ class ChatService {
       final currentUserName = currentUserDoc.data()?['username'] ?? 'Usuario';
       
       await chatRef.set({
-        'participants': [currentUserId, otherUserId],
+        'participants': [uid, otherUserId],
         'participantNames': {
-          currentUserId: currentUserName,
+          uid: currentUserName,
           otherUserId: otherUserName,
         },
         'lastMessage': '',
@@ -44,7 +46,11 @@ class ChatService {
 
   // Enviar mensaje
   Future<void> sendMessage(String chatId, String text) async {
-    if (text.trim().isEmpty) return;
+    final uid = currentUserId;
+    if (uid == null) throw Exception('No hay usuario autenticado');
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    if (trimmed.length > 500) throw Exception('El mensaje no puede superar los 500 caracteres');
     
     final messageRef = _firestore
         .collection('chats')
@@ -53,8 +59,8 @@ class ChatService {
         .doc();
     
     await messageRef.set({
-      'text': text,
-      'senderId': currentUserId,
+      'text': trimmed,
+      'senderId': uid,
       'timestamp': FieldValue.serverTimestamp(),
       'read': false,
       'deleted': false,
@@ -69,8 +75,8 @@ class ChatService {
     // Incrementar contador de no leídos para el otro usuario
     final chatDoc = await _firestore.collection('chats').doc(chatId).get();
     final participants = List<String>.from(chatDoc.data()?['participants'] ?? []);
-    final otherUserId = participants.firstWhere((id) => id != currentUserId);
-    
+    final otherUserId = participants.firstWhere((id) => id != uid);
+
     await _firestore.collection('users').doc(otherUserId).collection('chats').doc(chatId).set({
       'unreadCount': FieldValue.increment(1),
     }, SetOptions(merge: true));
@@ -78,32 +84,36 @@ class ChatService {
 
   // Marcar mensajes como leídos
   Future<void> markMessagesAsRead(String chatId) async {
+    final uid = currentUserId;
+    if (uid == null) return;
     final messages = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .where('read', isEqualTo: false)
         .get();
-    
+
     final batch = _firestore.batch();
     for (var doc in messages.docs) {
-      if (doc.data()['senderId'] != currentUserId) {
+      if (doc.data()['senderId'] != uid) {
         batch.update(doc.reference, {'read': true});
       }
     }
     await batch.commit();
-    
+
     // Resetear contador de no leídos
-    await _firestore.collection('users').doc(currentUserId).collection('chats').doc(chatId).set({
+    await _firestore.collection('users').doc(uid).collection('chats').doc(chatId).set({
       'unreadCount': 0,
     }, SetOptions(merge: true));
   }
 
   // Establecer estado "escribiendo"
   void setTyping(String chatId, bool isTyping) {
+    final uid = currentUserId;
+    if (uid == null) return;
     _firestore
         .collection('users')
-        .doc(currentUserId)
+        .doc(uid)
         .collection('typing')
         .doc(chatId)
         .set({'isTyping': isTyping});
@@ -122,6 +132,7 @@ class ChatService {
 
   // Stream de mensajes de un chat
   Stream<List<Map<String, dynamic>>> getMessages(String chatId) {
+    final uid = currentUserId;
     return _firestore
         .collection('chats')
         .doc(chatId)
@@ -136,7 +147,7 @@ class ChatService {
                 'timestamp': doc.data()['timestamp'],
                 'read': doc.data()['read'] ?? false,
                 'deleted': doc.data()['deleted'] ?? false,
-                'isMe': doc.data()['senderId'] == currentUserId,
+                'isMe': doc.data()['senderId'] == uid,
               })
           .where((msg) => msg['deleted'] == false)
           .toList();
@@ -157,34 +168,42 @@ class ChatService {
   // Buscar mensajes en un chat
   Future<List<Map<String, dynamic>>> searchMessages(String chatId, String query) async {
     if (query.isEmpty) return [];
-    
+
+    // Nota: Firestore requiere un índice compuesto si mezclas range filters en 'text'
+    // con orderBy en 'timestamp'. Para evitar depender de índices, ordenamos en Dart.
     final results = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .where('text', isGreaterThanOrEqualTo: query)
         .where('text', isLessThanOrEqualTo: '$query\uf8ff')
-        .limit(50)
+        .limit(100)
         .get();
 
-    final messages = results.docs.map((doc) {
-      return {
-        'id': doc.id,
-        'text': doc.data()['text'],
-        'senderId': doc.data()['senderId'],
-        'timestamp': doc.data()['timestamp'],
-      };
-    }).toList();
+    final messages = results.docs
+        .where((doc) => doc.data()['deleted'] != true && doc.data()['senderId'] != 'system')
+        .map((doc) {
+          return {
+            'id': doc.id,
+            'text': doc.data()['text'],
+            'senderId': doc.data()['senderId'],
+            'timestamp': doc.data()['timestamp'],
+          };
+        })
+        .toList();
 
+    // Ordenar por timestamp descendente en Dart
     messages.sort((a, b) {
-      final ta = a['timestamp'];
-      final tb = b['timestamp'];
-      if (ta == null && tb == null) return 0;
-      if (ta == null) return 1;
-      if (tb == null) return -1;
-      return (tb as Timestamp).compareTo(ta as Timestamp);
+      final t1 = a['timestamp'] as Timestamp?;
+      final t2 = b['timestamp'] as Timestamp?;
+      if (t1 == null && t2 == null) return 0;
+      if (t1 == null) return 1;
+      if (t2 == null) return -1;
+      return t2.compareTo(t1);
     });
 
+    // Limitar a 50 después de ordenar
+    if (messages.length > 50) return messages.sublist(0, 50);
     return messages;
   }
 
@@ -200,9 +219,11 @@ class ChatService {
 
   // Obtener lista de chats del usuario (con último mensaje y no leídos)
   Stream<List<Map<String, dynamic>>> getUserChats() {
+    final uid = currentUserId;
+    if (uid == null) return Stream.value([]);
     return _firestore
         .collection('chats')
-        .where('participants', arrayContains: currentUserId)
+        .where('participants', arrayContains: uid)
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
@@ -210,21 +231,21 @@ class ChatService {
           for (var doc in snapshot.docs) {
             final data = doc.data();
             final participants = List<String>.from(data['participants']);
-            final otherUserId = participants.firstWhere((id) => id != currentUserId);
-            
+            final otherUserId = participants.firstWhere((id) => id != uid);
+
             final userDoc = await _firestore.collection('users').doc(otherUserId).get();
             final otherUserName = userDoc.data()?['username'] ?? 'Usuario';
             final otherUserInitials = _getInitials(otherUserName);
-            
+
             // Obtener contador de no leídos
             final unreadDoc = await _firestore
                 .collection('users')
-                .doc(currentUserId)
+                .doc(uid)
                 .collection('chats')
                 .doc(doc.id)
                 .get();
             final unreadCount = unreadDoc.data()?['unreadCount'] ?? 0;
-            
+
             chats.add({
               'chatId': doc.id,
               'otherUserId': otherUserId,

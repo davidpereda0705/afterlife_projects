@@ -18,7 +18,7 @@ class AchievementBadge extends StatelessWidget {
     // Definimos el color según el estado
     final Color badgeColor = isUnlocked 
         ? AfterlifeColors.electricPurple 
-        : Theme.of(context).colorScheme.onSurface.withOpacity(0.3);
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -35,7 +35,7 @@ class AchievementBadge extends StatelessWidget {
             ),
             boxShadow: isUnlocked ? [
               BoxShadow(
-                color: badgeColor.withOpacity(0.4),
+                color: badgeColor.withValues(alpha: 0.4),
                 blurRadius: 10,
                 spreadRadius: 2,
               )

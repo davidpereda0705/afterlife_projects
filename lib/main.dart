@@ -1,7 +1,7 @@
 import 'package:afterlife_projects/components/backgrounds/disco_background.dart';
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/main_screen.dart';
-import 'package:afterlife_projects/screens/onboarding_screen.dart';
+import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +14,8 @@ import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'components/backgrounds/disco_background.dart';
+import 'screens/tutorial_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -47,7 +49,9 @@ class MyApp extends StatelessWidget {
                 data: MediaQuery.of(context).copyWith(
                   textScaler: TextScaler.linear(settings.fontSizeFactor),
                 ),
-                child: DiscoBackground(child: child!),
+                child: settings.backgroundEffects
+                    ? DiscoBackground(child: child!)
+                    : child!,
               );
             },
             home: const OnboardingWrapper(),
@@ -71,44 +75,49 @@ class OnboardingWrapper extends StatefulWidget {
 
 class _OnboardingWrapperState extends State<OnboardingWrapper> {
   bool _isLoading = true;
-  bool _showOnboarding = true;
+  bool _hasSeenTutorial = false;
 
   @override
   void initState() {
     super.initState();
-    _checkFirstLaunch();
+    _checkTutorial();
+    _handleDeepLink();
   }
 
-  Future<void> _checkFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-    
-    // Si ya hay una sesión activa, marcamos el tutorial como visto automáticamente
-    if (FirebaseAuth.instance.currentUser != null && !hasSeenOnboarding) {
-      await prefs.setBool('has_seen_onboarding', true);
-      if (mounted) {
-        setState(() {
-          _showOnboarding = false;
-          _isLoading = false;
+  void _handleDeepLink() {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final nightId = uri.queryParameters['nightId'];
+      if (nightId != null && nightId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null && mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => NightGameScreen(nightId: nightId),
+              ),
+            );
+          }
         });
       }
-      return;
     }
+  }
 
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('has_seen_tutorial') ?? false;
     if (mounted) {
       setState(() {
-        _showOnboarding = !hasSeenOnboarding;
+        _hasSeenTutorial = seen;
         _isLoading = false;
       });
     }
   }
 
-  void _completeOnboarding() async {
+  Future<void> _completeTutorial() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_onboarding', true);
-    if (mounted) {
-      setState(() => _showOnboarding = false);
-    }
+    await prefs.setBool('has_seen_tutorial', true);
+    if (mounted) setState(() => _hasSeenTutorial = true);
   }
 
   @override
@@ -126,18 +135,25 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
 
         final user = snapshot.data;
 
-        // Si el usuario está logueado, vamos directo a MainScreen
         if (user != null) {
-          return const MainScreen();
+          return Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (userProvider.isLoading && userProvider.userData == null) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              // Tutorial interactivo la primera vez que entras
+              if (!_hasSeenTutorial) {
+                return TutorialScreen(onDone: _completeTutorial);
+              }
+              return const MainScreen();
+            },
+          );
         }
 
-        // Si no está logueado, decidimos entre Onboarding o Login
-        if (_showOnboarding) {
-          return OnboardingScreen(onDone: _completeOnboarding);
-        }
-
+        // Sin sesión → directo al login
         return const LoginPage();
       },
     );
   }
 }
+

@@ -1,4 +1,5 @@
 
+import 'package:afterlife_projects/components/journal_export_card.dart';
 import 'package:afterlife_projects/night_summary.dart';
 import 'package:afterlife_projects/services/journal_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -50,7 +51,7 @@ class _JournalScreenState extends State<JournalScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Aún no hay noches registradas',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -142,9 +143,33 @@ class _JournalScreenState extends State<JournalScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      '${entry.day} · ${entry.time}',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
+                    Row(
+                      children: [
+                        Text(
+                          '${entry.day} · ${entry.time}',
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.share, size: 18),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => JournalExportCard(
+                                nightData: {
+                                  'name': entry.name,
+                                  'day': entry.day,
+                                  'players': entry.players,
+                                  'challenges': entry.challenges,
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -181,7 +206,7 @@ class _JournalScreenState extends State<JournalScreen> {
       children: [
         Icon(icon, color: color, size: 14),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+        Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12)),
       ],
     );
   }

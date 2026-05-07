@@ -1,5 +1,6 @@
 // lib/services/night_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:typed_data';
 
 import '../core/enums.dart';
@@ -142,6 +143,10 @@ class NightService {
       challenges[challengeIndex]['completed'] = true;
       challenges[challengeIndex]['completedBy'] = playerName;
       if (proofBytes != null) {
+        const maxBytes = 300 * 1024; // 300KB
+        if (proofBytes.length > maxBytes) {
+          throw Exception('La foto de prueba es demasiado grande (máx 300KB).');
+        }
         challenges[challengeIndex]['proofBytes'] = proofBytes.toList(); // Convertir a List<int>
       }
 
@@ -169,16 +174,19 @@ class NightService {
   // NIGHT PHOTOS
   // --------------------------------------------------------------------------
 
-  /// Añade una foto a la noche (en bytes)
+  /// Añade una foto a la noche (en bytes).
+  /// ⚠️ NOTA DE SEGURIDAD: Las fotos se guardan como bytes en Firestore.
   Future<void> addNightPhoto(String nightId, Uint8List photoBytes) async {
-    final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
-    await _firestore.runTransaction((transaction) async {
-      final doc = await transaction.get(nightRef);
-      if (!doc.exists) throw Exception('La noche no existe');
-      final nightPhotos = List<dynamic>.from(doc.data()?[AppConstants.fieldNightPhotos] ?? []);
-      nightPhotos.add(photoBytes.toList()); // Convertir a List<int>
-      transaction.update(nightRef, {AppConstants.fieldNightPhotos: nightPhotos});
-    });
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('nights/$nightId/photos/$fileName');
+    await ref.putData(photoBytes, SettableMetadata(contentType: 'image/jpeg'));
+    final url = await ref.getDownloadURL();
+    await _firestore
+        .collection(AppConstants.nightsCollection)
+        .doc(nightId)
+        .update({AppConstants.fieldNightPhotos: FieldValue.arrayUnion([url])});
   }
 
   // --------------------------------------------------------------------------
@@ -188,6 +196,54 @@ class NightService {
   /// Marca la noche como finalizada
   Future<void> finishNight(String nightId) async {
     await _firestore.collection(AppConstants.nightsCollection).doc(nightId).update({AppConstants.fieldStatus: NightStatus.finished.value});
+  }
+
+  // --------------------------------------------------------------------------
+  // DESIGNATED DRIVER
+  // --------------------------------------------------------------------------
+
+  Future<void> toggleDesignatedDriver(String nightId, String userId, bool isDriver) async {
+    final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
+    await _firestore.runTransaction((transaction) async {
+      final doc = await transaction.get(nightRef);
+      if (!doc.exists) throw Exception('La noche no existe');
+      final players = List<Map<String, dynamic>>.from(doc.data()?[AppConstants.fieldPlayers] ?? []);
+      for (var p in players) {
+        if ((p['userId'] ?? '') == userId) {
+          p['isDesignatedDriver'] = isDriver;
+          break;
+        }
+      }
+      transaction.update(nightRef, {AppConstants.fieldPlayers: players});
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // EXPENSES
+  // --------------------------------------------------------------------------
+
+  Future<void> updateExpenses(String nightId, List<Map<String, dynamic>> expenses) async {
+    await _firestore.collection(AppConstants.nightsCollection).doc(nightId).update({
+      'expenses': expenses,
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamExpenses(String nightId) {
+    return _firestore
+        .collection(AppConstants.nightsCollection)
+        .doc(nightId)
+        .snapshots()
+        .map((doc) {
+      final data = doc.data();
+      if (data == null) return [];
+      return List<Map<String, dynamic>>.from(data['expenses'] ?? []);
+    });
+  }
+
+  Future<void> updateSpotifyUrl(String nightId, String? url) async {
+    await _firestore.collection(AppConstants.nightsCollection).doc(nightId).update({
+      'spotifyUrl': url,
+    });
   }
 
   // --------------------------------------------------------------------------

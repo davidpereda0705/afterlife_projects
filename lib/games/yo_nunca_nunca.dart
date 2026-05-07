@@ -134,14 +134,14 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               // Barra de progreso
               LinearProgressIndicator(
                 value: (_currentIndex + 1) / _frases.length,
-                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                 color: AfterlifeColors.neonPink,
               ),
               const SizedBox(height: 8),
               Text(
                 'Frase ${_currentIndex + 1}/${_frases.length}',
                 style: AfterlifeTextTheme.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                 ),
               ),
               const SizedBox(height: 20),
@@ -161,7 +161,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AfterlifeColors.neonPink.withOpacity(0.2),
+                              color: AfterlifeColors.neonPink.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Center(
@@ -187,7 +187,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AfterlifeColors.neonOrange.withOpacity(0.2),
+                              color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -257,7 +257,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               Text(
                 "Si lo has hecho, ¡aprieta tu botón!",
                 style: AfterlifeTextTheme.bodySmall.copyWith(
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -305,7 +305,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               ),
               Text(
                 '${sorted[0]['points']} puntos',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 16),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 16),
               ),
               const SizedBox(height: 30),
               const Text(

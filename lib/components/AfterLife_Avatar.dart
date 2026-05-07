@@ -38,14 +38,14 @@ class AfterlifeAvatar extends StatelessWidget {
           color: avatarBorder,
           width: 2,
         ),
-        image: imageUrl != null
+        image: imageUrl != null && imageUrl!.isNotEmpty
             ? DecorationImage(
                 image: NetworkImage(imageUrl!),
                 fit: BoxFit.cover,
               )
             : null,
       ),
-      child: imageUrl == null && initials != null
+      child: imageUrl == null && initials != null && initials!.isNotEmpty
           ? Center(
               child: Text(
                 _getInitials(initials!),
@@ -87,8 +87,8 @@ class AfterlifeAvatar extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.black.withOpacity(0.5) 
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      ? Colors.black.withValues(alpha: 0.5) 
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                   blurRadius: 3,
                   offset: const Offset(0, 1),
                 ),

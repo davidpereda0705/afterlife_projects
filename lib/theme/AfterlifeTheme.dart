@@ -34,11 +34,11 @@ class AfterlifeTheme {
     final Color textDisabled = isDark
         ? AfterlifeColors.textDisabled
         : AfterlifeColors.textDisabledLight;
-    final Color divider = isDark ? Colors.white.withOpacity(0.05) : AfterlifeColors.dividerLight;
-    final Color outline = isDark ? Colors.white.withOpacity(0.1) : AfterlifeColors.outlineLight;
+    final Color divider = isDark ? Colors.white.withValues(alpha: 0.05) : AfterlifeColors.dividerLight;
+    final Color outline = isDark ? Colors.white.withValues(alpha: 0.1) : AfterlifeColors.outlineLight;
     final Color shadow = Colors.black;
     final Color inputFill = isDark
-        ? Colors.white.withOpacity(0.03)
+        ? Colors.white.withValues(alpha: 0.03)
         : AfterlifeColors.inputFillLight;
 
     // Accent colors (shared)
@@ -55,8 +55,8 @@ class AfterlifeTheme {
       surface: surface,
       onSurface: textPrimary,
       surfaceContainerHighest: isDark
-          ? Colors.white.withOpacity(0.04)
-          : Colors.black.withOpacity(0.04),
+          ? Colors.white.withValues(alpha: 0.04)
+          : Colors.black.withValues(alpha: 0.04),
       onSurfaceVariant: textSecondary,
       outline: outline,
       error: error,
@@ -84,7 +84,7 @@ class AfterlifeTheme {
       bodyMedium:
           AfterlifeTextTheme.bodyMedium.copyWith(color: textSecondary),
       bodySmall: AfterlifeTextTheme.bodySmall.copyWith(
-        color: textSecondary.withOpacity(0.7),
+        color: textSecondary.withValues(alpha: 0.7),
       ),
       labelLarge: AfterlifeTextTheme.labelLarge.copyWith(color: textPrimary),
       labelMedium: AfterlifeTextTheme.labelMedium.copyWith(color: textPrimary),
@@ -148,7 +148,8 @@ class AfterlifeTheme {
 
       cardTheme: CardThemeData(
         color: card,
-        elevation: 0,
+        elevation: isDark ? 0 : 2,
+        shadowColor: isDark ? Colors.transparent : Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
@@ -213,10 +214,10 @@ class AfterlifeTheme {
       sliderTheme: SliderThemeData(
         activeTrackColor: primary,
         inactiveTrackColor: isDark
-            ? Colors.white.withOpacity(0.15)
-            : Colors.black.withOpacity(0.1),
+            ? Colors.white.withValues(alpha: 0.15)
+            : Colors.black.withValues(alpha: 0.1),
         thumbColor: primary,
-        overlayColor: primary.withOpacity(0.12),
+        overlayColor: primary.withValues(alpha: 0.12),
       ),
 
       switchTheme: SwitchThemeData(
@@ -226,11 +227,11 @@ class AfterlifeTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primary.withOpacity(0.5);
+            return primary.withValues(alpha: 0.5);
           }
           return isDark
-              ? Colors.white.withOpacity(0.15)
-              : Colors.black.withOpacity(0.1);
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.black.withValues(alpha: 0.1);
         }),
       ),
 

@@ -38,10 +38,14 @@ class AuthService {
       };
 
       // Guardar en Firestore (esperamos a que termine para asegurar consistencia)
-      await _firestore.collection(AppConstants.usersCollection).doc(result.user!.uid).set(userData);
-      // Usuario guardado en Firestore
+      final user = result.user;
+      if (user == null) throw Exception('Error al crear el usuario');
+      await _firestore.collection(AppConstants.usersCollection).doc(user.uid).set(userData);
 
-      return result.user;
+      // Enviar email de verificación
+      await user.sendEmailVerification();
+
+      return user;
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -99,6 +103,19 @@ class AuthService {
     return _auth.currentUser;
   }
 
+  // Verificar si el email está verificado
+  bool isEmailVerified() {
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  // Reenviar email de verificación
+  Future<void> sendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+
   /// Cambia la contraseña del usuario actual.
   /// Requiere la contraseña actual para reautenticar.
   /// Lanza una excepción si la reautenticación falla o si hay otro error.
@@ -117,7 +134,7 @@ class AuthService {
 
     // Reautenticar con la contraseña actual
     AuthCredential credential = EmailAuthProvider.credential(
-      email: user.email!,
+      email: user.email ?? '',
       password: currentPassword,
     );
 
