@@ -1,10 +1,8 @@
 // lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
-import 'package:afterlife_projects/Menu_Noches.dart';
 import 'package:afterlife_projects/components/chat_screen.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/chat_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/services/friend_service.dart';
@@ -13,6 +11,7 @@ import 'package:afterlife_projects/services/achievement_service.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class GroupPage extends StatefulWidget {
   const GroupPage({super.key});
@@ -35,7 +34,6 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   String? _loadingFriendId;
 
   late AnimationController _fabAnimationController;
-  late Animation<double> _fabAnimation;
 
   @override
   void initState() {
@@ -43,10 +41,6 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     _fabAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
-    );
-    _fabAnimation = CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.easeInOut,
     );
     _fabAnimationController.forward();
   }
@@ -88,15 +82,18 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _sendRequest(String uid, String name) async {
     try {
       await _friendService.sendFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitud enviada a $name'), backgroundColor: Colors.green),
+        SnackBar(content: Text('Solicitud enviada a $name'), backgroundColor: AfterlifeColors.acidGreen),
       );
       _searchController.clear();
       _searchResults = [];
       setState(() => _searchQuery = '');
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
   }
@@ -104,19 +101,23 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _acceptRequest(String uid, String name) async {
     try {
       await _friendService.acceptFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: Colors.green),
+        SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: AfterlifeColors.acidGreen),
       );
-      
+
       // Verificar logros después de aceptar
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
       // Esperar un poco para que Firestore actualice el documento
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       await userProvider.refresh();
       final userData = userProvider.userData;
       final friendsCount = userData?['friendsCount'] ?? 0;
-      
+
       final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
         userId: userId,
         nightsCompleted: userData?['nightsCompleted'] ?? 0,
@@ -126,7 +127,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         photosUploaded: userData?['photosUploaded'] ?? 0,
         nightsCreated: userData?['nightsCreated'] ?? 0,
       );
-      
+
       if (newlyUnlocked.isNotEmpty && mounted) {
         final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,8 +140,9 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         await userProvider.refresh();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
   }
@@ -148,12 +150,15 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _rejectRequest(String uid, String name) async {
     try {
       await _friendService.rejectFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Colors.orange),
+        SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
   }
@@ -162,28 +167,31 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text('Eliminar amigo', style: TextStyle(color: Colors.white)),
-        content: Text('¿Seguro que quieres eliminar a $name de tus amigos?', style: TextStyle(color: Colors.white70)),
+        title: const Text('Eliminar amigo'),
+        content: Text('¿Seguro que quieres eliminar a $name de tus amigos?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
               try {
                 await _friendService.removeFriend(uid);
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Colors.orange),
+                  SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Theme.of(context).colorScheme.error),
                 );
-                
+
                 // Verificar logros después de eliminar (opcional, pero útil para actualizar progreso)
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
-                final userId = FirebaseAuth.instance.currentUser!.uid;
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userId == null) return;
                 await Future.delayed(const Duration(milliseconds: 500));
+                if (!mounted) return;
                 await userProvider.refresh();
                 final userData = userProvider.userData;
                 final friendsCount = userData?['friendsCount'] ?? 0;
-                
+
                 final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
                   userId: userId,
                   nightsCompleted: userData?['nightsCompleted'] ?? 0,
@@ -193,7 +201,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   photosUploaded: userData?['photosUploaded'] ?? 0,
                   nightsCreated: userData?['nightsCreated'] ?? 0,
                 );
-                
+
                 if (newlyUnlocked.isNotEmpty && mounted) {
                   final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -206,12 +214,13 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   await userProvider.refresh();
                 }
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Eliminar'),
           ),
         ],
@@ -222,7 +231,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AfterlifeColors.background,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           // Tabs de filtro
@@ -245,9 +254,9 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AfterlifeColors.surfaceDark,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+                  border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -257,10 +266,9 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        style: const TextStyle(color: AfterlifeColors.textPrimary),
                         decoration: InputDecoration(
                           hintText: 'Buscar por nombre...',
-                          hintStyle: TextStyle(color: AfterlifeColors.textDisabled),
+                          hintStyle: TextStyle(color: Theme.of(context).disabledColor),
                           border: InputBorder.none,
                         ),
                         onChanged: (value) {
@@ -271,7 +279,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                     ),
                     if (_searchQuery.isNotEmpty)
                       IconButton(
-                        icon: Icon(Icons.close, color: AfterlifeColors.textSecondary),
+                        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -309,10 +317,10 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+            color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? color : color.withOpacity(0.3),
+              color: isSelected ? color : color.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -320,7 +328,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? color : color.withOpacity(0.7),
+              color: isSelected ? color : color.withValues(alpha: 0.7),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
@@ -349,7 +357,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
       stream: _friendService.getFriends(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white70)));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -361,17 +369,11 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.people_outline, size: 60, color: AfterlifeColors.textDisabled),
+                Icon(Icons.people_outline, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
-                Text(
-                  'No tienes amigos aún',
-                  style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
-                ),
+                Text('No tienes amigos aún', style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 8),
-                Text(
-                  'Ve a la pestaña "BUSCAR" para añadir amigos',
-                  style: TextStyle(color: AfterlifeColors.textDisabled),
-                ),
+                Text('Ve a la pestaña "BUSCAR" para añadir amigos', style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           );
@@ -403,7 +405,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         statusText = 'En una noche';
         break;
       default:
-        statusColor = AfterlifeColors.textDisabled;
+        statusColor = Theme.of(context).disabledColor;
         statusText = 'Desconectado';
     }
 
@@ -478,7 +480,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                         children: [
                           Text(
                             friend['name'],
-                            style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
                           ),
                           if (_loadingFriendId == friend['uid'])
                             const Padding(
@@ -493,7 +495,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.2),
+                              color: statusColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -506,7 +508,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                       const SizedBox(height: 4),
                       Text(
                         friend['message'],
-                        style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                        style: Theme.of(context).textTheme.bodySmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -514,7 +516,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.more_vert, color: AfterlifeColors.textSecondary),
+                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                   onPressed: () => _removeFriend(friend['uid'], friend['name']),
                 ),
               ],
@@ -531,7 +533,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
       stream: _friendService.getFriendRequests(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white70)));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -543,12 +545,9 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.person_add_outlined, size: 60, color: AfterlifeColors.textDisabled),
+                Icon(Icons.person_add_outlined, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
-                Text(
-                  'No hay solicitudes pendientes',
-                  style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
-                ),
+                Text('No hay solicitudes pendientes', style: Theme.of(context).textTheme.bodyLarge),
               ],
             ),
           );
@@ -579,12 +578,12 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                           children: [
                             Text(
                               req['name'],
-                              style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Quiere ser tu amigo',
-                              style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
+                              style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
                         ),
@@ -623,17 +622,11 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_search, size: 60, color: AfterlifeColors.textDisabled),
+            Icon(Icons.person_search, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
-            Text(
-              'No se encontraron usuarios',
-              style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
-            ),
+            Text('No se encontraron usuarios', style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 8),
-            Text(
-              'Prueba con otro nombre',
-              style: TextStyle(color: AfterlifeColors.textDisabled),
-            ),
+            Text('Prueba con otro nombre', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       );
@@ -644,12 +637,9 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 60, color: AfterlifeColors.textDisabled),
+            Icon(Icons.search, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
-            Text(
-              'Busca usuarios por nombre',
-              style: AfterlifeTextTheme.bodyLarge.copyWith(color: AfterlifeColors.textSecondary),
-            ),
+            Text('Busca usuarios por nombre', style: Theme.of(context).textTheme.bodyLarge),
           ],
         ),
       );
@@ -680,15 +670,11 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                       children: [
                         Text(
                           user['name'],
-                          style: AfterlifeTextTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          user['email'],
-                          style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        // Email oculto por privacidad; si lo necesitas, usa un campo alternativo
+                        // Text(user['email'], style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),

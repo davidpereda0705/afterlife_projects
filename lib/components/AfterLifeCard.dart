@@ -21,39 +21,60 @@ class AfterlifeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardColor =
-        backgroundColor ?? AfterlifeColors.electricLilac.withOpacity(0.15);
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = backgroundColor ??
+        (isDark ? const Color(0xFF0D0D1A) : Theme.of(context).cardColor);
     final radius = borderRadius ?? BorderRadius.circular(16);
 
     return Container(
-      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Material(
-        color: Colors.transparent,
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      decoration: BoxDecoration(
         borderRadius: radius,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius as BorderRadius,
-          splashColor: AfterlifeColors.electricLilac,
-          highlightColor: AfterlifeColors.neonPink,
-          child: Container(
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: radius,
-              border: Border.all(
-                color: AfterlifeColors.electricLilac,
-                width: 1.5,
+        // Gradient glow shadow
+        boxShadow: [
+          BoxShadow(
+            color: AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.2 : 0.1),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AfterlifeColors.neonPink.withValues(alpha: isDark ? 0.08 : 0.05),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      // Gradient border via nested containers
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          gradient: LinearGradient(
+            colors: [
+              AfterlifeColors.electricPurple.withValues(alpha: isDark ? 0.6 : 0.4),
+              AfterlifeColors.neonPink.withValues(alpha: isDark ? 0.4 : 0.3),
+              AfterlifeColors.cyanBlue.withValues(alpha: isDark ? 0.3 : 0.2),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(1.5), // border width
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius as BorderRadius,
+            splashColor: AfterlifeColors.electricPurple.withValues(alpha: 0.15),
+            highlightColor: AfterlifeColors.neonPink.withValues(alpha: 0.08),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: radius,
               ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black,
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
+              padding: padding ?? const EdgeInsets.all(16),
+              child: child,
             ),
-            padding: padding ?? const EdgeInsets.all(16),
-            child: child,
           ),
         ),
       ),

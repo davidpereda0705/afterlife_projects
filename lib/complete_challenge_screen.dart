@@ -43,11 +43,12 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     } finally {
-      setState(() => _uploadingMedia = false);
+      if (mounted) setState(() => _uploadingMedia = false);
     }
   }
 
@@ -66,15 +67,13 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   @override
   Widget build(BuildContext context) {
     final challenge = widget.challenge;
-    final color = const Color(0xFF7B1FA2);
+    final color = AfterlifeColors.electricLilac;
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -90,14 +89,14 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFFEC4899)],
+                colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 4),
                 )
@@ -108,18 +107,18 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               children: [
                 Text(
                   challenge['name'] ?? 'Reto',
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+         style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${challenge['points'] ?? 0} pts',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -144,16 +143,16 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+              border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
             ),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedPlayer,
-              hint: const Text('Selecciona un jugador', style: TextStyle(color: Colors.white54)),
-              dropdownColor: AfterlifeColors.surfaceDark,
-              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7B1FA2)),
-              style: const TextStyle(color: Colors.white),
+       hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.electricLilac),
+       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: const InputDecoration(border: InputBorder.none),
               items: widget.players.map<DropdownMenuItem<String>>((player) {
                 return DropdownMenuItem<String>(
@@ -210,16 +209,16 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                       height: double.infinity,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: Colors.grey[900],
+                          color: Theme.of(context).disabledColor,
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image, color: Colors.white54, size: 40),
+                                Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 40),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Error al cargar la imagen',
-                                  style: TextStyle(color: Colors.white54),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                                 ),
                               ],
                             ),
@@ -235,10 +234,10 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.black54,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, color: Colors.white, size: 18),
+            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),
                       ),
                       onPressed: () => setState(() => _imageBytes = null),
                     ),
@@ -258,7 +257,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                         label: const Text('Cámara'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AfterlifeColors.cyanBlue,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -271,7 +270,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                         label: const Text('Galería'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AfterlifeColors.neonPink,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -291,7 +290,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
           // Botón confirmar
           AfterButton(
             label: 'CONFIRMAR',
-            color: _canConfirm ? AfterlifeColors.acidGreen : Colors.grey,
+            color: _canConfirm ? AfterlifeColors.acidGreen : Theme.of(context).disabledColor,
             onPressed: _canConfirm ? _confirm : null,
           ),
         ],

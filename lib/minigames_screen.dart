@@ -1,10 +1,6 @@
-import 'package:afterlife_projects/games/truth_or_drinks_game.dart';
-import 'package:afterlife_projects/games/would_you_rether_game.dart';
-import 'package:afterlife_projects/games/yo_nunca_nunca.dart';
-import 'package:afterlife_projects/games/reto_rapido.dart';
+import 'package:afterlife_projects/screens/game_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 
 class MinigamesScreen extends StatelessWidget {
@@ -13,79 +9,70 @@ class MinigamesScreen extends StatelessWidget {
   final List<Map<String, dynamic>> _games = const [
     {
       'title': 'VERDAD O BEBIDA',
-      'description': 'Responde con honestidad… o bebe',
+      'description': 'Responde con honestidad… o acepta la consecuencia',
       'icon': Icons.psychology_alt_outlined,
-      'color': Color(0xFFA855F7),
+      'color': AfterlifeColors.electricPurple,
       'route': 'truth_or_drink',
     },
     {
       'title': 'YO NUNCA',
       'description': 'El juego que destruye amistades',
       'icon': Icons.water_drop_outlined,
-      'color': Color(0xFFEC4899),
+      'color': AfterlifeColors.neonPink,
       'route': 'yo_nunca',
     },
     {
       'title': 'RETO RÁPIDO',
       'description': '30 segundos para hacer el ridículo',
       'icon': Icons.timer_outlined,
-      'color': Color(0xFF06B6D4),
+      'color': AfterlifeColors.cyanBlue,
       'route': 'reto_rapido',
     },
     {
       'title': '¿QUÉ PREFIERES?',
       'description': 'El dilema donde todos pierden',
       'icon': Icons.balance_outlined,
-      'color': Color(0xFF84CC16),
-      'route': 'would_you_rather', // Cambiado el identificador
+      'color': AfterlifeColors.acidGreen,
+      'route': 'would_you_rather',
     },
   ];
 
   void _navigateToGame(BuildContext context, String route) {
-    switch (route) {
-      case 'truth_or_drink':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const TruthOrDrinkGame()),
-        );
-        break;
-      case 'yo_nunca':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const YoNuncaGame()),
-        );
-        break;
-      case 'reto_rapido':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RetoRapidoGame()),
-        );
-        break;
-      case 'would_you_rather': // ¡NUEVO CASO!
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const WouldYouRatherGame()),
-        );
-        break;
-      default:
-        // Para cualquier otro juego no implementado
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('¡Próximamente! Este juego llegará muy pronto...'),
-            backgroundColor: AfterlifeColors.electricPurple,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        break;
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => GameSetupScreen(gameRoute: route)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Eliminamos Scaffold y AppBar
-    return Container(
-      color: AfterlifeColors.background,
-      child: ListView(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = Theme.of(context).colorScheme.onSurface;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+          ).createShader(bounds),
+          child: const Text(
+            'MINIJUEGOS',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+      ),
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Tarjeta de bienvenida
@@ -97,7 +84,7 @@ class MinigamesScreen extends StatelessWidget {
                 children: [
                   Text(
                     'PREVIA MODE',
-                    style: AfterlifeTextTheme.titleSmall.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       color: AfterlifeColors.electricLilac,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
@@ -106,9 +93,7 @@ class MinigamesScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Elige un juego y que empiece el caos',
-                    style: AfterlifeTextTheme.bodyLarge.copyWith(
-                      color: AfterlifeColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
@@ -133,13 +118,12 @@ class MinigamesScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () => _navigateToGame(context, game['route']),
                 child: _buildGameCard(
+                  context: context,
                   title: game['title'],
                   description: game['description'],
                   icon: game['icon'],
                   color: game['color'],
-                  isAvailable: game['route'] != 'would_you_rather'
-                      ? true
-                      : true, // ¡AHORA SÍ DISPONIBLE!
+                  isAvailable: true,
                 ),
               );
             },
@@ -161,11 +145,8 @@ class MinigamesScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Bebe con responsabilidad. Conoce tus límites y cuida de tus amigos.',
-                      style: AfterlifeTextTheme.bodySmall.copyWith(
-                        color: AfterlifeColors.textSecondary,
-                        fontSize: 11,
-                      ),
+                      'Juega con responsabilidad. Respeta tus límites y cuida de tus amigos.',
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 11),
                     ),
                   ),
                 ],
@@ -178,11 +159,12 @@ class MinigamesScreen extends StatelessWidget {
   }
 
   Widget _buildGameCard({
+    required BuildContext context,
     required String title,
     required String description,
     required IconData icon,
     required Color color,
-    required bool isAvailable, // Nuevo parámetro
+    required bool isAvailable,
   }) {
     return AfterlifeCard(
       child: Column(
@@ -192,7 +174,7 @@ class MinigamesScreen extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),
@@ -200,7 +182,7 @@ class MinigamesScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title,
-            style: AfterlifeTextTheme.titleSmall.copyWith(
+            style: Theme.of(context).textTheme.titleSmall!.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -215,7 +197,7 @@ class MinigamesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -231,10 +213,7 @@ class MinigamesScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             description,
-            style: AfterlifeTextTheme.bodySmall.copyWith(
-              color: AfterlifeColors.textSecondary,
-              fontSize: 10,
-            ),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 10),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

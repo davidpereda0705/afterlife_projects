@@ -34,6 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _showPasswordSection = false;
   bool _isSaving = false;
   bool _initialized = false;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -61,7 +62,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _pickImage() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AfterlifeColors.surfaceDark,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -74,7 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -110,6 +110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _avatarImage = File(pickedFile.path);
             _hasChanges = true;
           });
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto actualizada localmente. Guarda los cambios.'),
@@ -119,6 +120,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error al cargar la imagen'),
@@ -126,7 +128,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         );
       } finally {
-        setState(() => _isUploading = false);
+        if (mounted) setState(() => _isUploading = false);
       }
     }
   }
@@ -141,12 +143,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color),
       ),
-      title: Text(label, style: const TextStyle(color: Colors.white)),
+   title: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       onTap: () => Navigator.pop(context, source),
     );
   }
@@ -156,21 +158,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AfterlifeColors.surfaceDark,
-        title: const Text(
+        title: Text(
           'Descartar cambios',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
-        content: const Text(
+        content: Text(
           '¿Seguro que quieres salir sin guardar?',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               'Cancelar',
-              style: TextStyle(color: AfterlifeColors.textSecondary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(
@@ -274,22 +275,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (context, userProvider, child) {
         if (userProvider.isLoading && !_initialized) {
           return const Scaffold(
-            backgroundColor: AfterlifeColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (userProvider.error != null && !_initialized) {
           return Scaffold(
-            backgroundColor: AfterlifeColors.background,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Error al cargar perfil: ${userProvider.error}',
-                    style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -307,20 +306,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final email = currentUser?.email ?? '';
         _populateControllers(userData, email);
 
-        return WillPopScope(
-          onWillPop: _onWillPop,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (!didPop) {
+              final shouldPop = await _onWillPop();
+              if (shouldPop && context.mounted) Navigator.pop(context);
+            }
+          },
           child: Scaffold(
-            backgroundColor: AfterlifeColors.background,
             appBar: AppBar(
-              backgroundColor: AfterlifeColors.background,
               elevation: 0,
               leading: IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color: AfterlifeColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 onPressed: () async {
-                  if (await _onWillPop()) Navigator.pop(context);
+                  if (await _onWillPop() && context.mounted) Navigator.pop(context);
                 },
               ),
               title: Text(
@@ -347,8 +350,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   Container(
                                     width: 100,
                                     height: 100,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white10,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Center(
@@ -358,7 +361,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFF7B1FA2),
+                                            AfterlifeColors.electricLilac,
                                           ),
                                         ),
                                       ),
@@ -389,15 +392,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         color: AfterlifeColors.electricLilac,
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: AfterlifeColors.background,
+                                          color: Theme.of(context).scaffoldBackgroundColor,
                                           width: 2,
                                         ),
                                       ),
                                       child: Icon(
                                         Icons.camera_alt,
                                         color: (_isUploading || _isSaving)
-                                            ? Colors.white38
-                                            : Colors.white,
+                                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                                            : Theme.of(context).colorScheme.onSurface,
                                         size: 20,
                                       ),
                                     ),
@@ -414,7 +417,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 'Cambiar foto de perfil',
                                 style: TextStyle(
                                   color: (_isUploading || _isSaving)
-                                      ? AfterlifeColors.textDisabled
+                                      ? Theme.of(context).disabledColor
                                       : AfterlifeColors.cyanBlue,
                                 ),
                               ),
@@ -443,7 +446,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         controller: _nameController,
                         color: AfterlifeColors.electricLilac,
                       ),
-                      const Divider(height: 24, color: Colors.white10),
+            Divider(height: 24, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                       _buildField(
                         icon: Icons.alternate_email,
                         label: 'Handle',
@@ -452,7 +455,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
 
                       const SizedBox(height: 16),
-                      const Divider(height: 24, color: Colors.white10),
+            Divider(height: 24, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
 
                       // Sección contraseña (colapsable)
                       InkWell(
@@ -483,7 +486,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 _showPasswordSection
                                     ? Icons.expand_less
                                     : Icons.expand_more,
-                                color: AfterlifeColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ],
                           ),
@@ -512,22 +515,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: ElevatedButton(
                             onPressed: _isSaving
                                 ? null
-                                : () => _changePassword(AuthService()),
+                                : () => _changePassword(_authService),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AfterlifeColors.neonPink,
-                              foregroundColor: Colors.white,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: _isSaving
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   )
                                 : const Text(
@@ -551,21 +554,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           Icons.check_circle,
                           color: (_hasChanges && !_isSaving)
                               ? AfterlifeColors.acidGreen
-                              : AfterlifeColors.textDisabled,
+                              : Theme.of(context).disabledColor,
                         ),
                         label: Text(
                           'GUARDAR CAMBIOS',
                           style: TextStyle(
                             color: (_hasChanges && !_isSaving)
                                 ? AfterlifeColors.acidGreen
-                                : AfterlifeColors.textDisabled,
+                                : Theme.of(context).disabledColor,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: (_hasChanges && !_isSaving)
-                                ? AfterlifeColors.acidGreen.withOpacity(0.5)
-                                : AfterlifeColors.textDisabled.withOpacity(0.3),
+                                ? AfterlifeColors.acidGreen.withValues(alpha: 0.5)
+                                : Theme.of(context).disabledColor.withValues(alpha: 0.3),
                           ),
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
@@ -606,7 +609,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: color.withOpacity(0.7),
+                  color: color.withValues(alpha: 0.7),
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -614,7 +617,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 4),
               TextField(
                 controller: controller,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
@@ -639,7 +642,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Text(
           label,
           style: TextStyle(
-            color: AfterlifeColors.neonPink.withOpacity(0.7),
+            color: AfterlifeColors.neonPink.withValues(alpha: 0.7),
             fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
@@ -648,10 +651,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextField(
           controller: controller,
           obscureText: true,
-          style: const TextStyle(color: Colors.white),
+     style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,

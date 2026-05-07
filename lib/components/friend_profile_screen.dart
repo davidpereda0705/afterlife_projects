@@ -1,6 +1,7 @@
 import 'package:afterlife_projects/components/AchievementBadge.dart';
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterLife_Avatar.dart';
+import 'package:afterlife_projects/services/report_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,7 +29,6 @@ class FriendProfileScreen extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            backgroundColor: AfterlifeColors.background,
             body: Center(child: CircularProgressIndicator(color: AfterlifeColors.electricPurple)),
           );
         }
@@ -36,9 +36,8 @@ class FriendProfileScreen extends StatelessWidget {
         final data = snapshot.data;
         if (data == null) {
           return Scaffold(
-            backgroundColor: AfterlifeColors.background,
             appBar: AppBar(backgroundColor: Colors.transparent),
-            body: const Center(child: Text('Usuario no encontrado', style: TextStyle(color: Colors.white))),
+      body: Center(child: Text('Usuario no encontrado', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
           );
         }
 
@@ -51,25 +50,27 @@ class FriendProfileScreen extends StatelessWidget {
         final achievementsCount = data['achievementsCount'] ?? 0;
 
         return Scaffold(
-          backgroundColor: AfterlifeColors.background,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+       icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              _buildReportMenu(context),
+            ],
           ),
           body: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             children: [
               _buildHeader(username, level, points),
               const SizedBox(height: 24),
-              _buildStatsGrid(nights, challengesCount, friendsCount, achievementsCount),
+              _buildStatsGrid(context, nights, challengesCount, friendsCount, achievementsCount),
               const SizedBox(height: 32),
-              _buildChallengesSection(challengesCount),
+              _buildChallengesSection(context, challengesCount),
               const SizedBox(height: 32),
-              _buildAchievementsSection(),
+              _buildAchievementsSection(context),
             ],
           ),
         );
@@ -102,7 +103,7 @@ class FriendProfileScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AfterlifeColors.electricPurple.withOpacity(0.2),
+                        color: AfterlifeColors.electricPurple.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('LVL $level', style: const TextStyle(color: AfterlifeColors.electricPurple, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -111,7 +112,7 @@ class FriendProfileScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AfterlifeColors.neonOrange.withOpacity(0.2),
+                        color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('$pts PTS', style: const TextStyle(color: AfterlifeColors.neonOrange, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -126,7 +127,7 @@ class FriendProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsGrid(int nights, int challenges, int friends, int achievements) {
+  Widget _buildStatsGrid(BuildContext context, int nights, int challenges, int friends, int achievements) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -135,15 +136,15 @@ class FriendProfileScreen extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.6,
       children: [
-        _buildStatCard('Noches', nights.toString(), Icons.nightlight_round, AfterlifeColors.neonPink),
-        _buildStatCard('Retos', challenges.toString(), Icons.emoji_events, AfterlifeColors.cyanBlue),
-        _buildStatCard('Amigos', friends.toString(), Icons.group, AfterlifeColors.acidGreen),
-        _buildStatCard('Logros', achievements.toString(), Icons.military_tech, AfterlifeColors.electricPurple),
+        _buildStatCard(context, 'Noches', nights.toString(), Icons.nightlight_round, AfterlifeColors.neonPink),
+        _buildStatCard(context, 'Retos', challenges.toString(), Icons.emoji_events, AfterlifeColors.cyanBlue),
+        _buildStatCard(context, 'Amigos', friends.toString(), Icons.group, AfterlifeColors.acidGreen),
+        _buildStatCard(context, 'Logros', achievements.toString(), Icons.military_tech, AfterlifeColors.electricPurple),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color color) {
     return AfterlifeCard(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -155,7 +156,7 @@ class FriendProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(color: AfterlifeColors.textSecondary, fontSize: 10)),
+       Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 10)),
             ],
           ),
         ],
@@ -163,7 +164,7 @@ class FriendProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChallengesSection(int count) {
+  Widget _buildChallengesSection(BuildContext context, int count) {
     // Simulamos algunos retos logrados ya que no hay una colección específica aún
     final List<String> mockChallenges = [
       'Selfie con el grupo',
@@ -175,13 +176,13 @@ class FriendProfileScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'RETOS LOGRADOS',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5),
         ),
         const SizedBox(height: 16),
         if (count == 0)
-          Text('Este usuario aún no ha completado retos.', style: TextStyle(color: AfterlifeColors.textDisabled))
+          Text('Este usuario aún no ha completado retos.', style: TextStyle(color: Theme.of(context).disabledColor))
         else
           ListView.builder(
             shrinkWrap: true,
@@ -192,9 +193,9 @@ class FriendProfileScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AfterlifeColors.cyanBlue.withOpacity(0.2)),
+                  border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -202,7 +203,7 @@ class FriendProfileScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       mockChallenges[index % mockChallenges.length],
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+           style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                     ),
                     const Spacer(),
                     const Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 14),
@@ -217,13 +218,13 @@ class FriendProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAchievementsSection() {
+  Widget _buildAchievementsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'LOGROS DESTACADOS',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5),
         ),
         const SizedBox(height: 16),
         Row(
@@ -236,5 +237,102 @@ class FriendProfileScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildReportMenu(BuildContext context) {
+    final reportService = ReportService();
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
+      onSelected: (value) async {
+        if (value == 'report') {
+          final reason = await _showReportDialog(context);
+          if (reason != null && reason.isNotEmpty) {
+            try {
+              await reportService.reportUser(
+                reportedUserId: uid,
+                reason: reason,
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Usuario reportado. Lo revisaremos.'), backgroundColor: AfterlifeColors.acidGreen),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+                );
+              }
+            }
+          }
+        } else if (value == 'block') {
+          try {
+            await reportService.blockUser(uid);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Usuario bloqueado'), backgroundColor: AfterlifeColors.neonOrange),
+              );
+              Navigator.pop(context);
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+              );
+            }
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'report', child: Row(children: [Icon(Icons.flag_outlined), SizedBox(width: 8), Text('Reportar')])),
+        const PopupMenuItem(value: 'block', child: Row(children: [Icon(Icons.block, color: Colors.redAccent), SizedBox(width: 8), Text('Bloquear', style: TextStyle(color: Colors.redAccent))])),
+      ],
+    );
+  }
+
+  Future<String?> _showReportDialog(BuildContext context) async {
+    String selected = 'Comportamiento inapropiado';
+    final detailsController = TextEditingController();
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reportar usuario'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: selected,
+              items: const [
+                DropdownMenuItem(value: 'Comportamiento inapropiado', child: Text('Comportamiento inapropiado')),
+                DropdownMenuItem(value: 'Spam', child: Text('Spam')),
+                DropdownMenuItem(value: 'Perfil falso', child: Text('Perfil falso')),
+                DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+              ],
+              onChanged: (v) => selected = v ?? selected,
+              decoration: const InputDecoration(labelText: 'Motivo'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: detailsController,
+              decoration: const InputDecoration(labelText: 'Detalles (opcional)', hintText: 'Describe lo ocurrido'),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCELAR')),
+          ElevatedButton(
+            onPressed: () {
+              result = selected;
+              Navigator.pop(ctx);
+            },
+            child: const Text('REPORTAR'),
+          ),
+        ],
+      ),
+    );
+    detailsController.dispose();
+    return result;
   }
 }

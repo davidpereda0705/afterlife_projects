@@ -1,4 +1,6 @@
 // lib/models/night_model.dart
+import 'package:afterlife_projects/core/enums.dart';
+
 class NightModel {
   final String id;
   final String name;
@@ -13,7 +15,7 @@ class NightModel {
   final List<Map<String, dynamic>> challenges;
   final List<String> nightPhotos; // o List<Uint8List> según tu caso
   final DateTime createdAt;
-  final String? status;
+  final NightStatus status;
 
   NightModel({
     required this.id,
@@ -29,7 +31,7 @@ class NightModel {
     required this.challenges,
     required this.nightPhotos,
     required this.createdAt,
-    this.status,
+    this.status = NightStatus.waiting,
   });
 
   // 🔧 Método fromMap para crear desde Firestore
@@ -47,9 +49,20 @@ class NightModel {
       players: List<Map<String, dynamic>>.from(map['players'] ?? []),
       challenges: List<Map<String, dynamic>>.from(map['challenges'] ?? []),
       nightPhotos: List<String>.from(map['nightPhotos'] ?? []), // si son URLs
-      createdAt: (map['createdAt'] as dynamic).toDate(),
-      status: map['status'] ?? 'waiting',
+      createdAt: _parseDateTime(map['createdAt']),
+      status: NightStatus.fromString(map['status'] as String?),
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    try {
+      return value.toDate() as DateTime;
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
   // Opcional: toMap para guardar
@@ -67,7 +80,7 @@ class NightModel {
       'challenges': challenges,
       'nightPhotos': nightPhotos,
       'createdAt': createdAt,
-      'status': status,
+      'status': status.value,
     };
   }
 }

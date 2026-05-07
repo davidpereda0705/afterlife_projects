@@ -18,7 +18,7 @@ class AchievementBadge extends StatelessWidget {
     // Definimos el color según el estado
     final Color badgeColor = isUnlocked 
         ? AfterlifeColors.electricPurple 
-        : Colors.grey.withOpacity(0.3);
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -27,7 +27,7 @@ class AchievementBadge extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AfterlifeColors.background,
+            color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
             border: Border.all(
               color: badgeColor,
@@ -35,7 +35,7 @@ class AchievementBadge extends StatelessWidget {
             ),
             boxShadow: isUnlocked ? [
               BoxShadow(
-                color: badgeColor.withOpacity(0.4),
+                color: badgeColor.withValues(alpha: 0.4),
                 blurRadius: 10,
                 spreadRadius: 2,
               )
@@ -54,7 +54,7 @@ class AchievementBadge extends StatelessWidget {
             fontFamily: 'Syne',
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: isUnlocked ? Colors.white : Colors.grey,
+            color: isUnlocked ? Theme.of(context).colorScheme.onSurface : Theme.of(context).disabledColor,
           ),
         ),
       ],

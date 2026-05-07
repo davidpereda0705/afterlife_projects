@@ -4,23 +4,16 @@ import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
 class TruthOrDrinkGame extends StatefulWidget {
-  const TruthOrDrinkGame({super.key});
+  final List<Map<String, dynamic>>? players;
+  const TruthOrDrinkGame({super.key, this.players});
 
   @override
   State<TruthOrDrinkGame> createState() => _TruthOrDrinkGameState();
 }
 
 class _TruthOrDrinkGameState extends State<TruthOrDrinkGame> {
-  // Jugadores
-  final List<String> _players = ["Alex", "Marta", "Carlos", "Lucía"];
-  
-  // Mapa para llevar el castigo individual de cada jugador
-  final Map<String, int> _playerPenalties = {
-    "Alex": 1,
-    "Marta": 1,
-    "Carlos": 1,
-    "Lucía": 1,
-  };
+  late List<String> _players;
+  late Map<String, int> _playerPenalties;
 
   int _currentPlayerIndex = 0;
 
@@ -146,10 +139,30 @@ final List<String> _spicyQuestions = [
   "¿Has tenido una cita con alguien que sabías que tenía fama de rompecorazones?",
 ];
 
+  @override
+  void initState() {
+    super.initState();
+
+    // 1. Inicializar la lista de jugadores
+    if (widget.players != null && widget.players!.isNotEmpty) {
+      _players = widget.players!.map((player) => player['name'] as String).toList();
+    } else {
+      _players = ['Jugador 1', 'Jugador 2', 'Jugador 3', 'Jugador 4'];
+    }
+
+    // 2. Inicializar el mapa de penalizaciones
+    _playerPenalties = {};
+    for (var player in _players) {
+      _playerPenalties[player] = 1; // Todos empiezan con 1
+    }
+
+    // 3. Establecer la primera pregunta
+    _nextQuestion();
+  }
+
   void _nextQuestion() {
     setState(() {
       _currentQuestion = _spicyQuestions[_questionIndex];
-
       _questionIndex++;
 
       if (_questionIndex >= _spicyQuestions.length) {
@@ -160,29 +173,24 @@ final List<String> _spicyQuestions = [
 
   void _answered() {
     setState(() {
-      // Solo reiniciamos el castigo del jugador actual cuando RESPONDE
+      // Reiniciar el castigo del jugador actual cuando RESPONDE
       _playerPenalties[_currentPlayer] = 1;
-
       _currentPlayerIndex++;
 
       if (_currentPlayerIndex >= _players.length) {
         _currentPlayerIndex = 0;
       }
     });
-
     _nextQuestion();
   }
 
   void _drinkPenalty() {
     final player = _currentPlayer;
     final currentPenalty = _currentPenalty;
-    
-    // SNACKBAR ELIMINADO - ahora solo se ve en el contador
 
     setState(() {
-      // INCREMENTAMOS el castigo de ESTE jugador (no se reinicia)
+      // Incrementar el castigo de ESTE jugador al beber
       _playerPenalties[player] = currentPenalty + 1;
-
       _currentPlayerIndex++;
 
       if (_currentPlayerIndex >= _players.length) {
@@ -198,17 +206,13 @@ final List<String> _spicyQuestions = [
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
-
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         title: const Text(
           "Verdad o Bebida 🔥",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -218,35 +222,30 @@ final List<String> _spicyQuestions = [
                 Text(
                   "Turno de",
                   style: TextStyle(
-                    color: AfterlifeColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   _currentPlayer.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                
-                // Mostrar los tragos acumulados del jugador actual
                 const SizedBox(height: 4),
-                
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AfterlifeColors.neonPink.withOpacity(0.2),
+                    color: AfterlifeColors.neonPink.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
+                    border: Border.all(color: AfterlifeColors.neonPink.withValues(alpha: 0.5)),
                   ),
                   child: Text(
-                    "🍻 $_currentPenalty trago${_currentPenalty != 1 ? 's' : ''} acumulado${_currentPenalty != 1 ? 's' : ''}",
-                    style: TextStyle(
+                    "⚡ $_currentPenalty Bebida${_currentPenalty != 1 ? 's' : ''} acumulada${_currentPenalty != 1 ? 's' : ''}",
+                    style: const TextStyle(
                       color: AfterlifeColors.neonPink,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -256,26 +255,18 @@ final List<String> _spicyQuestions = [
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           AfterlifeCard(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Icon(
-                    Icons.local_fire_department,
-                    color: Colors.orange,
-                    size: 40,
-                  ),
-
+          Icon(Icons.local_fire_department, color: Theme.of(context).colorScheme.error, size: 40),
                   const SizedBox(height: 16),
-
                   Text(
                     _currentQuestion,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -285,9 +276,7 @@ final List<String> _spicyQuestions = [
               ),
             ),
           ),
-
           const SizedBox(height: 30),
-
           Row(
             children: [
               Expanded(
@@ -297,35 +286,28 @@ final List<String> _spicyQuestions = [
                   onPressed: _answered,
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: AfterButton(
-                  label: "BEBER ($_currentPenalty)",
+                  label: "BEBER ($_currentPenalty)",  // 👈 Cambiado de "RETO" a "BEBER"
                   color: AfterlifeColors.acidGreen,
                   onPressed: _drinkPenalty,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
           Center(
             child: Text(
-              "Si no respondes, tus tragos acumulados aumentan 🍻",
+              "Si no respondes, bebes y tus bebidas acumuladas aumentan ⚡",
               style: TextStyle(
-                color: AfterlifeColors.textSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                 fontSize: 12,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Mostrar el resumen de tragos de todos los jugadores
           AfterlifeCard(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -333,9 +315,9 @@ final List<String> _spicyQuestions = [
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "ESTADO DE TRAGOS 🍻",
+                    "ESTADO DE BEBIDAS ⚡",
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -350,33 +332,31 @@ final List<String> _spicyQuestions = [
                         children: [
                           Text(
                             player,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 16,
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                             decoration: BoxDecoration(
-                              color: player == _currentPlayer 
-                                  ? AfterlifeColors.acidGreen.withOpacity(0.3)
+                              color: player == _currentPlayer
+                                  ? AfterlifeColors.acidGreen.withValues(alpha: 0.3)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen
-                                    : AfterlifeColors.textSecondary.withOpacity(0.3),
+                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
-                              "$penalty trago${penalty != 1 ? 's' : ''}",
+                              "$penalty Bebida${penalty != 1 ? 's' : ''}",
                               style: TextStyle(
                                 color: player == _currentPlayer
                                     ? AfterlifeColors.acidGreen
-                                    : AfterlifeColors.textSecondary,
-                                fontWeight: player == _currentPlayer
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                    : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                                fontWeight: player == _currentPlayer ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                           ),

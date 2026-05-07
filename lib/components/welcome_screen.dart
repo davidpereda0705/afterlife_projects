@@ -8,8 +8,6 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos tu nuevo fondo negro profundo como base
-      backgroundColor: AfterlifeColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -35,7 +33,7 @@ class WelcomeScreen extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     // Resplandor usando tu nuevo Púrpura Eléctrico con opacidad
-                    color: AfterlifeColors.electricPurple.withOpacity(0.5),
+                    color: AfterlifeColors.electricPurple.withValues(alpha: 0.5),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),

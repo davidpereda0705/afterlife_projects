@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/app_constants.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -23,24 +24,28 @@ class AuthService {
 
       // Datos iniciales del usuario con todos los campos que usará la app
       final userData = {
-        'username': username,
-        'email': email,
-        'level': 1,
-        'points': 0,
-        'nightsCompleted': 0,
-        'challengesCompleted': 0,
-        'friendsCount': 0,
+        AppConstants.fieldUsername: username,
+        AppConstants.fieldEmail: email,
+        AppConstants.fieldLevel: 1,
+        AppConstants.fieldPoints: 0,
+        AppConstants.fieldNightsCompleted: 0,
+        AppConstants.fieldChallengesCompleted: 0,
+        AppConstants.fieldFriendsCount: 0,
         'achievementsCount': 0,
-        'photosUploaded': 0, // Añadir
-        'nightsCreated': 0, // Añadir
-        'createdAt': FieldValue.serverTimestamp(),
+        AppConstants.fieldPhotosUploaded: 0, // Añadir
+        AppConstants.fieldNightsCreated: 0, // Añadir
+        AppConstants.fieldCreatedAt: FieldValue.serverTimestamp(),
       };
 
       // Guardar en Firestore (esperamos a que termine para asegurar consistencia)
-      await _firestore.collection('users').doc(result.user!.uid).set(userData);
-      print('✅ Usuario guardado en Firestore con datos iniciales');
+      final user = result.user;
+      if (user == null) throw Exception('Error al crear el usuario');
+      await _firestore.collection(AppConstants.usersCollection).doc(user.uid).set(userData);
 
-      return result.user;
+      // Enviar email de verificación
+      await user.sendEmailVerification();
+
+      return user;
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -98,6 +103,19 @@ class AuthService {
     return _auth.currentUser;
   }
 
+  // Verificar si el email está verificado
+  bool isEmailVerified() {
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  // Reenviar email de verificación
+  Future<void> sendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+
   /// Cambia la contraseña del usuario actual.
   /// Requiere la contraseña actual para reautenticar.
   /// Lanza una excepción si la reautenticación falla o si hay otro error.
@@ -116,7 +134,7 @@ class AuthService {
 
     // Reautenticar con la contraseña actual
     AuthCredential credential = EmailAuthProvider.credential(
-      email: user.email!,
+      email: user.email ?? '',
       password: currentPassword,
     );
 

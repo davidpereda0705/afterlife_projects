@@ -20,13 +20,13 @@ class AfterButton extends StatelessWidget {
       child: Container(
         height: 60,
         decoration: BoxDecoration(
-          color: isDisabled ? color.withOpacity(0.3) : color,
+          color: isDisabled ? color.withValues(alpha: 0.3) : color,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isDisabled
               ? []
               : [
                   BoxShadow(
-                    color: color.withOpacity(0.6),
+                    color: color.withValues(alpha: 0.6),
                     blurRadius: 25,
                   ),
                 ],
@@ -34,10 +34,10 @@ class AfterButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Syne',
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 16,
             ),
           ),

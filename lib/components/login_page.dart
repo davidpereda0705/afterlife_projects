@@ -2,9 +2,9 @@ import 'dart:ui';
 import 'package:afterlife_projects/components/AfterButton.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
 import 'package:afterlife_projects/theme/colors.dart';
-import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -59,9 +59,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _markOnboardingAsSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+  }
+
   void _intentarAcceder() async {
     // Si no es login, validamos el formulario normalmente
-    if (!isLogin && !_formKey.currentState!.validate()) return;
+    if (!isLogin && !(_formKey.currentState?.validate() ?? false)) return;
     
     // Si es login, solo comprobamos que no estén vacíos
     if (isLogin && (_userController.text.trim().isEmpty || _passController.text.trim().isEmpty)) {
@@ -73,7 +78,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     try {
       if (isLogin) {
-        await _auth.signInWithEmail(_userController.text.trim(), _passController.text.trim());
+        final user = await _auth.signInWithEmail(_userController.text.trim(), _passController.text.trim());
+        if (user != null) {
+          await user.reload();
+          final freshUser = FirebaseAuth.instance.currentUser;
+          if (freshUser != null && !freshUser.emailVerified && mounted) {
+            await _auth.signOut();
+            _showError('Verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
+            await _auth.sendVerificationEmail();
+            setState(() => isLoading = false);
+            return;
+          }
+        }
       } else {
         await _auth.registerWithEmail(
           _emailController.text.trim(),
@@ -81,6 +97,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _userController.text.trim(),
         );
       }
+      await _markOnboardingAsSeen();
     } on FirebaseAuthException catch (e) {
       if (isLogin) {
         _showError('Nombre / contraseña incorrecto, inténtalo de nuevo');
@@ -97,8 +114,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.redAccent.withOpacity(0.9),
+        content: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.9),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -108,7 +125,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Fondo Dinámico
@@ -119,10 +135,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AfterlifeColors.background,
-                    AfterlifeColors.electricPurple.withOpacity(0.15),
-                    AfterlifeColors.background,
-                    AfterlifeColors.electricLilac.withOpacity(0.1),
+                    Theme.of(context).scaffoldBackgroundColor,
+                    AfterlifeColors.electricPurple.withValues(alpha: 0.15),
+                    Theme.of(context).scaffoldBackgroundColor,
+                    AfterlifeColors.electricLilac.withValues(alpha: 0.1),
                   ],
                 ),
               ),
@@ -138,7 +154,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AfterlifeColors.electricLilac.withOpacity(0.2),
+                color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
               ),
               child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container()),
             ),
@@ -169,9 +185,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           child: Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                             ),
                             child: Form(
                               key: _formKey,
@@ -241,7 +257,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         child: RichText(
                           text: TextSpan(
                             text: isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? ',
-                            style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 14),
+                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 14),
                             children: [
                               TextSpan(
                                 text: isLogin ? 'REGÍSTRATE' : 'ENTRA',
@@ -278,27 +294,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       controller: controller,
       obscureText: isPassword && !(showPassword ?? false),
       validator: validator,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
-        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withOpacity(0.7), size: 20),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12),
+        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withValues(alpha: 0.7), size: 20),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   (showPassword ?? false) ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white38,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   size: 20,
                 ),
                 onPressed: togglePassword,
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -306,11 +322,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
         ),
       ),
     );

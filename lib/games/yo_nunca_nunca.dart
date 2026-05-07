@@ -5,20 +5,15 @@ import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
 class YoNuncaGame extends StatefulWidget {
-  const YoNuncaGame({super.key});
+  final List<Map<String, dynamic>>? players;
+  const YoNuncaGame({super.key, this.players});
 
   @override
   State<YoNuncaGame> createState() => _YoNuncaGameState();
 }
 
 class _YoNuncaGameState extends State<YoNuncaGame> {
-  // Jugadores de ejemplo (nombre, iniciales, contador de bebidas)
-  final List<Map<String, dynamic>> _players = [
-    {'name': 'Carlos', 'initials': 'CR', 'drinks': 0},
-    {'name': 'Ana', 'initials': 'AN', 'drinks': 0},
-    {'name': 'María', 'initials': 'MJ', 'drinks': 0},
-    {'name': 'Luis', 'initials': 'LP', 'drinks': 0},
-  ];
+  late List<Map<String, dynamic>> _players;
 
   // Frases (puedes usar las que ya tienes)
   final List<String> _frases = [
@@ -67,12 +62,26 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
   @override
   void initState() {
     super.initState();
+    if (widget.players != null && widget.players!.isNotEmpty) {
+      _players = widget.players!.map((p) => {
+        'name': p['name'],
+        'initials': p['initials'],
+        'points': 0,
+      }).toList();
+    } else {
+      _players = [
+        {'name': 'Carlos', 'initials': 'CR', 'points': 0},
+        {'name': 'Ana', 'initials': 'AN', 'points': 0},
+        {'name': 'María', 'initials': 'MJ', 'points': 0},
+        {'name': 'Luis', 'initials': 'LP', 'points': 0},
+      ];
+    }
     _frases.shuffle(); // Mezclar al inicio
   }
 
-  void _addDrink(int index) {
+  void _addPoint(int index) {
     setState(() {
-      _players[index]['drinks'] = (_players[index]['drinks'] as int) + 1;
+      _players[index]['points'] = (_players[index]['points'] as int) + 1;
     });
   }
 
@@ -108,9 +117,7 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
     }
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         title: Text('YO NUNCA', style: AfterlifeTextTheme.headlineMedium),
         centerTitle: true,
@@ -127,13 +134,15 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               // Barra de progreso
               LinearProgressIndicator(
                 value: (_currentIndex + 1) / _frases.length,
-                backgroundColor: Colors.white10,
-                color: const Color(0xFFEC4899),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                color: AfterlifeColors.neonPink,
               ),
               const SizedBox(height: 8),
               Text(
                 'Frase ${_currentIndex + 1}/${_frases.length}',
-                style: AfterlifeTextTheme.bodySmall.copyWith(color: Colors.white54),
+                style: AfterlifeTextTheme.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -152,13 +161,16 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEC4899).withOpacity(0.2),
+                              color: AfterlifeColors.neonPink.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Center(
                               child: Text(
                                 player['initials'],
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -166,25 +178,28 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                           Expanded(
                             child: Text(
                               player['name'],
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B).withOpacity(0.2),
+                              color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '${player['drinks']} 🍻',
-                              style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold),
+                              '${player['points']} ⭐',
+                              style: const TextStyle(color: AfterlifeColors.neonOrange, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.local_drink, color: Color(0xFFEC4899)),
-                            onPressed: () => _addDrink(index),
-                            tooltip: 'Añadir bebida',
+                            icon: const Icon(Icons.add_circle, color: AfterlifeColors.neonPink),
+                            onPressed: () => _addPoint(index),
+                            tooltip: 'Añadir punto',
                           ),
                         ],
                       ),
@@ -204,14 +219,14 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                       children: [
                         Icon(
                           Icons.water_drop_outlined,
-                          color: const Color(0xFFEC4899),
+                          color: AfterlifeColors.neonPink,
                           size: 50,
                         ),
                         const SizedBox(height: 20),
                         Text(
                           "YO NUNCA NUNCA...",
                           style: AfterlifeTextTheme.titleSmall.copyWith(
-                            color: const Color(0xFFEC4899),
+                            color: AfterlifeColors.neonPink,
                             letterSpacing: 2,
                           ),
                         ),
@@ -235,14 +250,14 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               // Botón siguiente
               AfterButton(
                 label: 'SIGUIENTE',
-                color: const Color(0xFFEC4899),
+                color: AfterlifeColors.neonPink,
                 onPressed: _nextFrase,
               ),
               const SizedBox(height: 16),
               Text(
-                "Si lo has hecho, ¡aprieta tu botón de bebida!",
+                "Si lo has hecho, ¡aprieta tu botón!",
                 style: AfterlifeTextTheme.bodySmall.copyWith(
-                  color: AfterlifeColors.textSecondary,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -255,17 +270,15 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
   }
 
   Widget _buildResultsScreen() {
-    // Ordenar jugadores por número de bebidas (mayor a menor)
+    // Ordenar jugadores por número de puntos (mayor a menor)
     final sorted = List<Map<String, dynamic>>.from(_players)
-      ..sort((a, b) => (b['drinks'] as int).compareTo(a['drinks'] as int));
+      ..sort((a, b) => (b['points'] as int).compareTo(a['points'] as int));
 
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('RESUMEN', style: AfterlifeTextTheme.headlineMedium),
@@ -276,28 +289,28 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.emoji_events, size: 80, color: Color(0xFFF59E0B)),
+              const Icon(Icons.emoji_events, size: 80, color: AfterlifeColors.neonOrange),
               const SizedBox(height: 20),
               Text(
                 '🏆 GANADOR 🏆',
-                style: TextStyle(color: Color(0xFFF59E0B), fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AfterlifeColors.neonOrange, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               Text(
                 sorted[0]['name'],
                 style: AfterlifeTextTheme.headlineMedium.copyWith(
-                  color: Color(0xFFF59E0B),
+                  color: AfterlifeColors.neonOrange,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                '${sorted[0]['drinks']} bebidas',
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                '${sorted[0]['points']} puntos',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 16),
               ),
               const SizedBox(height: 30),
               const Text(
                 'CLASIFICACIÓN FINAL',
-                style: TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(color: AfterlifeColors.neonPink, fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 20),
               ...sorted.map((player) {
@@ -306,8 +319,17 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(player['name'], style: const TextStyle(color: Colors.white, fontSize: 16)),
-                      Text('${player['drinks']} 🍻', style: const TextStyle(color: Color(0xFFF59E0B))),
+                      Text(
+                        player['name'],
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        '${player['points']} ⭐',
+                        style: const TextStyle(color: AfterlifeColors.neonOrange),
+                      ),
                     ],
                   ),
                 );
@@ -321,7 +343,10 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('VOLVER', style: TextStyle(color: AfterlifeColors.textSecondary)),
+                child: Text(
+                  'VOLVER',
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                ),
               ),
             ],
           ),

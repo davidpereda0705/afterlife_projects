@@ -7,15 +7,15 @@ import 'package:afterlife_projects/components/AfterLifeCard.dart';
 import 'package:afterlife_projects/components/AfterButton.dart';
 
 class WouldYouRatherGame extends StatefulWidget {
-  const WouldYouRatherGame({super.key});
+  final List<Map<String, dynamic>>? players;
+  const WouldYouRatherGame({super.key, this.players});
 
   @override
   State<WouldYouRatherGame> createState() => _WouldYouRatherGameState();
 }
 
 class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
-  // Jugadores fijos
-  final List<String> _players = ["Alex", "Marta", "Carlos", "Lucía"];
+  late List<String> _players;
   
   // Categoría seleccionada
   final String _selectedCategory = 'explosivo';
@@ -100,6 +100,11 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
   @override
   void initState() {
     super.initState();
+    if (widget.players != null && widget.players!.isNotEmpty) {
+      _players = widget.players!.map((p) => p['name'] as String).toList();
+    } else {
+      _players = ["Alex", "Marta", "Carlos", "Lucía"];
+    }
     _resetVotingState();
   }
 
@@ -209,12 +214,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
     final Color currentColor = _categoryColors[_selectedCategory]!;
     
     return Scaffold(
-      backgroundColor: AfterlifeColors.background,
       appBar: AppBar(
-        backgroundColor: AfterlifeColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -253,7 +256,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Votación anónima por turnos. Pasa el móvil a cada persona.',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -276,7 +279,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: currentColor.withOpacity(0.2),
+                      color: currentColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -293,10 +296,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AfterlifeColors.cyanBlue.withOpacity(0.1),
+                      color: AfterlifeColors.cyanBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AfterlifeColors.cyanBlue.withOpacity(0.3),
+                        color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -330,7 +333,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: currentColor.withOpacity(0.2),
+                      color: currentColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -352,10 +355,10 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AfterlifeColors.neonPink.withOpacity(0.1),
+                      color: AfterlifeColors.neonPink.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AfterlifeColors.neonPink.withOpacity(0.3),
+                        color: AfterlifeColors.neonPink.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -387,7 +390,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                     Text(
                       'Pulsa EMPEZAR para la primera ronda',
                       style: TextStyle(
-                        color: AfterlifeColors.textSecondary,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                         fontSize: 14,
                       ),
                     ),
@@ -404,7 +407,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AfterlifeColors.electricPurple.withOpacity(0.1),
+                color: AfterlifeColors.electricPurple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AfterlifeColors.electricPurple),
               ),
@@ -413,7 +416,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'TURNO DE:',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -421,7 +424,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     _getCurrentVoter().toUpperCase(),
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -430,7 +433,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                   Text(
                     'Vota en privado, nadie más mira',
                     style: TextStyle(
-                      color: AfterlifeColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
@@ -519,7 +522,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Text(
                   '$votedCount/${_players.length}',
                   style: TextStyle(
-                    color: AfterlifeColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -528,7 +531,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white10,
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               color: AfterlifeColors.acidGreen,
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
@@ -545,11 +548,11 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
     Color colorResultado = AfterlifeColors.neonOrange;
     
     if (_votesA < _votesB) {
-      resultado = 'PIERDE OPCIÓN A\nBeben los que votaron A';
+      resultado = 'PIERDE OPCIÓN A\nPierden los que votaron A';
     } else if (_votesB < _votesA) {
-      resultado = 'PIERDE OPCIÓN B\nBeben los que votaron B';
+      resultado = 'PIERDE OPCIÓN B\nPierden los que votaron B';
     } else {
-      resultado = 'EMPATE\nBEBEN TODOS';
+      resultado = 'EMPATE\nPIERDEN TODOS';
       colorResultado = AfterlifeColors.acidGreen;
     }
     
@@ -560,8 +563,8 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              colorResultado.withOpacity(0.2),
-              AfterlifeColors.electricPurple.withOpacity(0.2),
+              colorResultado.withValues(alpha: 0.2),
+              AfterlifeColors.electricPurple.withValues(alpha: 0.2),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -603,7 +606,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
                 Container(
                   height: 50,
                   width: 2,
-                  color: Colors.white24,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
                 ),
                 Column(
                   children: [
@@ -630,7 +633,7 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorResultado.withOpacity(0.2),
+                color: colorResultado.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
