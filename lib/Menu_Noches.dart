@@ -54,7 +54,7 @@ class NightSelectionScreen extends StatelessWidget {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AfterlifeColors.electricLilac.withOpacity(0.2),
+                        color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.add_circle_outline, color: AfterlifeColors.electricLilac, size: 30),
@@ -85,7 +85,7 @@ class NightSelectionScreen extends StatelessWidget {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AfterlifeColors.neonPink.withOpacity(0.2),
+                        color: AfterlifeColors.neonPink.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.group_add_outlined, color: AfterlifeColors.neonPink, size: 30),

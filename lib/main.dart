@@ -1,3 +1,4 @@
+import 'package:afterlife_projects/components/backgrounds/disco_background.dart';
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/main_screen.dart';
 import 'package:afterlife_projects/screens/onboarding_screen.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
                 data: MediaQuery.of(context).copyWith(
                   textScaler: TextScaler.linear(settings.fontSizeFactor),
                 ),
-                child: child!,
+                child: DiscoBackground(child: child!),
               );
             },
             home: const OnboardingWrapper(),

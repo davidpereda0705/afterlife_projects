@@ -164,11 +164,10 @@ class ChatService {
         .collection('messages')
         .where('text', isGreaterThanOrEqualTo: query)
         .where('text', isLessThanOrEqualTo: '$query\uf8ff')
-        .orderBy('timestamp', descending: true)
         .limit(50)
         .get();
-    
-    return results.docs.map((doc) {
+
+    final messages = results.docs.map((doc) {
       return {
         'id': doc.id,
         'text': doc.data()['text'],
@@ -176,6 +175,17 @@ class ChatService {
         'timestamp': doc.data()['timestamp'],
       };
     }).toList();
+
+    messages.sort((a, b) {
+      final ta = a['timestamp'];
+      final tb = b['timestamp'];
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      return (tb as Timestamp).compareTo(ta as Timestamp);
+    });
+
+    return messages;
   }
 
   // Eliminar mensaje (soft delete)

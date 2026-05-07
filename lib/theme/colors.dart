@@ -73,10 +73,65 @@ class AfterlifeColors {
     end: Alignment.bottomRight,
   );
   
-  // NUEVO: Gradiente con tu lila eléctrico
-  static Gradient get electricLilacGradient => LinearGradient(
-    colors: [electricLilac, Color(0xFF9C27B0)], // Lila eléctrico a magenta
+  static Gradient get electricLilacGradient => const LinearGradient(
+    colors: [electricLilac, Color(0xFF9C27B0)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static Gradient get gradient => const LinearGradient(
+    colors: [electricPurple, neonPink],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static Gradient get heroGradient => const LinearGradient(
+    colors: [electricPurple, neonPink, cyanBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.5, 1.0],
+  );
+
+  // =================== ADAPTIVE ===================
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color surface(BuildContext context) =>
+      isDark(context) ? surfaceDark : surfaceLight;
+
+  static Color card(BuildContext context) =>
+      isDark(context) ? cardDark : cardLight;
+
+  static Color textPrimaryAdaptive(BuildContext context) =>
+      isDark(context) ? textPrimary : textPrimaryLight;
+
+  static Color textSecondaryAdaptive(BuildContext context) =>
+      isDark(context) ? textSecondary : textSecondaryLight;
+
+  static Color textDisabledAdaptive(BuildContext context) =>
+      isDark(context) ? textDisabled : textDisabledLight;
+
+  static Color dividerAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.05) : dividerLight;
+
+  static Color outlineAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.1) : outlineLight;
+
+  static Color inputFillAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.03) : inputFillLight;
+
+  static Gradient headerGradient(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        colors: [Color(0xFF1A0533), Color(0xFF0D0D1A)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    return const LinearGradient(
+      colors: [Color(0xFFF3EEFF), Color(0xFFFFEEF8)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
 }

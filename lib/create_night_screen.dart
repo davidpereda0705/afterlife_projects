@@ -258,7 +258,7 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedHour,
+              initialValue: _selectedHour,
               hint: Text(
                 'Hora',
                 style: TextStyle(
