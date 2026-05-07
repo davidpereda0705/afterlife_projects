@@ -1,5 +1,4 @@
 
-import 'package:afterlife_projects/components/journal_export_card.dart';
 import 'package:afterlife_projects/night_summary.dart';
 import 'package:afterlife_projects/services/journal_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -148,26 +147,6 @@ class _JournalScreenState extends State<JournalScreen> {
                         Text(
                           '${entry.day} · ${entry.time}',
                           style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.share, size: 18),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => JournalExportCard(
-                                nightData: {
-                                  'name': entry.name,
-                                  'day': entry.day,
-                                  'players': entry.players,
-                                  'challenges': entry.challenges,
-                                },
-                              ),
-                            );
-                          },
                         ),
                       ],
                     ),

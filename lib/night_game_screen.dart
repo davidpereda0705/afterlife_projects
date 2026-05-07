@@ -4,7 +4,6 @@ import 'package:afterlife_projects/components/challenge_wheel.dart';
 import 'package:afterlife_projects/components/expense_splitter.dart';
 import 'package:afterlife_projects/components/moments_viewer.dart';
 import 'package:afterlife_projects/components/night_chat_sheet.dart';
-import 'package:afterlife_projects/components/qr_invite.dart';
 import 'package:afterlife_projects/components/spotify_link.dart';
 import 'package:afterlife_projects/services/offline_service.dart';
 import 'package:afterlife_projects/night_summary.dart';
@@ -938,18 +937,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  void _showQrInvite(Map<String, dynamic> nightData) {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => QrInviteSheet(
-        nightId: widget.nightId,
-        nightName: nightData['name'] ?? 'Noche',
-      ),
-    );
-  }
 
   void _showChallengeWheel(List<dynamic> players) {
     HapticFeedback.lightImpact();
