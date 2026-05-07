@@ -250,7 +250,7 @@ class _ProvinceCard extends StatelessWidget {
 
 class _ProvinceClubsScreen extends StatefulWidget {
   final _Province province;
-  const _ProvinceClubsScreen({super.key, required this.province});
+  const _ProvinceClubsScreen({required this.province});
 
   @override
   State<_ProvinceClubsScreen> createState() => _ProvinceClubsScreenState();

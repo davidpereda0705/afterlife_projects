@@ -1,6 +1,5 @@
 import 'package:afterlife_projects/Home.dart';
 import 'package:afterlife_projects/Menu_Noches.dart';
-import 'package:afterlife_projects/clubs_screen.dart';
 import 'package:afterlife_projects/components/group_page.dart';
 import 'package:afterlife_projects/profile_screen.dart';
 import 'package:afterlife_projects/ranking_screen.dart';

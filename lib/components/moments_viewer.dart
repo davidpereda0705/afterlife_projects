@@ -68,7 +68,7 @@ class MomentsViewer extends StatelessWidget {
                         children: [
                           if (hasImage)
                             Image.network(
-                              imageUrl!,
+                              imageUrl,
                               fit: BoxFit.cover,
                             )
                           else

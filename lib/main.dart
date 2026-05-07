@@ -14,7 +14,6 @@ import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'components/backgrounds/disco_background.dart';
 import 'screens/tutorial_screen.dart';
 import 'firebase_options.dart';
 

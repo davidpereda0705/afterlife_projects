@@ -4,7 +4,6 @@ import 'package:afterlife_projects/components/effects/glass_card.dart';
 import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/journal_screen.dart';
 import 'package:afterlife_projects/AchievementsScreen.dart';
-import 'package:afterlife_projects/screens/visited_clubs_screen.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
