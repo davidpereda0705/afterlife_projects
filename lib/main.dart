@@ -1,6 +1,6 @@
 import 'package:afterlife_projects/components/login_page.dart';
 import 'package:afterlife_projects/main_screen.dart';
-import 'package:afterlife_projects/screens/onboarding_screen.dart';
+import 'package:afterlife_projects/night_game_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -9,10 +9,13 @@ import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/providers/settings_provider.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
+import 'package:afterlife_projects/services/biometric_service.dart';
 import 'package:afterlife_projects/edit_profile.dart';
 import 'package:afterlife_projects/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'components/backgrounds/disco_background.dart';
+import 'screens/tutorial_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -46,7 +49,9 @@ class MyApp extends StatelessWidget {
                 data: MediaQuery.of(context).copyWith(
                   textScaler: TextScaler.linear(settings.fontSizeFactor),
                 ),
-                child: child!,
+                child: settings.backgroundEffects
+                    ? DiscoBackground(child: child!)
+                    : child!,
               );
             },
             home: const OnboardingWrapper(),
@@ -70,44 +75,49 @@ class OnboardingWrapper extends StatefulWidget {
 
 class _OnboardingWrapperState extends State<OnboardingWrapper> {
   bool _isLoading = true;
-  bool _showOnboarding = true;
+  bool _hasSeenTutorial = false;
 
   @override
   void initState() {
     super.initState();
-    _checkFirstLaunch();
+    _checkTutorial();
+    _handleDeepLink();
   }
 
-  Future<void> _checkFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-    
-    // Si ya hay una sesión activa, marcamos el tutorial como visto automáticamente
-    if (FirebaseAuth.instance.currentUser != null && !hasSeenOnboarding) {
-      await prefs.setBool('has_seen_onboarding', true);
-      if (mounted) {
-        setState(() {
-          _showOnboarding = false;
-          _isLoading = false;
+  void _handleDeepLink() {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final nightId = uri.queryParameters['nightId'];
+      if (nightId != null && nightId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null && mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => NightGameScreen(nightId: nightId),
+              ),
+            );
+          }
         });
       }
-      return;
     }
+  }
 
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('has_seen_tutorial') ?? false;
     if (mounted) {
       setState(() {
-        _showOnboarding = !hasSeenOnboarding;
+        _hasSeenTutorial = seen;
         _isLoading = false;
       });
     }
   }
 
-  void _completeOnboarding() async {
+  Future<void> _completeTutorial() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_onboarding', true);
-    if (mounted) {
-      setState(() => _showOnboarding = false);
-    }
+    await prefs.setBool('has_seen_tutorial', true);
+    if (mounted) setState(() => _hasSeenTutorial = true);
   }
 
   @override
@@ -125,18 +135,103 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
 
         final user = snapshot.data;
 
-        // Si el usuario está logueado, vamos directo a MainScreen
         if (user != null) {
-          return const MainScreen();
+          return Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (userProvider.isLoading && userProvider.userData == null) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              // Tutorial interactivo la primera vez que entras
+              if (!_hasSeenTutorial) {
+                return TutorialScreen(onDone: _completeTutorial);
+              }
+              return const BiometricGate(child: MainScreen());
+            },
+          );
         }
 
-        // Si no está logueado, decidimos entre Onboarding o Login
-        if (_showOnboarding) {
-          return OnboardingScreen(onDone: _completeOnboarding);
-        }
-
+        // Sin sesión → directo al login
         return const LoginPage();
       },
+    );
+  }
+}
+
+/// Pantalla intermedia que pide biometría al volver de segundo plano.
+/// En web se ignora automáticamente.
+class BiometricGate extends StatefulWidget {
+  final Widget child;
+  const BiometricGate({super.key, required this.child});
+
+  @override
+  State<BiometricGate> createState() => _BiometricGateState();
+}
+
+class _BiometricGateState extends State<BiometricGate>
+    with WidgetsBindingObserver {
+  bool _locked = false;
+  bool _supportsBio = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addObserver(this);
+      _checkSupport();
+    }
+  }
+
+  Future<void> _checkSupport() async {
+    final can = await BiometricService.canCheckBiometrics();
+    setState(() => _supportsBio = can);
+  }
+
+  @override
+  void dispose() {
+    if (!kIsWeb) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (kIsWeb || !_supportsBio) return;
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      setState(() => _locked = true);
+    }
+    if (state == AppLifecycleState.resumed && _locked) {
+      _authenticate();
+    }
+  }
+
+  Future<void> _authenticate() async {
+    final ok = await BiometricService.authenticate();
+    if (ok && mounted) {
+      setState(() => _locked = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb || !_supportsBio || !_locked) return widget.child;
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_outline, size: 64),
+            const SizedBox(height: 16),
+            const Text('Afterlife bloqueado', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _authenticate,
+              icon: const Icon(Icons.fingerprint),
+              label: const Text('DESBLOQUEAR'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -47,7 +47,7 @@ class NightSummaryDetailScreen extends StatelessWidget {
                   children: [
                     Text(
                       '${entry.day} · ${entry.time} · ${entry.groupName}',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -80,13 +80,13 @@ class NightSummaryDetailScreen extends StatelessWidget {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 '${players.indexOf(player) + 1}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                               ),
                             ),
                           ),

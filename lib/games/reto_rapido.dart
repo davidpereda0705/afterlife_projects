@@ -220,9 +220,9 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AfterlifeColors.neonPink.withOpacity(0.5)),
+                  border: Border.all(color: AfterlifeColors.neonPink.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   children: [
@@ -260,7 +260,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
                       value: _secondsLeft / 30,
                       strokeWidth: 8,
                       color: _secondsLeft <= 5 ? Theme.of(context).colorScheme.error : AfterlifeColors.cyanBlue,
-                      backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                   ),
                   Column(
@@ -331,7 +331,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               Text(
                 'Pulsa COMPLETADO si has superado el reto a tiempo',
                 style: AfterlifeTextTheme.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -378,7 +378,7 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
               ),
               Text(
                 '${sorted[0]['completed']} retos completados',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 16),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 16),
               ),
               const SizedBox(height: 30),
               const Text(

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:afterlife_projects/components/AfterLifeCard.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -28,11 +31,13 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-  
+  StreamSubscription<List<Map<String, dynamic>>>? _messagesSubscription;
+
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
   String _searchQuery = '';
   bool _showSearchBar = false;
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -41,7 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _chatService.markMessagesAsRead(widget.chatId);
     
     // Y seguir marcando como leídos si llegan nuevos mientras estamos dentro
-    _chatService.getMessages(widget.chatId).listen((messages) {
+    _messagesSubscription = _chatService.getMessages(widget.chatId).listen((messages) {
       if (mounted) {
         _chatService.markMessagesAsRead(widget.chatId);
       }
@@ -55,6 +60,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
+    _messagesSubscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -68,6 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
     
     _chatService.sendMessage(widget.chatId, text);
+    HapticFeedback.lightImpact();
     _messageController.clear();
     
     // Scroll al final
@@ -82,20 +90,49 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _searchMessages(String query) async {
+  void _onSearchChanged(String query) {
+    _searchDebounceTimer?.cancel();
+    _searchQuery = query;
     if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+      }
       return;
     }
-    setState(() => _isSearching = true);
-    final results = await _chatService.searchMessages(widget.chatId, query);
-    setState(() {
-      _searchResults = results;
-      _isSearching = false;
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _searchMessages(query);
     });
+  }
+
+  void _searchMessages(String query) async {
+    if (!mounted) return;
+    setState(() => _isSearching = true);
+    try {
+      final results = await _chatService.searchMessages(widget.chatId, query);
+      if (!mounted) return;
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSearching = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al buscar: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
+    }
+  }
+
+  void _closeSearchAndReturn() {
+    setState(() {
+      _showSearchBar = false;
+      _searchQuery = '';
+      _searchResults = [];
+    });
+    _focusNode.unfocus();
   }
 
   @override
@@ -175,8 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       onChanged: (value) {
-                        setState(() => _searchQuery = value);
-                        _searchMessages(value);
+                        _onSearchChanged(value);
                       },
                     ),
                   ),
@@ -247,7 +283,7 @@ class _ChatScreenState extends State<ChatScreen> {
       stream: _chatService.getMessages(widget.chatId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.70))));
+          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -299,8 +335,10 @@ class _ChatScreenState extends State<ChatScreen> {
           time = _formatTime((message['timestamp'] as Timestamp).toDate());
         }
       }
-    } catch (e) {}
-    
+    } catch (e) {
+      // ignore: timestamp parse error - use empty string fallback
+    }
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -308,13 +346,13 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isMe
-              ? AfterlifeColors.electricLilac.withOpacity(0.8)
+              ? AfterlifeColors.electricLilac.withValues(alpha: 0.8)
               : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isMe
                 ? AfterlifeColors.electricLilac
-                : AfterlifeColors.electricPurple.withOpacity(0.3),
+                : AfterlifeColors.electricPurple.withValues(alpha: 0.3),
             width: 0.5,
           ),
         ),
@@ -335,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   time,
                   style: TextStyle(
-                    color: (isMe ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.70) : Theme.of(context).disabledColor),
+                    color: (isMe ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.70) : Theme.of(context).disabledColor),
                     fontSize: 10,
                   ),
                 ),
@@ -345,7 +383,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icon(
                     message['read'] ? Icons.done_all : Icons.done,
                     size: 12, 
-                    color: message['read'] ? AfterlifeColors.acidGreen : Theme.of(context).colorScheme.onPrimary.withOpacity(0.70)
+                    color: message['read'] ? AfterlifeColors.acidGreen : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.70)
                   ),
               ],
             ),
@@ -387,13 +425,19 @@ class _ChatScreenState extends State<ChatScreen> {
       itemBuilder: (context, index) {
         final message = _searchResults[index];
         final isMe = message['senderId'] == _chatService.currentUserId;
-        final time = message['timestamp'] != null
-            ? _formatTime(message['timestamp'].toDate())
-            : '';
-        
+        DateTime? messageDate;
+        try {
+          final ts = message['timestamp'];
+          if (ts is Timestamp) messageDate = ts.toDate();
+        } catch (_) {
+          messageDate = null;
+        }
+        final time = messageDate != null ? _formatTime(messageDate) : '';
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           child: AfterlifeCard(
+            onTap: _closeSearchAndReturn,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -418,7 +462,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    message['text'],
+                    message['text'] ?? '',
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                   ),
                 ],
@@ -436,7 +480,7 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: AfterlifeColors.electricLilac.withOpacity(0.2)),
+          top: BorderSide(color: AfterlifeColors.electricLilac.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(

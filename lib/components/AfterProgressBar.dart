@@ -36,7 +36,7 @@ class AfterProgressBar extends StatelessWidget {
           width: double.infinity,
           height: 14,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
@@ -50,7 +50,7 @@ class AfterProgressBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(0.6),
+                        color: color.withValues(alpha: 0.6),
                         blurRadius: 12,
                         spreadRadius: 1,
                       ),

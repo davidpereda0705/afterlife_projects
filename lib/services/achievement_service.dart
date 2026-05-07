@@ -85,7 +85,7 @@ class AchievementService {
     final userRef = _firestore.collection(AppConstants.usersCollection).doc(userId);
     final userDoc = await userRef.get();
     final currentUnlocked = List<Map<String, dynamic>>.from(userDoc.data()?[AppConstants.fieldUnlockedAchievements] ?? []);
-    final totalPointsToAdd = achievements.fold(0, (sum, a) => sum + a.points);
+    final totalPointsToAdd = achievements.fold(0, (total, a) => total + a.points);
 
     for (final achievement in achievements) {
       currentUnlocked.add({

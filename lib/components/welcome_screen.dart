@@ -33,7 +33,7 @@ class WelcomeScreen extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     // Resplandor usando tu nuevo Púrpura Eléctrico con opacidad
-                    color: AfterlifeColors.electricPurple.withOpacity(0.5),
+                    color: AfterlifeColors.electricPurple.withValues(alpha: 0.5),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),

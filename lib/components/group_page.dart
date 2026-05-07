@@ -11,6 +11,7 @@ import 'package:afterlife_projects/services/achievement_service.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class GroupPage extends StatefulWidget {
   const GroupPage({super.key});
@@ -33,7 +34,6 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   String? _loadingFriendId;
 
   late AnimationController _fabAnimationController;
-  late Animation<double> _fabAnimation;
 
   @override
   void initState() {
@@ -41,10 +41,6 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
     _fabAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
-    );
-    _fabAnimation = CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.easeInOut,
     );
     _fabAnimationController.forward();
   }
@@ -86,6 +82,8 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _sendRequest(String uid, String name) async {
     try {
       await _friendService.sendFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Solicitud enviada a $name'), backgroundColor: AfterlifeColors.acidGreen),
       );
@@ -93,6 +91,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
       _searchResults = [];
       setState(() => _searchQuery = '');
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
@@ -102,19 +101,23 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _acceptRequest(String uid, String name) async {
     try {
       await _friendService.acceptFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ahora eres amigo de $name'), backgroundColor: AfterlifeColors.acidGreen),
       );
-      
+
       // Verificar logros después de aceptar
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
       // Esperar un poco para que Firestore actualice el documento
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       await userProvider.refresh();
       final userData = userProvider.userData;
       final friendsCount = userData?['friendsCount'] ?? 0;
-      
+
       final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
         userId: userId,
         nightsCompleted: userData?['nightsCompleted'] ?? 0,
@@ -124,7 +127,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         photosUploaded: userData?['photosUploaded'] ?? 0,
         nightsCreated: userData?['nightsCreated'] ?? 0,
       );
-      
+
       if (newlyUnlocked.isNotEmpty && mounted) {
         final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +140,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         await userProvider.refresh();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
@@ -146,10 +150,13 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
   void _rejectRequest(String uid, String name) async {
     try {
       await _friendService.rejectFriendRequest(uid);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Solicitud rechazada'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
@@ -168,19 +175,23 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             onPressed: () async {
               try {
                 await _friendService.removeFriend(uid);
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$name ya no es tu amigo'), backgroundColor: Theme.of(context).colorScheme.error),
                 );
-                
+
                 // Verificar logros después de eliminar (opcional, pero útil para actualizar progreso)
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
-                final userId = FirebaseAuth.instance.currentUser!.uid;
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userId == null) return;
                 await Future.delayed(const Duration(milliseconds: 500));
+                if (!mounted) return;
                 await userProvider.refresh();
                 final userData = userProvider.userData;
                 final friendsCount = userData?['friendsCount'] ?? 0;
-                
+
                 final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
                   userId: userId,
                   nightsCompleted: userData?['nightsCompleted'] ?? 0,
@@ -190,7 +201,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   photosUploaded: userData?['photosUploaded'] ?? 0,
                   nightsCreated: userData?['nightsCreated'] ?? 0,
                 );
-                
+
                 if (newlyUnlocked.isNotEmpty && mounted) {
                   final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -203,6 +214,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   await userProvider.refresh();
                 }
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
                 );
@@ -244,7 +256,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AfterlifeColors.electricLilac.withOpacity(0.3)),
+                  border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -267,7 +279,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                     ),
                     if (_searchQuery.isNotEmpty)
                       IconButton(
-                        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -305,10 +317,10 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+            color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? color : color.withOpacity(0.3),
+              color: isSelected ? color : color.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -316,7 +328,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? color : color.withOpacity(0.7),
+              color: isSelected ? color : color.withValues(alpha: 0.7),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
@@ -357,7 +369,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.people_outline, size: 60, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                Icon(Icons.people_outline, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
                 Text('No tienes amigos aún', style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 8),
@@ -483,7 +495,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.2),
+                              color: statusColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -504,7 +516,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                   onPressed: () => _removeFriend(friend['uid'], friend['name']),
                 ),
               ],
@@ -533,7 +545,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.person_add_outlined, size: 60, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                Icon(Icons.person_add_outlined, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
                 Text('No hay solicitudes pendientes', style: Theme.of(context).textTheme.bodyLarge),
               ],
@@ -610,7 +622,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_search, size: 60, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+            Icon(Icons.person_search, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text('No se encontraron usuarios', style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 8),
@@ -625,7 +637,7 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 60, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+            Icon(Icons.search, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text('Busca usuarios por nombre', style: Theme.of(context).textTheme.bodyLarge),
           ],
@@ -661,12 +673,8 @@ class _GroupPageState extends State<GroupPage> with TickerProviderStateMixin {
                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          user['email'],
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        // Email oculto por privacidad; si lo necesitas, usa un campo alternativo
+                        // Text(user['email'], style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),

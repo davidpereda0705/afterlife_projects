@@ -9,6 +9,7 @@ import '../providers/user_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_theme.dart';
 import '../components/AchievementBadge.dart';
+import '../components/effects/glass_card.dart';
 
 class AchievementsScreen extends StatefulWidget {
   final String? highlightTitle;
@@ -151,12 +152,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         final totalCount = _allAchievements.length;
 
         return Scaffold(
-          backgroundColor: AfterlifeColors.background,
           appBar: AppBar(
-            backgroundColor: AfterlifeColors.background,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimary),
+              icon: Icon(Icons.arrow_back, color: AfterlifeColors.textPrimaryAdaptive(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
@@ -337,13 +336,16 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               itemCount: unlocked.length,
               itemBuilder: (context, index) {
                 final achievement = unlocked[index];
-                return Container(
-                  width: 100,
+                return GlassCard(
                   margin: const EdgeInsets.only(right: 12),
-                  child: AchievementBadge(
-                    title: achievement.title,
-                    icon: achievement.icon,
-                    isUnlocked: true,
+                  padding: const EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 84,
+                    child: AchievementBadge(
+                      title: achievement.title,
+                      icon: achievement.icon,
+                      isUnlocked: true,
+                    ),
                   ),
                 );
               },
@@ -395,25 +397,24 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
     final isHighlighted = (_highlightedId == achievement.id);
 
-    return Container(
+    return AnimatedContainer(
       key: _achievementKeys[achievement.id],
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          color: isHighlighted ? AfterlifeColors.acidGreen.withOpacity(0.3) : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isHighlighted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange.withOpacity(0.2),
-            width: isHighlighted ? 2 : 1,
-          ),
-          boxShadow: isHighlighted
-              ? [BoxShadow(color: AfterlifeColors.acidGreen.withOpacity(0.5), blurRadius: 8)]
-              : [],
+      decoration: BoxDecoration(
+        color: isHighlighted ? AfterlifeColors.acidGreen.withOpacity(0.3) : Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isHighlighted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange.withOpacity(0.2),
+          width: isHighlighted ? 2 : 1,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+        boxShadow: isHighlighted
+            ? [BoxShadow(color: AfterlifeColors.acidGreen.withOpacity(0.5), blurRadius: 8)]
+            : [],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
             children: [
               Container(
                 width: 50,
@@ -430,9 +431,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(achievement.title, style: TextStyle(color: AfterlifeColors.textPrimary, fontWeight: FontWeight.bold)),
+                    Text(achievement.title, style: TextStyle(color: AfterlifeColors.textPrimaryAdaptive(context), fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(achievement.description, style: TextStyle(color: AfterlifeColors.textSecondary, fontSize: 12)),
+                    Text(achievement.description, style: TextStyle(color: AfterlifeColors.textSecondaryAdaptive(context), fontSize: 12)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -441,7 +442,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             borderRadius: BorderRadius.circular(2),
                             child: LinearProgressIndicator(
                               value: progress,
-                              backgroundColor: Colors.white.withOpacity(0.1),
+                              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                               valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonOrange),
                               minHeight: 4,
                             ),
@@ -456,7 +457,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               ),
             ],
           ),
-        ),
       ),
     );
   }

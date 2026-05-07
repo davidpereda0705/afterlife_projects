@@ -67,6 +67,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
     try {
       // Verificar que la noche aún existe y no está llena
       final nightDoc = await _nightService.getNightById(night['id']);
+      if (!mounted) return;
       if (nightDoc == null) {
         _showSnackBar('La noche ya no existe', Theme.of(context).colorScheme.error);
         _loadAvailableNights();
@@ -88,6 +89,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
       // Refrescar UserProvider para actualizar el badge
       await userProvider.refresh();
 
+      if (!mounted) return;
       _showSnackBar('Te has unido a ${night['name']}', AfterlifeColors.acidGreen);
 
       if (mounted) {
@@ -99,6 +101,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       _showSnackBar('Error al unirse: $e', Theme.of(context).colorScheme.error);
     }
   }
@@ -192,8 +195,8 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isFull
-              ? Theme.of(context).disabledColor.withOpacity(0.3)
-              : AfterlifeColors.neonPink.withOpacity(0.3),
+              ? Theme.of(context).disabledColor.withValues(alpha: 0.3)
+              : AfterlifeColors.neonPink.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -238,7 +241,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                     Text(
                       '${night['hostName'] ?? ''} · ${night['groupName'] ?? ''}',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -250,11 +253,11 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 16),
+              Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 16),
               const SizedBox(width: 4),
               Text(
                 '${night['day'] ?? ''} · ${night['time'] ?? ''}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
               const Spacer(),
               if (!isFull)
@@ -264,7 +267,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AfterlifeColors.acidGreen.withOpacity(0.2),
+                    color: AfterlifeColors.acidGreen.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -283,7 +286,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).disabledColor.withOpacity(0.2),
+                    color: Theme.of(context).disabledColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -300,11 +303,11 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.people, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 18),
+              Icon(Icons.people, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 18),
               const SizedBox(width: 4),
               Text(
                 '$currentPlayers/$maxPlayers',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
             ],
           ),
@@ -315,7 +318,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
               onPressed: isFull ? null : () => _joinNight(night),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFull
-                    ? Theme.of(context).disabledColor.withOpacity(0.3)
+                    ? Theme.of(context).disabledColor.withValues(alpha: 0.3)
                     : AfterlifeColors.neonPink,
                 foregroundColor: Theme.of(context).colorScheme.onSurface,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -345,7 +348,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           Icon(
             Icons.nightlight_round,
             size: 60,
-            color: AfterlifeColors.electricLilac.withOpacity(0.5),
+            color: AfterlifeColors.electricLilac.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -359,7 +362,7 @@ class _JoinNightScreenState extends State<JoinNightScreen> {
           const SizedBox(height: 8),
           Text(
             'Crea una nueva noche o vuelve más tarde',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
         ],
       ),

@@ -1,9 +1,7 @@
-// lib/core/themes/colors.dart
 import 'package:flutter/material.dart';
 
 class AfterlifeColors {
   // =================== DARK ===================
-  // Fondo
   static const Color background = Color(0xFF000000);
 
   // Paleta neón
@@ -24,59 +22,165 @@ class AfterlifeColors {
 
   // Superficies
   static const Color surfaceDark = Color(0xFF000000);
-  static const Color cardDark = Color(0xFF000000);
+  static const Color cardDark = Color(0xFF0D0D1A);
 
   // =================== LIGHT ===================
-  static const Color backgroundLight = Color(0xFFF5F5F7);
-  static const Color surfaceLight = Colors.white;
-  static const Color cardLight = Colors.white;
+  static const Color backgroundLight = Color(0xFFF8F5FF);
+  static const Color surfaceLight = Color(0xFFFFFFFF);
+  static const Color cardLight = Color(0xFFFFFFFF);
 
-  static const Color textPrimaryLight = Color(0xFF1A1A1A);
-  static const Color textSecondaryLight = Color(0xFF6E6E73);
-  static const Color textDisabledLight = Color(0xFFB0B0B8);
+  static const Color textPrimaryLight = Color(0xFF1A0A2E);
+  static const Color textSecondaryLight = Color(0xFF6B5B7F);
+  static const Color textDisabledLight = Color(0xFFB0A8BC);
 
-  static const Color dividerLight = Color(0xFFE5E5EA);
-  static const Color outlineLight = Color(0xFFD1D1D6);
+  static const Color dividerLight = Color(0xFFE8E0F0);
+  static const Color outlineLight = Color(0xFFD4CCE6);
   static const Color shadowLight = Color(0x1F000000);
 
-  static const Color inputFillLight = Color(0xFFF2F2F7);
-  
-  // Métodos de ayuda
-  static Color electricPurpleWithOpacity(double opacity) => 
-      electricPurple.withOpacity(opacity);
-      
-  static Color neonPinkWithOpacity(double opacity) => 
-      neonPink.withOpacity(opacity);
-      
-  static Color cyanBlueWithOpacity(double opacity) => 
-      cyanBlue.withOpacity(opacity);
-      
-  static Color electricLilacWithOpacity(double opacity) => 
-      electricLilac.withOpacity(opacity);
-  
-  // Gradientes (añadimos uno con tu nuevo color)
-  static Gradient get purplePinkGradient => LinearGradient(
+  static const Color inputFillLight = Color(0xFFF2EDFA);
+
+  // =================== HELPERS ===================
+  static Color electricPurpleWithOpacity(double opacity) =>
+      electricPurple.withValues(alpha: opacity);
+
+  static Color neonPinkWithOpacity(double opacity) =>
+      neonPink.withValues(alpha: opacity);
+
+  static Color cyanBlueWithOpacity(double opacity) =>
+      cyanBlue.withValues(alpha: opacity);
+
+  static Color electricLilacWithOpacity(double opacity) =>
+      electricLilac.withValues(alpha: opacity);
+
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color surface(BuildContext context) =>
+      isDark(context) ? surfaceDark : surfaceLight;
+
+  static Color card(BuildContext context) =>
+      isDark(context) ? cardDark : cardLight;
+
+  static Color textPrimaryAdaptive(BuildContext context) =>
+      isDark(context) ? textPrimary : textPrimaryLight;
+
+  static Color textSecondaryAdaptive(BuildContext context) =>
+      isDark(context) ? textSecondary : textSecondaryLight;
+
+  static Color textDisabledAdaptive(BuildContext context) =>
+      isDark(context) ? textDisabled : textDisabledLight;
+
+  static Color dividerAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.05) : dividerLight;
+
+  static Color outlineAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.1) : outlineLight;
+
+  static Color inputFillAdaptive(BuildContext context) =>
+      isDark(context) ? Colors.white.withValues(alpha: 0.03) : inputFillLight;
+
+  // =================== GRADIENTS ===================
+  static Gradient get gradient => const LinearGradient(
+    colors: [electricPurple, neonPink],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 1.0],
+  );
+
+  static Gradient get purplePinkGradient => const LinearGradient(
     colors: [electricPurple, neonPink],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
-  static Gradient get blueGreenGradient => LinearGradient(
+
+  static Gradient get blueGreenGradient => const LinearGradient(
     colors: [cyanBlue, acidGreen],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
-  static Gradient get orangePurpleGradient => LinearGradient(
+
+  static Gradient get orangePurpleGradient => const LinearGradient(
     colors: [neonOrange, deepPurple],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
-  // NUEVO: Gradiente con tu lila eléctrico
-  static Gradient get electricLilacGradient => LinearGradient(
-    colors: [electricLilac, Color(0xFF9C27B0)], // Lila eléctrico a magenta
+
+  static Gradient get electricLilacGradient => const LinearGradient(
+    colors: [electricLilac, Color(0xFF9C27B0)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static Gradient get heroGradient => const LinearGradient(
+    colors: [electricPurple, neonPink, cyanBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.5, 1.0],
+  );
+
+  // Adaptive header gradient
+  static Gradient headerGradient(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        colors: [Color(0xFF1A0533), Color(0xFF0D0D1A)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    return const LinearGradient(
+      colors: [Color(0xFFF3E8FF), Color(0xFFFFF0F5), Color(0xFFE0F7FA)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
+  // Adaptive card gradient for profile/home cards
+  static Gradient cardGradient(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        colors: [Color(0xFF1A0533), Color(0xFF2D0A4E), Color(0xFF1A0533)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    return const LinearGradient(
+      colors: [Color(0xFFFFFFFF), Color(0xFFFAF5FF), Color(0xFFFFF5FA)],
+      stops: [0.0, 0.5, 1.0],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
+  // Adaptive subtle card gradient
+  static Gradient subtleCardGradient(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        colors: [Color(0xFF1A0533), Color(0xFF0A0A14)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    return const LinearGradient(
+      colors: [Color(0xFFFFFFFF), Color(0xFFF8F5FF)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
+  // Bottom nav gradient
+  static Gradient bottomNavGradient(BuildContext context) {
+    if (isDark(context)) {
+      return const LinearGradient(
+        colors: [Color(0xFF0D0D1A), Color(0xFF060610)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      );
+    }
+    return const LinearGradient(
+      colors: [Color(0xFFFFFFFF), Color(0xFFF8F5FF)],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    );
+  }
 }

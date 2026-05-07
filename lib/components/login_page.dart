@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void _intentarAcceder() async {
     // Si no es login, validamos el formulario normalmente
-    if (!isLogin && !_formKey.currentState!.validate()) return;
+    if (!isLogin && !(_formKey.currentState?.validate() ?? false)) return;
     
     // Si es login, solo comprobamos que no estén vacíos
     if (isLogin && (_userController.text.trim().isEmpty || _passController.text.trim().isEmpty)) {
@@ -78,7 +78,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     try {
       if (isLogin) {
-        await _auth.signInWithEmail(_userController.text.trim(), _passController.text.trim());
+        final user = await _auth.signInWithEmail(_userController.text.trim(), _passController.text.trim());
+        if (user != null) {
+          await user.reload();
+          final freshUser = FirebaseAuth.instance.currentUser;
+          if (freshUser != null && !freshUser.emailVerified && mounted) {
+            await _auth.signOut();
+            _showError('Verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
+            await _auth.sendVerificationEmail();
+            setState(() => isLoading = false);
+            return;
+          }
+        }
       } else {
         await _auth.registerWithEmail(
           _emailController.text.trim(),
@@ -104,7 +115,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
+        backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.9),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -125,9 +136,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   end: Alignment.bottomRight,
                   colors: [
                     Theme.of(context).scaffoldBackgroundColor,
-                    AfterlifeColors.electricPurple.withOpacity(0.15),
+                    AfterlifeColors.electricPurple.withValues(alpha: 0.15),
                     Theme.of(context).scaffoldBackgroundColor,
-                    AfterlifeColors.electricLilac.withOpacity(0.1),
+                    AfterlifeColors.electricLilac.withValues(alpha: 0.1),
                   ],
                 ),
               ),
@@ -143,7 +154,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AfterlifeColors.electricLilac.withOpacity(0.2),
+                color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
               ),
               child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container()),
             ),
@@ -174,9 +185,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           child: Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+                              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                             ),
                             child: Form(
                               key: _formKey,
@@ -286,24 +297,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
-        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withOpacity(0.7), size: 20),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12),
+        prefixIcon: Icon(icon, color: AfterlifeColors.electricPurple.withValues(alpha: 0.7), size: 20),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   (showPassword ?? false) ? Icons.visibility : Icons.visibility_off,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   size: 20,
                 ),
                 onPressed: togglePassword,
               )
             : null,
         filled: true,
-        fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.025),
+        fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -311,7 +322,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.5)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

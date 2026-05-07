@@ -211,10 +211,12 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _goToMainScreen();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _goToMainScreen();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -241,7 +243,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AfterlifeColors.electricLilac.withOpacity(0.3),
+                        AfterlifeColors.electricLilac.withValues(alpha: 0.3),
                         Theme.of(context).scaffoldBackgroundColor,
                       ],
                     ),
@@ -285,7 +287,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                             shape: BoxShape.circle,
                             color: index == _currentStep
                                 ? AfterlifeColors.electricLilac
-                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                           ),
                         );
                       }),
@@ -345,7 +347,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             child: Text(
               '¡Qué noche!',
               style: AfterlifeTextTheme.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -360,7 +362,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay participantes',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         ),
       );
     }
@@ -372,7 +374,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
         ? AfterlifeColors.neonOrange
         : position == 2
             ? Theme.of(context).disabledColor
-            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4);
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
 
     return Center(
       child: Column(
@@ -387,7 +389,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
-                    colors: [color.withOpacity(0.5), Colors.transparent],
+                    colors: [color.withValues(alpha: 0.5), Colors.transparent],
                   ),
                 ),
                 child: AfterlifeAvatar(
@@ -428,7 +430,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -472,8 +474,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                       height: 30,
                       decoration: BoxDecoration(
                         color: index == 0
-                            ? AfterlifeColors.neonOrange.withOpacity(0.2)
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                            ? AfterlifeColors.neonOrange.withValues(alpha: 0.2)
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -482,7 +484,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                           style: TextStyle(
                             color: index == 0
                                 ? AfterlifeColors.neonOrange
-                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -498,7 +500,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AfterlifeColors.neonOrange.withOpacity(0.2),
+                        color: AfterlifeColors.neonOrange.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -527,7 +529,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay fotos de retos',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         ),
       );
     }
@@ -581,7 +583,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     const SizedBox(height: 4),
                     Text(
                       'Completado por: ${item['completedBy']}',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 ),
@@ -600,7 +602,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
       return Center(
         child: Text(
           'No hay fotos de la noche',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         ),
       );
     }
@@ -699,8 +701,8 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     height: 25,
                     decoration: BoxDecoration(
                       color: index == 0
-                          ? AfterlifeColors.neonOrange.withOpacity(0.2)
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                          ? AfterlifeColors.neonOrange.withValues(alpha: 0.2)
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -709,7 +711,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                         style: TextStyle(
                           color: index == 0
                               ? AfterlifeColors.neonOrange
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -802,7 +804,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
             ),
           ),
           Center(
