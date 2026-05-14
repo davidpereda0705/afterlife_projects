@@ -201,64 +201,62 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
     try {
       await _nightService.finishNight(nightId);
+
       final currentUserId = _currentUserId;
       if (currentUserId != null) {
-        await _nightService.clearActiveNightForUser(currentUserId);
-        if (!mounted) return;
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.refresh();
+        try {
+          await _nightService.clearActiveNightForUser(currentUserId);
+        } catch (e) {
+          debugPrint('⚠️ [FINISH] clearActiveNight error: $e');
+        }
       }
+
+      // Navegar a la pantalla de resumen SIEMPRE, sin importar el resultado de las operaciones secundarias
       if (!mounted) return;
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final pointsEarned = _getCurrentUserPoints(nightData);
-      final completedChallenges = _getCompletedChallengesCount(nightData);
-      await userProvider.updateAfterNight(
-        pointsEarned: pointsEarned,
-        nightsCompletedIncrement: 1,
-        challengesCompletedIncrement: completedChallenges,
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NightSummaryScreen(nightData: nightData),
+        ),
       );
 
-      final updatedUserData = userProvider.userData;
-      final nightsCompleted = updatedUserData?['nightsCompleted'] ?? 0;
-      final challengesCompletedTotal =
-          updatedUserData?['challengesCompleted'] ?? 0;
-      final level = updatedUserData?['level'] ?? 0;
-      final friendsCount = updatedUserData?['friendsCount'] ?? 0;
-      final photosUploaded = updatedUserData?['photosUploaded'] ?? 0;
-      final nightsCreated = updatedUserData?['nightsCreated'] ?? 0;
-
-      final newlyUnlocked = await _achievementService
-          .checkAndUnlockAchievements(
-            userId: currentUserId ?? '',
-            nightsCompleted: nightsCompleted,
-            challengesCompleted: challengesCompletedTotal,
-            level: level,
-            friendsCount: friendsCount,
-            photosUploaded: photosUploaded,
-            nightsCreated: nightsCreated,
+      // Actualizar estadísticas y logros en segundo plano (no bloquean la navegación)
+      if (currentUserId != null) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final pointsEarned = _getCurrentUserPoints(nightData);
+        final completedChallenges = _getCompletedChallengesCount(nightData);
+        try {
+          await userProvider.refresh();
+          await userProvider.updateAfterNight(
+            pointsEarned: pointsEarned,
+            nightsCompletedIncrement: 1,
+            challengesCompletedIncrement: completedChallenges,
           );
-
-      if (newlyUnlocked.isNotEmpty && mounted) {
-        final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🎉 ¡Logros desbloqueados: $achievementNames!'),
-            backgroundColor: AfterlifeColors.acidGreen,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        await userProvider.refresh();
-      }
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NightSummaryScreen(nightData: nightData),
-          ),
-        );
+        } catch (e) {
+          debugPrint('⚠️ [FINISH] updateAfterNight error: $e');
+        }
+        try {
+          final updatedUserData = userProvider.userData;
+          final newlyUnlocked = await _achievementService
+              .checkAndUnlockAchievements(
+                userId: currentUserId,
+                nightsCompleted: updatedUserData?['nightsCompleted'] ?? 0,
+                challengesCompleted:
+                    updatedUserData?['challengesCompleted'] ?? 0,
+                level: updatedUserData?['level'] ?? 0,
+                friendsCount: updatedUserData?['friendsCount'] ?? 0,
+                photosUploaded: updatedUserData?['photosUploaded'] ?? 0,
+                nightsCreated: updatedUserData?['nightsCreated'] ?? 0,
+              );
+          if (newlyUnlocked.isNotEmpty) {
+            await userProvider.refresh();
+          }
+        } catch (e) {
+          debugPrint('⚠️ [FINISH] checkAchievements error: $e');
+        }
       }
     } catch (e) {
+      debugPrint('❌ [FINISH] finishNight error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
