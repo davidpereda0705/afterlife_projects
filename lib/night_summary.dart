@@ -9,7 +9,7 @@ class NightSummary {
   final String groupName;
   final List<Map<String, dynamic>> players;
   final List<Map<String, dynamic>> challenges;
-  final List<Uint8List> nightPhotos;
+  final List<String> nightPhotos; // Firebase Storage URLs
   final DateTime timestamp;
 
   NightSummary({
@@ -40,7 +40,7 @@ class NightSummary {
         }
         return copy;
       }).toList(),
-      'nightPhotos': nightPhotos.map((b) => List<int>.from(b)).toList(),
+      'nightPhotos': nightPhotos,
       'timestamp': timestamp.toIso8601String(),
     };
   }
@@ -60,7 +60,7 @@ class NightSummary {
         }
         return challenge;
       }).toList(),
-      nightPhotos: (json['nightPhotos'] as List? ?? []).map((b) => Uint8List.fromList(b)).toList(),
+      nightPhotos: List<String>.from(json['nightPhotos'] ?? []),
       timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
     );
   }
@@ -77,7 +77,6 @@ class NightSummary {
       'challenges': challenges.map((c) {
         final copy = Map<String, dynamic>.from(c);
         if (copy['proofBytes'] != null) {
-          // Convertir Uint8List a List<int> para Firestore
           if (copy['proofBytes'] is Uint8List) {
             copy['proofBytes'] = (copy['proofBytes'] as Uint8List).toList();
           } else if (copy['proofBytes'] is List<int>) {
@@ -86,7 +85,7 @@ class NightSummary {
         }
         return copy;
       }).toList(),
-      'nightPhotos': nightPhotos.map((b) => b.toList()).toList(),
+      'nightPhotos': nightPhotos,
       'timestamp': Timestamp.fromDate(timestamp),
     };
   }
@@ -100,12 +99,13 @@ class NightSummary {
       }
       return challenge;
     }).toList() ?? [];
-    final nightPhotos = (map['nightPhotos'] as List?)?.map((p) {
-      if (p is List) {
-        return Uint8List.fromList(List<int>.from(p));
-      }
-      return Uint8List(0);
-    }).toList() ?? [];
+
+    // nightPhotos: handle both URL strings (new) and legacy byte lists (old)
+    final rawPhotos = map['nightPhotos'] as List? ?? [];
+    final nightPhotos = rawPhotos
+        .where((p) => p is String && p.isNotEmpty)
+        .cast<String>()
+        .toList();
 
     return NightSummary(
       id: docId,
