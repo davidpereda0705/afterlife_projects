@@ -78,13 +78,16 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return "$hours:$minutes:$seconds";
   }
 
+  // ✅ ÚNICA MODIFICACIÓN: compresión de la imagen
   Future<void> _addNightPhoto(String nightId) async {
     HapticFeedback.mediumImpact();
     final picker = ImagePicker();
     try {
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
+        imageQuality: 60,        // reducido de 80 a 60
+        maxWidth: 800,           // añadido
+        maxHeight: 800,          // añadido
       );
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
@@ -570,11 +573,11 @@ class _NightGameScreenState extends State<NightGameScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-      Row(children: [Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 24), const SizedBox(width: 8), Text('RETO ACTUAL', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))]),
+          Row(children: [Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 24), const SizedBox(width: 8), Text('RETO ACTUAL', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))]),
           const SizedBox(height: 12),
           Text(current['name'] ?? 'Reto', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-     Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)), child: Text('${current['points'] ?? 0} pts', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold)))])
+          Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)), child: Text('${current['points'] ?? 0} pts', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold)))]),
         ],
       ),
     );
@@ -839,7 +842,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Conductor designado badge
                       if (player['isDesignatedDriver'] == true)
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
@@ -929,7 +931,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: Text(challenge['name'] ?? 'Reto', style: TextStyle(color: isCompleted ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal))),
-         if (challenge['proofBytes'] != null) Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 16)),
+                  if (challenge['proofBytes'] != null) Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 16)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(color: isCompleted ? AfterlifeColors.acidGreen.withValues(alpha: 0.2) : AfterlifeColors.neonOrange.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),

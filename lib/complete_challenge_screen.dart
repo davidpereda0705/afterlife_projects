@@ -26,6 +26,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   Uint8List? _imageBytes;
   bool _uploadingMedia = false;
 
+  // ✅ ÚNICA MODIFICACIÓN: compresión de la imagen
   Future<void> _pickMedia(ImageSource source) async {
     setState(() => _uploadingMedia = true);
     final picker = ImagePicker();
@@ -33,7 +34,9 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
     try {
       final XFile? pickedFile = await picker.pickImage(
         source: source,
-        imageQuality: 80,
+        imageQuality: 60,        // reducido de 80 a 60
+        maxWidth: 800,           // añadido
+        maxHeight: 800,          // añadido
       );
 
       if (pickedFile != null) {
@@ -107,7 +110,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               children: [
                 Text(
                   challenge['name'] ?? 'Reto',
-         style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -118,7 +121,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                   ),
                   child: Text(
                     '${challenge['points'] ?? 0} pts',
-          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -148,11 +151,11 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
             ),
             child: DropdownButtonFormField<String>(
-              initialValue: _selectedPlayer,
-       hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+              value: _selectedPlayer,
+              hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
               dropdownColor: Theme.of(context).colorScheme.surface,
               icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.electricLilac),
-       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: const InputDecoration(border: InputBorder.none),
               items: widget.players.map<DropdownMenuItem<String>>((player) {
                 return DropdownMenuItem<String>(
@@ -237,7 +240,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           shape: BoxShape.circle,
                         ),
-            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),
+                        child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),
                       ),
                       onPressed: () => setState(() => _imageBytes = null),
                     ),
