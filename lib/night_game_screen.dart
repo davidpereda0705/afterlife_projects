@@ -15,6 +15,7 @@ import '../services/night_service.dart';
 import '../services/achievement_service.dart';
 import '../services/journal_service.dart';
 import '../providers/user_provider.dart';
+import '../utils/image_utils.dart';
 import 'complete_challenge_screen.dart';
 import 'night_summary_screen.dart';
 
@@ -78,29 +79,31 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return "$hours:$minutes:$seconds";
   }
 
-  // ✅ ÚNICA MODIFICACIÓN: compresión de la imagen
   Future<void> _addNightPhoto(String nightId) async {
     HapticFeedback.mediumImpact();
     final picker = ImagePicker();
     try {
-      final XFile? pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 60,        // reducido de 80 a 60
-        maxWidth: 800,           // añadido
-        maxHeight: 800,          // añadido
+      final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+
+      final raw = await pickedFile.readAsBytes();
+      final compressed = await ImageUtils.compressForFirestore(raw);
+
+      await _nightService.addNightPhoto(nightId, compressed);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto añadida'),
+          backgroundColor: AfterlifeColors.acidGreen,
+        ),
       );
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        await _nightService.addNightPhoto(nightId, bytes);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto añadida'), backgroundColor: AfterlifeColors.acidGreen),
-        );
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
@@ -121,7 +124,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return challenges.where((c) => c['completed'] == true).length;
   }
 
-  // Convierte cualquier tipo de lista a Uint8List para evitar errores de tipo
   Uint8List _toUint8List(dynamic data) {
     if (data == null) return Uint8List(0);
     if (data is Uint8List) return data;
@@ -136,21 +138,29 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return Uint8List(0);
   }
 
-  Future<void> _finishNight(String nightId, Map<String, dynamic> nightData) async {
+  Future<void> _finishNight(
+    String nightId,
+    Map<String, dynamic> nightData,
+  ) async {
     HapticFeedback.heavyImpact();
     if (_isFinishing) return;
     _isFinishing = true;
 
-    // --------------------------------------------------------------
-    // 1. Guardar el diario (independiente del resto)
-    // --------------------------------------------------------------
     debugPrint('🔵 [DIARIO] Iniciando guardado...');
     try {
       if (_currentUserId == null) {
         debugPrint('❌ [DIARIO] Usuario no autenticado');
       } else {
+        // ✅ Convertir las fotos de la noche (que ahora son bytes) a Uint8List
         final rawNightPhotos = nightData['nightPhotos'] as List? ?? [];
-        final nightPhotoUrls = rawNightPhotos.whereType<String>().toList();
+        final convertedNightPhotos = rawNightPhotos
+            .map((p) {
+              if (p is Uint8List) return p;
+              if (p is Map) return _toUint8List(p['data'] ?? p['bytes']);
+              return _toUint8List(p);
+            })
+            .where((b) => b.isNotEmpty)
+            .toList();
 
         final rawChallenges = nightData['challenges'] as List? ?? [];
         final convertedChallenges = rawChallenges.map((c) {
@@ -169,14 +179,19 @@ class _NightGameScreenState extends State<NightGameScreen> {
           groupName: nightData['groupName'] ?? '',
           players: List<Map<String, dynamic>>.from(nightData['players'] ?? []),
           challenges: convertedChallenges,
-          nightPhotos: nightPhotoUrls,
+          nightPhotos:
+              convertedNightPhotos, // ✅ ahora son Uint8List, compatibles con el modelo
           timestamp: DateTime.now(),
         );
         await _journalService.saveEntry(summary);
         debugPrint('✅ [DIARIO] Resumen guardado correctamente');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Noche guardada en el diario'), backgroundColor: Colors.green, duration: Duration(seconds: 1)),
+            const SnackBar(
+              content: Text('Noche guardada en el diario'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
           );
         }
       }
@@ -184,12 +199,8 @@ class _NightGameScreenState extends State<NightGameScreen> {
       debugPrint('❌ [DIARIO] Error guardando resumen: $e\n$stack');
     }
 
-    // --------------------------------------------------------------
-    // 2. Operaciones de finalización de noche
-    // --------------------------------------------------------------
     try {
       await _nightService.finishNight(nightId);
-
       final currentUserId = _currentUserId;
       if (currentUserId != null) {
         await _nightService.clearActiveNightForUser(currentUserId);
@@ -197,12 +208,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         await userProvider.refresh();
       }
-
       if (!mounted) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final pointsEarned = _getCurrentUserPoints(nightData);
       final completedChallenges = _getCompletedChallengesCount(nightData);
-
       await userProvider.updateAfterNight(
         pointsEarned: pointsEarned,
         nightsCompletedIncrement: 1,
@@ -211,21 +220,23 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
       final updatedUserData = userProvider.userData;
       final nightsCompleted = updatedUserData?['nightsCompleted'] ?? 0;
-      final challengesCompletedTotal = updatedUserData?['challengesCompleted'] ?? 0;
+      final challengesCompletedTotal =
+          updatedUserData?['challengesCompleted'] ?? 0;
       final level = updatedUserData?['level'] ?? 0;
       final friendsCount = updatedUserData?['friendsCount'] ?? 0;
       final photosUploaded = updatedUserData?['photosUploaded'] ?? 0;
       final nightsCreated = updatedUserData?['nightsCreated'] ?? 0;
 
-      final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
-        userId: currentUserId ?? '',
-        nightsCompleted: nightsCompleted,
-        challengesCompleted: challengesCompletedTotal,
-        level: level,
-        friendsCount: friendsCount,
-        photosUploaded: photosUploaded,
-        nightsCreated: nightsCreated,
-      );
+      final newlyUnlocked = await _achievementService
+          .checkAndUnlockAchievements(
+            userId: currentUserId ?? '',
+            nightsCompleted: nightsCompleted,
+            challengesCompleted: challengesCompletedTotal,
+            level: level,
+            friendsCount: friendsCount,
+            photosUploaded: photosUploaded,
+            nightsCreated: nightsCreated,
+          );
 
       if (newlyUnlocked.isNotEmpty && mounted) {
         final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
@@ -250,7 +261,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al finalizar: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(
+            content: Text('Error al finalizar: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     } finally {
@@ -258,16 +272,21 @@ class _NightGameScreenState extends State<NightGameScreen> {
     }
   }
 
-  void _navigateToCompleteChallenge(Map<String, dynamic> challenge, String nightId, List<dynamic> playersRaw) async {
+  void _navigateToCompleteChallenge(
+    Map<String, dynamic> challenge,
+    String nightId,
+    List<dynamic> playersRaw,
+    int challengeIndex, // índice capturado en el momento del tap, no depende del estado
+  ) async {
     HapticFeedback.lightImpact();
-    final List<Map<String, dynamic>> players = List<Map<String, dynamic>>.from(playersRaw);
+    final List<Map<String, dynamic>> players = List<Map<String, dynamic>>.from(
+      playersRaw,
+    );
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CompleteChallengeScreen(
-          challenge: challenge,
-          players: players,
-        ),
+        builder: (context) =>
+            CompleteChallengeScreen(challenge: challenge, players: players),
       ),
     );
     if (result != null && mounted) {
@@ -276,7 +295,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
       await _nightService.completeChallenge(
         nightId,
-        _currentChallengeIndex,
+        challengeIndex, // usar el índice capturado, no _currentChallengeIndex
         playerName,
         imageBytes,
       );
@@ -284,7 +303,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
       if (imageBytes != null && _currentUserId != null) {
         if (!mounted) return;
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final userDocRef = FirebaseFirestore.instance.collection('users').doc(_currentUserId);
+        final userDocRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(_currentUserId);
         final userDoc = await userDocRef.get();
         final currentPhotos = userDoc.data()?['photosUploaded'] ?? 0;
         await userDocRef.update({'photosUploaded': currentPhotos + 1});
@@ -292,21 +313,23 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
         final updatedData = userProvider.userData;
         final nightsCompleted = updatedData?['nightsCompleted'] ?? 0;
-        final challengesCompletedTotal = updatedData?['challengesCompleted'] ?? 0;
+        final challengesCompletedTotal =
+            updatedData?['challengesCompleted'] ?? 0;
         final level = updatedData?['level'] ?? 0;
         final friendsCount = updatedData?['friendsCount'] ?? 0;
         final photosUploaded = currentPhotos + 1;
         final nightsCreated = updatedData?['nightsCreated'] ?? 0;
 
-        final newlyUnlocked = await _achievementService.checkAndUnlockAchievements(
-          userId: _currentUserId!,
-          nightsCompleted: nightsCompleted,
-          challengesCompleted: challengesCompletedTotal,
-          level: level,
-          friendsCount: friendsCount,
-          photosUploaded: photosUploaded,
-          nightsCreated: nightsCreated,
-        );
+        final newlyUnlocked = await _achievementService
+            .checkAndUnlockAchievements(
+              userId: _currentUserId!,
+              nightsCompleted: nightsCompleted,
+              challengesCompleted: challengesCompletedTotal,
+              level: level,
+              friendsCount: friendsCount,
+              photosUploaded: photosUploaded,
+              nightsCreated: nightsCreated,
+            );
 
         if (newlyUnlocked.isNotEmpty && mounted) {
           final achievementNames = newlyUnlocked.map((a) => a.title).join(', ');
@@ -339,7 +362,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
           );
         }
         if (!snapshot.hasData || snapshot.data == null) {
-          // Modo offline: intentar cargar desde cache
           return FutureBuilder<Map<String, dynamic>?>(
             future: OfflineService.getCachedActiveNight(),
             builder: (ctx, cacheSnap) {
@@ -347,15 +369,20 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 return _buildNightUI(cacheSnap.data!, true);
               }
               return Scaffold(
-                body: Center(child: Text('Noche no encontrada', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                body: Center(
+                  child: Text(
+                    'Noche no encontrada',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
               );
             },
           );
         }
 
-        // Cachear noche para modo offline
         OfflineService.cacheActiveNight(snapshot.data!);
-
         return _buildNightUI(snapshot.data!, false);
       },
     );
@@ -367,22 +394,33 @@ class _NightGameScreenState extends State<NightGameScreen> {
     final nightPhotos = nightData['nightPhotos'] as List? ?? [];
 
     int totalChallenges = challenges.length;
-    int completedChallenges = challenges.where((c) => c['completed'] == true).length;
-    double progress = totalChallenges > 0 ? completedChallenges / totalChallenges : 0;
+    int completedChallenges = challenges
+        .where((c) => c['completed'] == true)
+        .length;
+    double progress = totalChallenges > 0
+        ? completedChallenges / totalChallenges
+        : 0;
 
-    int nextIncompleteIndex = challenges.indexWhere((c) => c['completed'] != true);
+    int nextIncompleteIndex = challenges.indexWhere(
+      (c) => c['completed'] != true,
+    );
     if (nextIncompleteIndex == -1) nextIncompleteIndex = challenges.length;
     if (_currentChallengeIndex != nextIncompleteIndex && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _currentChallengeIndex = nextIncompleteIndex);
+        if (mounted) {
+          setState(() => _currentChallengeIndex = nextIncompleteIndex);
+        }
       });
     }
 
-    final allCompleted = completedChallenges == totalChallenges && totalChallenges > 0;
+    final allCompleted =
+        completedChallenges == totalChallenges && totalChallenges > 0;
     final startTime = _parseStartTime(nightData['time'] ?? '22:30');
     final endTime = _calculateEndTime(startTime);
     final now = DateTime.now();
-    final timeLeft = endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
+    final timeLeft = endTime.isAfter(now)
+        ? endTime.difference(now)
+        : Duration.zero;
     int totalPoints = 0;
     for (var player in players) {
       totalPoints += (player['points'] as int? ?? 0);
@@ -392,7 +430,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -400,11 +441,20 @@ class _NightGameScreenState extends State<NightGameScreen> {
           children: [
             Text(
               nightData['name'] ?? 'Noche',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               '${nightData['day'] ?? ''} · ${nightData['time'] ?? ''} · ${nightData['groupName'] ?? ''} ${isOffline ? "(offline)" : ""}',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -415,9 +465,17 @@ class _NightGameScreenState extends State<NightGameScreen> {
             decoration: BoxDecoration(
               color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+              ),
             ),
-            child: Text(_formatDuration(timeLeft), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
+            child: Text(
+              _formatDuration(timeLeft),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.chat, color: AfterlifeColors.acidGreen),
@@ -429,7 +487,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
             onPressed: () => _finishNight(widget.nightId, nightData),
           ),
           IconButton(
-            icon: Icon(Icons.add_a_photo, color: Theme.of(context).colorScheme.onSurface),
+            icon: Icon(
+              Icons.add_a_photo,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             onPressed: () => _addNightPhoto(widget.nightId),
           ),
           Container(
@@ -438,13 +499,25 @@ class _NightGameScreenState extends State<NightGameScreen> {
             decoration: BoxDecoration(
               color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.star, color: AfterlifeColors.neonOrange, size: 16),
+                const Icon(
+                  Icons.star,
+                  color: AfterlifeColors.neonOrange,
+                  size: 16,
+                ),
                 const SizedBox(width: 4),
-                Text('$totalPoints pts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                Text(
+                  '$totalPoints pts',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -457,15 +530,25 @@ class _NightGameScreenState extends State<NightGameScreen> {
             color: Theme.of(context).colorScheme.surface,
             child: Row(
               children: [
-                Text('$completedChallenges/$totalChallenges', style: const TextStyle(color: AfterlifeColors.neonPink, fontWeight: FontWeight.bold)),
+                Text(
+                  '$completedChallenges/$totalChallenges',
+                  style: const TextStyle(
+                    color: AfterlifeColors.neonPink,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                      valueColor: const AlwaysStoppedAnimation(AfterlifeColors.neonPink),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.05),
+                      valueColor: const AlwaysStoppedAnimation(
+                        AfterlifeColors.neonPink,
+                      ),
                       minHeight: 8,
                     ),
                   ),
@@ -479,17 +562,30 @@ class _NightGameScreenState extends State<NightGameScreen> {
               children: [
                 _buildHostInfo(nightData),
                 const SizedBox(height: 20),
-                _buildCurrentChallenge(nightData, _currentChallengeIndex, allCompleted),
+                _buildCurrentChallenge(
+                  nightData,
+                  _currentChallengeIndex,
+                  allCompleted,
+                ),
                 const SizedBox(height: 20),
                 _buildNightPhotos(nightPhotos),
                 const SizedBox(height: 12),
-                MomentsViewer(nightId: widget.nightId, nightName: nightData['name'] ?? 'Noche'),
+                MomentsViewer(
+                  nightId: widget.nightId,
+                  nightName: nightData['name'] ?? 'Noche',
+                ),
                 const SizedBox(height: 20),
                 _buildPlayersRanking(players, nightData['hostName']),
                 const SizedBox(height: 8),
                 _buildDriverToggle(players),
                 const SizedBox(height: 20),
-                _buildChallengesList(challenges, _currentChallengeIndex, allCompleted, widget.nightId, players),
+                _buildChallengesList(
+                  challenges,
+                  _currentChallengeIndex,
+                  allCompleted,
+                  widget.nightId,
+                  players,
+                ),
                 const SizedBox(height: 20),
               ],
             ),
@@ -499,14 +595,16 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  // ==================== MÉTODOS DE CONSTRUCCIÓN DE UI ====================
+  // ==================== MÉTODOS DE UI (sin cambios) ====================
   Widget _buildHostInfo(Map<String, dynamic> nightData) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
@@ -514,108 +612,256 @@ class _NightGameScreenState extends State<NightGameScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
+              gradient: const LinearGradient(
+                colors: [
+                  AfterlifeColors.electricLilac,
+                  AfterlifeColors.neonPink,
+                ],
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(child: Text(nightData['hostInitials'] ?? '?', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold))),
+            child: Center(
+              child: Text(
+                nightData['hostInitials'] ?? '?',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ANFITRIÓN', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text(nightData['hostName'] ?? 'Anfitrión', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text(
+                  'ANFITRIÓN',
+                  style: TextStyle(
+                    color: AfterlifeColors.electricLilac,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  nightData['hostName'] ?? 'Anfitrión',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AfterlifeColors.acidGreen.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-            child: const Text('EN CURSO', style: TextStyle(color: AfterlifeColors.acidGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: AfterlifeColors.acidGreen.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'EN CURSO',
+              style: TextStyle(
+                color: AfterlifeColors.acidGreen,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCurrentChallenge(Map<String, dynamic> nightData, int currentIndex, bool allCompleted) {
+  Widget _buildCurrentChallenge(
+    Map<String, dynamic> nightData,
+    int currentIndex,
+    bool allCompleted,
+  ) {
     final challenges = nightData['challenges'] as List? ?? [];
     if (allCompleted) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
+          gradient: const LinearGradient(
+            colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink],
+          ),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.celebration, color: Theme.of(context).colorScheme.onPrimary, size: 48),
+            Icon(
+              Icons.celebration,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 48,
+            ),
             const SizedBox(height: 16),
-            Text('¡RETOS COMPLETADOS!', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Text(
+              '¡RETOS COMPLETADOS!',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
-            Text('Puedes finalizar la noche cuando quieras', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)), textAlign: TextAlign.center),
+            Text(
+              'Puedes finalizar la noche cuando quieras',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       );
     }
-    if (challenges.isEmpty || currentIndex >= challenges.length) return const SizedBox();
+    if (challenges.isEmpty || currentIndex >= challenges.length) {
+      return const SizedBox();
+    }
     final current = challenges[currentIndex];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink]),
+        gradient: const LinearGradient(
+          colors: [AfterlifeColors.electricLilac, AfterlifeColors.neonPink],
+        ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AfterlifeColors.electricLilac.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: AfterlifeColors.electricLilac.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onPrimary, size: 24), const SizedBox(width: 8), Text('RETO ACTUAL', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))]),
+          Row(
+            children: [
+              Icon(
+                Icons.emoji_events,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'RETO ACTUAL',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
-          Text(current['name'] ?? 'Reto', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+            current['name'] ?? 'Reto',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
-          Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)), child: Text('${current['points'] ?? 0} pts', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold)))]),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onPrimary.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${current['points'] ?? 0} pts',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildNightPhotos(List photos) {
-    final urls = photos.whereType<String>().toList();
-    if (urls.isEmpty) return const SizedBox();
+    // Soporta: {'data': Uint8List} (nuevo), {'bytes': ...} (legacy), Uint8List directo
+    final imageBytesList = photos
+        .map((item) {
+          if (item is Uint8List) return item;
+          if (item is Map) return _toUint8List(item['data'] ?? item['bytes']);
+          return _toUint8List(item);
+        })
+        .where((b) => b.isNotEmpty)
+        .toList();
+    if (imageBytesList.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('FOTOS DE LA NOCHE', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1))),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'FOTOS DE LA NOCHE',
+            style: TextStyle(
+              color: AfterlifeColors.cyanBlue,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+        ),
         SizedBox(
           height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: urls.length,
+            itemCount: imageBytesList.length,
             itemBuilder: (context, index) {
+              final bytes = imageBytesList[index];
               return GestureDetector(
-                onTap: () => _showFullscreenPhoto(context, urls[index]),
+                onTap: () => _showFullscreenPhotoFromBytes(context, bytes),
                 child: Container(
                   width: 160,
                   margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AfterlifeColors.cyanBlue.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AfterlifeColors.cyanBlue.withAlpha(50),
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      urls[index],
+                    child: Image.memory(
+                      bytes,
                       fit: BoxFit.cover,
-                      loadingBuilder: (_, child, progress) => progress == null
-                          ? child
-                          : Center(child: CircularProgressIndicator(strokeWidth: 2, color: AfterlifeColors.cyanBlue)),
                       errorBuilder: (_, __, ___) => Container(
-                        color: AfterlifeColors.cyanBlue.withValues(alpha: 0.1),
-                        child: const Icon(Icons.broken_image_outlined, color: AfterlifeColors.cyanBlue),
+                        color: AfterlifeColors.cyanBlue.withAlpha(25),
+                        child: const Icon(
+                          Icons.broken_image_outlined,
+                          color: AfterlifeColors.cyanBlue,
+                        ),
                       ),
                     ),
                   ),
@@ -629,35 +875,33 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  void _showFullscreenPhoto(BuildContext context, String url) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.black87,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Stack(
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  child: Image.network(url, fit: BoxFit.contain),
-                ),
+void _showFullscreenPhotoFromBytes(BuildContext context, Uint8List bytes) {
+  showDialog(
+    context: context,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.black87,
+      insetPadding: EdgeInsets.zero,
+      child: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(child: Image.memory(bytes, fit: BoxFit.contain)),
+            ),
+            Positioned(
+              top: 40,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(context),
               ),
-              Positioned(
-                top: 40,
-                right: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDriverToggle(List<dynamic> players) {
     final currentUserId = _currentUserId;
@@ -673,10 +917,16 @@ class _NightGameScreenState extends State<NightGameScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isDriver ? AfterlifeColors.acidGreen.withValues(alpha: 0.1) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
+          color: isDriver
+              ? AfterlifeColors.acidGreen.withValues(alpha: 0.1)
+              : Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.025),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDriver ? AfterlifeColors.acidGreen.withValues(alpha: 0.5) : Colors.transparent,
+            color: isDriver
+                ? AfterlifeColors.acidGreen.withValues(alpha: 0.5)
+                : Colors.transparent,
           ),
         ),
         child: Row(
@@ -685,14 +935,20 @@ class _NightGameScreenState extends State<NightGameScreen> {
             Icon(
               isDriver ? Icons.local_taxi : Icons.local_taxi_outlined,
               size: 18,
-              color: isDriver ? AfterlifeColors.acidGreen : Theme.of(context).disabledColor,
+              color: isDriver
+                  ? AfterlifeColors.acidGreen
+                  : Theme.of(context).disabledColor,
             ),
             const SizedBox(width: 8),
             Text(
-              isDriver ? 'Eres conductor designado (+50 pts al final)' : 'Marcarme como conductor designado',
+              isDriver
+                  ? 'Eres conductor designado (+50 pts al final)'
+                  : 'Marcarme como conductor designado',
               style: TextStyle(
                 fontSize: 12,
-                color: isDriver ? AfterlifeColors.acidGreen : Theme.of(context).disabledColor,
+                color: isDriver
+                    ? AfterlifeColors.acidGreen
+                    : Theme.of(context).disabledColor,
                 fontWeight: isDriver ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -704,9 +960,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
 
   Widget _buildPlayersRanking(List<dynamic> players, String? hostName) {
     if (players.isEmpty) return const SizedBox();
-    final sorted = List<Map<String, dynamic>>.from(players)..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
+    final sorted = List<Map<String, dynamic>>.from(players)
+      ..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
 
-    // Medal emojis and pod styling for top 3
     const medals = ['🥇', '🥈', '🥉'];
     final podiumBg = [
       const Color(0xFFF59E0B), // gold
@@ -729,7 +985,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
               height: 18,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AfterlifeColors.neonPink, AfterlifeColors.electricPurple],
+                  colors: [
+                    AfterlifeColors.neonPink,
+                    AfterlifeColors.electricPurple,
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -737,11 +996,20 @@ class _NightGameScreenState extends State<NightGameScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.leaderboard, color: AfterlifeColors.neonPink, size: 16),
+            const Icon(
+              Icons.leaderboard,
+              color: AfterlifeColors.neonPink,
+              size: 16,
+            ),
             const SizedBox(width: 6),
             const Text(
               'CLASIFICACION',
-              style: TextStyle(color: AfterlifeColors.neonPink, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+              style: TextStyle(
+                color: AfterlifeColors.neonPink,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
             ),
           ],
         ),
@@ -752,13 +1020,21 @@ class _NightGameScreenState extends State<NightGameScreen> {
           final isCurrentUser = player['name'] == _currentUsername;
           final isTop3 = index < 3;
           final medal = isTop3 ? medals[index] : null;
-          final bgColor = isTop3 ? podiumBg[index].withValues(alpha: 0.08) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025);
+          final bgColor = isTop3
+              ? podiumBg[index].withValues(alpha: 0.08)
+              : Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.025);
           final borderColor = isCurrentUser
               ? AfterlifeColors.electricPurple.withValues(alpha: 0.7)
               : isTop3
-                  ? podiumBorder[index].withValues(alpha: 0.45)
-                  : Colors.transparent;
-          final borderWidth = isCurrentUser ? 2.0 : isTop3 ? 1.5 : 0.0;
+              ? podiumBorder[index].withValues(alpha: 0.45)
+              : Colors.transparent;
+          final borderWidth = isCurrentUser
+              ? 2.0
+              : isTop3
+              ? 1.5
+              : 0.0;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -768,10 +1044,22 @@ class _NightGameScreenState extends State<NightGameScreen> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: borderColor, width: borderWidth),
               boxShadow: isCurrentUser
-                  ? [BoxShadow(color: AfterlifeColors.electricPurple.withValues(alpha: 0.25), blurRadius: 8)]
+                  ? [
+                      BoxShadow(
+                        color: AfterlifeColors.electricPurple.withValues(
+                          alpha: 0.25,
+                        ),
+                        blurRadius: 8,
+                      ),
+                    ]
                   : isTop3
-                      ? [BoxShadow(color: podiumBorder[index].withValues(alpha: 0.15), blurRadius: 6)]
-                      : [],
+                  ? [
+                      BoxShadow(
+                        color: podiumBorder[index].withValues(alpha: 0.15),
+                        blurRadius: 6,
+                      ),
+                    ]
+                  : [],
             ),
             child: Row(
               children: [
@@ -779,19 +1067,27 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 SizedBox(
                   width: 36,
                   child: medal != null
-                      ? Text(medal, style: const TextStyle(fontSize: 22), textAlign: TextAlign.center)
+                      ? Text(
+                          medal,
+                          style: const TextStyle(fontSize: 22),
+                          textAlign: TextAlign.center,
+                        )
                       : Container(
                           width: 30,
                           height: 30,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.06),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
                             child: Text(
                               '${index + 1}',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.4),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -810,14 +1106,20 @@ class _NightGameScreenState extends State<NightGameScreen> {
                         : AfterlifeColors.cyanBlue.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: isCurrentUser
-                        ? Border.all(color: AfterlifeColors.electricPurple.withValues(alpha: 0.5))
+                        ? Border.all(
+                            color: AfterlifeColors.electricPurple.withValues(
+                              alpha: 0.5,
+                            ),
+                          )
                         : null,
                   ),
                   child: Center(
                     child: Text(
                       player['initials'] ?? '?',
                       style: TextStyle(
-                        color: isCurrentUser ? AfterlifeColors.electricPurple : AfterlifeColors.cyanBlue,
+                        color: isCurrentUser
+                            ? AfterlifeColors.electricPurple
+                            : AfterlifeColors.cyanBlue,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -836,7 +1138,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
                             color: isCurrentUser
                                 ? AfterlifeColors.electricPurple
                                 : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: isCurrentUser ? FontWeight.w800 : FontWeight.w600,
+                            fontWeight: isCurrentUser
+                                ? FontWeight.w800
+                                : FontWeight.w600,
                             fontSize: 14,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -845,28 +1149,56 @@ class _NightGameScreenState extends State<NightGameScreen> {
                       if (player['isDesignatedDriver'] == true)
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
-                          child: Icon(Icons.local_taxi, size: 14, color: AfterlifeColors.acidGreen),
+                          child: Icon(
+                            Icons.local_taxi,
+                            size: 14,
+                            color: AfterlifeColors.acidGreen,
+                          ),
                         ),
                       if (isCurrentUser) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AfterlifeColors.electricPurple.withValues(alpha: 0.2),
+                            color: AfterlifeColors.electricPurple.withValues(
+                              alpha: 0.2,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('TU', style: TextStyle(color: AfterlifeColors.electricPurple, fontSize: 8, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'TU',
+                            style: TextStyle(
+                              color: AfterlifeColors.electricPurple,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                       if (isHost) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AfterlifeColors.electricLilac.withValues(alpha: 0.2),
+                            color: AfterlifeColors.electricLilac.withValues(
+                              alpha: 0.2,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('HOST', style: TextStyle(color: AfterlifeColors.electricLilac, fontSize: 8, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'HOST',
+                            style: TextStyle(
+                              color: AfterlifeColors.electricLilac,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ],
@@ -874,7 +1206,10 @@ class _NightGameScreenState extends State<NightGameScreen> {
                 ),
                 // Points
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: isTop3
                         ? podiumBorder[index].withValues(alpha: 0.15)
@@ -884,7 +1219,9 @@ class _NightGameScreenState extends State<NightGameScreen> {
                   child: Text(
                     '${player['points'] ?? 0} pts',
                     style: TextStyle(
-                      color: isTop3 ? podiumBorder[index] : AfterlifeColors.neonOrange,
+                      color: isTop3
+                          ? podiumBorder[index]
+                          : AfterlifeColors.neonOrange,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -898,44 +1235,127 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-  Widget _buildChallengesList(List<dynamic> challenges, int currentIndex, bool allCompleted, String nightId, List<dynamic> players) {
+  Widget _buildChallengesList(
+    List<dynamic> challenges,
+    int currentIndex,
+    bool allCompleted,
+    String nightId,
+    List<dynamic> players,
+  ) {
     if (challenges.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('RETOS', style: TextStyle(color: AfterlifeColors.cyanBlue, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        const Text(
+          'RETOS',
+          style: TextStyle(
+            color: AfterlifeColors.cyanBlue,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+          ),
+        ),
         const SizedBox(height: 12),
         ...List.generate(challenges.length, (index) {
           final challenge = challenges[index];
           final isCurrent = index == currentIndex && !allCompleted;
           final isCompleted = challenge['completed'] == true;
           return GestureDetector(
-            onTap: allCompleted ? null : () {
-              if (!isCompleted) _navigateToCompleteChallenge(challenge, nightId, players);
-            },
+            onTap: allCompleted
+                ? null
+                : () {
+                    if (!isCompleted) {
+                      _navigateToCompleteChallenge(challenge, nightId, players, index);
+                    }
+                  },
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.025),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isCurrent ? AfterlifeColors.cyanBlue : isCompleted ? AfterlifeColors.acidGreen.withValues(alpha: 0.3) : Colors.transparent, width: isCurrent ? 2 : 1),
+                border: Border.all(
+                  color: isCurrent
+                      ? AfterlifeColors.cyanBlue
+                      : isCompleted
+                      ? AfterlifeColors.acidGreen.withValues(alpha: 0.3)
+                      : Colors.transparent,
+                  width: isCurrent ? 2 : 1,
+                ),
               ),
               child: Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(color: isCompleted ? AfterlifeColors.acidGreen.withValues(alpha: 0.2) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(isCompleted ? Icons.check_circle : Icons.emoji_events, color: isCompleted ? AfterlifeColors.acidGreen : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? AfterlifeColors.acidGreen.withValues(alpha: 0.2)
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isCompleted ? Icons.check_circle : Icons.emoji_events,
+                      color: isCompleted
+                          ? AfterlifeColors.acidGreen
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(challenge['name'] ?? 'Reto', style: TextStyle(color: isCompleted ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal))),
-                  if (challenge['proofBytes'] != null) Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 16)),
+                  Expanded(
+                    child: Text(
+                      challenge['name'] ?? 'Reto',
+                      style: TextStyle(
+                        color: isCompleted
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6)
+                            : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  if (challenge['proofBytes'] != null)
+                    Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: Icon(
+                        Icons.image,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        size: 16,
+                      ),
+                    ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: isCompleted ? AfterlifeColors.acidGreen.withValues(alpha: 0.2) : AfterlifeColors.neonOrange.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                    child: Text('${challenge['points'] ?? 0} pts', style: TextStyle(color: isCompleted ? AfterlifeColors.acidGreen : AfterlifeColors.neonOrange, fontSize: 12, fontWeight: FontWeight.bold)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? AfterlifeColors.acidGreen.withValues(alpha: 0.2)
+                          : AfterlifeColors.neonOrange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${challenge['points'] ?? 0} pts',
+                      style: TextStyle(
+                        color: isCompleted
+                            ? AfterlifeColors.acidGreen
+                            : AfterlifeColors.neonOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -945,7 +1365,6 @@ class _NightGameScreenState extends State<NightGameScreen> {
       ],
     );
   }
-
 
   void _showNightChat(Map<String, dynamic> nightData) {
     HapticFeedback.lightImpact();
@@ -960,15 +1379,21 @@ class _NightGameScreenState extends State<NightGameScreen> {
     );
   }
 
-
   Future<void> _toggleDriver(String userId, bool isDriver) async {
     HapticFeedback.mediumImpact();
     try {
-      await _nightService.toggleDesignatedDriver(widget.nightId, userId, isDriver);
+      await _nightService.toggleDesignatedDriver(
+        widget.nightId,
+        userId,
+        isDriver,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     }

@@ -128,11 +128,11 @@ class NightSummaryDetailScreen extends StatelessWidget {
                         children: [
                           // Fotos de noche (URLs de Firebase Storage)
                           ...nightPhotoUrls.map((url) => GestureDetector(
-                            onTap: () => _showFullscreenUrl(context, url),
+                            onTap: () => _showFullscreenUrl(context, url as String),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                url,
+                                url as String,
                                 fit: BoxFit.cover,
                                 loadingBuilder: (_, child, progress) => progress == null
                                     ? child

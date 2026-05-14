@@ -170,11 +170,14 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     List<Map<String, dynamic>> photos = [];
     for (var challenge in challenges) {
       if (challenge['proofBytes'] != null) {
-        photos.add({
-          'bytes': challenge['proofBytes'],
-          'title': challenge['name'],
-          'completedBy': challenge['completedBy'] ?? 'Alguien',
-        });
+        final bytes = _toUint8List(challenge['proofBytes']);
+        if (bytes.isNotEmpty) {
+          photos.add({
+            'bytes': bytes,
+            'title': challenge['name'],
+            'completedBy': challenge['completedBy'] ?? 'Alguien',
+          });
+        }
       }
     }
     return photos;
@@ -184,11 +187,10 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     final nightPhotos = widget.nightData['nightPhotos'] ?? [];
     List<Map<String, dynamic>> photos = [];
     for (var item in nightPhotos) {
-      if (item is Uint8List) {
-        photos.add({'bytes': item});
-      } else if (item is Map && item.containsKey('bytes')) {
-        photos.add({'bytes': item['bytes']});
-      }
+      // Soporta: {'data': Uint8List} (nuevo), {'bytes': ...} (legacy), Uint8List directo
+      final raw = item is Map ? (item['data'] ?? item['bytes']) : item;
+      final bytes = _toUint8List(raw);
+      if (bytes.isNotEmpty) photos.add({'bytes': bytes});
     }
     return photos;
   }
@@ -494,7 +496,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                     Expanded(
                       child: Text(
                         player['name'] ?? 'Jugador',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                     Container(
@@ -522,7 +524,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 3: FOTOS DE LOS RETOS (CORREGIDO) ----
+  // ---- PASO 3: FOTOS DE LOS RETOS ----
   Widget _buildChallengePhotos() {
     final photos = _getChallengePhotos();
     if (photos.isEmpty) {
@@ -595,7 +597,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
     );
   }
 
-  // ---- PASO 4: FOTOS DE LA NOCHE (CORREGIDO) ----
+  // ---- PASO 4: FOTOS DE LA NOCHE (adaptadas para bytes) ----
   Widget _buildNightPhotos() {
     final photos = _getNightPhotos();
     if (photos.isEmpty) {
@@ -722,7 +724,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
                   Expanded(
                     child: Text(
                       player['name'] ?? 'Jugador',
-           style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                     ),
                   ),
                   Text(
@@ -821,7 +823,7 @@ class _NightSummaryScreenState extends State<NightSummaryScreen>
             top: 40,
             right: 20,
             child: IconButton(
-       icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 30),
+              icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 30),
               onPressed: () => Navigator.pop(context),
             ),
           ),

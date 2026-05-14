@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:typed_data';
-
 import '../core/enums.dart';
 import '../core/app_constants.dart';
 
@@ -11,7 +10,6 @@ class NightService {
   // NIGHTS CRUD
   // --------------------------------------------------------------------------
 
-  /// Crea una nueva noche en Firestore y devuelve su ID.
   Future<String> createNight({
     required String name,
     required String hostId,
@@ -57,7 +55,6 @@ class NightService {
     return docRef.id;
   }
 
-  /// Obtiene todas las noches disponibles (status == 'waiting' y no llenas)
   Future<List<Map<String, dynamic>>> getAvailableNights() async {
     final snapshot = await _firestore
         .collection(AppConstants.nightsCollection)
@@ -75,14 +72,12 @@ class NightService {
     return nights;
   }
 
-  /// Obtiene una noche por su ID
   Future<Map<String, dynamic>?> getNightById(String nightId) async {
     final doc = await _firestore.collection(AppConstants.nightsCollection).doc(nightId).get();
     if (!doc.exists) return null;
     return {...doc.data()!, 'id': doc.id};
   }
 
-  /// Escucha cambios en tiempo real de una noche
   Stream<Map<String, dynamic>?> streamNight(String nightId) {
     return _firestore
         .collection(AppConstants.nightsCollection)
@@ -98,7 +93,6 @@ class NightService {
   // JOIN NIGHT
   // --------------------------------------------------------------------------
 
-  /// Añade un jugador a la noche (actualiza el array players)
   Future<void> joinNight(String nightId, String userId, String userName, String userInitials) async {
     final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
     await _firestore.runTransaction((transaction) async {
@@ -123,71 +117,104 @@ class NightService {
   }
 
   // --------------------------------------------------------------------------
-  // COMPLETE CHALLENGE
+  // COMPLETE CHALLENGE (sin transacción, límite de 150KB)
   // --------------------------------------------------------------------------
-
-  /// Marca un reto como completado, suma puntos al jugador y guarda la prueba (bytes)
   Future<void> completeChallenge(String nightId, int challengeIndex, String playerName, Uint8List? proofBytes) async {
-    final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
-    await _firestore.runTransaction((transaction) async {
-      final doc = await transaction.get(nightRef);
-      if (!doc.exists) throw Exception('La noche no existe');
+    const maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
+        final doc = await nightRef.get();
+        if (!doc.exists) throw Exception('La noche no existe');
 
-      final challenges = List<Map<String, dynamic>>.from(doc.data()?[AppConstants.fieldChallenges] ?? []);
-      if (challengeIndex >= challenges.length) throw Exception('Reto inválido');
-      if (challenges[challengeIndex]['completed'] == true) throw Exception('Reto ya completado');
+        final challenges = List<Map<String, dynamic>>.from(doc.data()?[AppConstants.fieldChallenges] ?? []);
+        if (challengeIndex >= challenges.length) throw Exception('Reto inválido');
+        if (challenges[challengeIndex]['completed'] == true) throw Exception('Reto ya completado');
 
-      // Marcar reto como completado
-      challenges[challengeIndex]['completed'] = true;
-      challenges[challengeIndex]['completedBy'] = playerName;
-      if (proofBytes != null) {
-        const maxBytes = 300 * 1024; // 300KB
-        if (proofBytes.length > maxBytes) {
-          throw Exception('La foto de prueba es demasiado grande (máx 300KB).');
+        // Normalizar proofBytes existentes: List<dynamic> → Uint8List (blob)
+        // Si no se hace, Firestore detecta arrays anidados al reescribir el campo
+        for (final c in challenges) {
+          final pb = c['proofBytes'];
+          if (pb != null && pb is! Uint8List) {
+            try {
+              c['proofBytes'] = Uint8List.fromList((pb as List).cast<int>());
+            } catch (_) {
+              c['proofBytes'] = null;
+            }
+          }
         }
-        challenges[challengeIndex]['proofBytes'] = proofBytes.toList();
-      }
 
-      // Sumar puntos al jugador
-      final players = List<Map<String, dynamic>>.from(doc.data()?[AppConstants.fieldPlayers] ?? []);
-      final pointsToAdd = challenges[challengeIndex][AppConstants.fieldPoints] as int;
-      bool playerFound = false;
-      for (var player in players) {
-        if (player[AppConstants.fieldNightName] == playerName) {
-          player[AppConstants.fieldPoints] = (player[AppConstants.fieldPoints] ?? 0) + pointsToAdd;
-          playerFound = true;
-          break;
+        challenges[challengeIndex]['completed'] = true;
+        challenges[challengeIndex]['completedBy'] = playerName;
+        if (proofBytes != null) {
+          if (proofBytes.length > 150 * 1024) {
+            throw Exception('La imagen es demasiado grande (máx 150KB)');
+          }
+          challenges[challengeIndex]['proofBytes'] = proofBytes;
         }
-      }
-      if (!playerFound) throw Exception('Jugador no encontrado');
 
-      transaction.update(nightRef, {
-        AppConstants.fieldChallenges: challenges,
-        AppConstants.fieldPlayers: players,
-      });
-    });
+        final players = List<Map<String, dynamic>>.from(doc.data()?[AppConstants.fieldPlayers] ?? []);
+        final pointsToAdd = challenges[challengeIndex][AppConstants.fieldPoints] as int;
+        bool playerFound = false;
+        for (var player in players) {
+          if (player[AppConstants.fieldNightName] == playerName) {
+            player[AppConstants.fieldPoints] = (player[AppConstants.fieldPoints] ?? 0) + pointsToAdd;
+            playerFound = true;
+            break;
+          }
+        }
+        if (!playerFound) throw Exception('Jugador no encontrado');
+
+        await nightRef.update({
+          AppConstants.fieldChallenges: challenges,
+          AppConstants.fieldPlayers: players,
+        });
+        return;
+      } catch (e) {
+        if (attempt == maxRetries - 1) rethrow;
+        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
-  // NIGHT PHOTOS (ahora guarda bytes directamente en Firestore)
+  // NIGHT PHOTOS – máximo 3 fotos
+  // Formato: [{'data': Uint8List}, ...] — blob como campo de mapa, nunca en array directo
   // --------------------------------------------------------------------------
-
-  /// Añade una foto a la noche (en bytes). Los bytes se guardan en el array nightPhotos.
   Future<void> addNightPhoto(String nightId, Uint8List photoBytes) async {
-    final bytesList = photoBytes.toList(); // Convertimos a List<int> para Firestore
-    await _firestore
-        .collection(AppConstants.nightsCollection)
-        .doc(nightId)
-        .update({
-          AppConstants.fieldNightPhotos: FieldValue.arrayUnion([bytesList])
-        });
+    if (photoBytes.length > 150 * 1024) {
+      throw Exception('La imagen es demasiado grande (máx 150KB). Elige una imagen más pequeña.');
+    }
+    final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
+    final doc = await nightRef.get();
+    final rawPhotos = doc.data()?[AppConstants.fieldNightPhotos] as List? ?? [];
+
+    // Migrar fotos existentes al formato {'data': Uint8List}
+    // Los formatos antiguos tenían {'bytes': List<int>} que causaba arrays anidados
+    final normalizedPhotos = rawPhotos.map<Map<String, dynamic>?>((p) {
+      if (p is Map) {
+        final raw = p['data'] ?? p['bytes'];
+        if (raw == null) return null;
+        final bytes = raw is Uint8List
+            ? raw
+            : Uint8List.fromList((raw as List).cast<int>());
+        return {'data': bytes};
+      }
+      if (p is Uint8List) return {'data': p};
+      if (p is List) return {'data': Uint8List.fromList(p.cast<int>())};
+      return null;
+    }).whereType<Map<String, dynamic>>().toList();
+
+    if (normalizedPhotos.length >= 3) {
+      throw Exception('Máximo 3 fotos por noche. Elimina alguna antes de añadir otra.');
+    }
+    normalizedPhotos.add({'data': photoBytes});
+    await nightRef.update({AppConstants.fieldNightPhotos: normalizedPhotos});
   }
 
   // --------------------------------------------------------------------------
   // FINISH NIGHT
   // --------------------------------------------------------------------------
-
-  /// Marca la noche como finalizada
   Future<void> finishNight(String nightId) async {
     await _firestore.collection(AppConstants.nightsCollection).doc(nightId).update({AppConstants.fieldStatus: NightStatus.finished.value});
   }
@@ -195,7 +222,6 @@ class NightService {
   // --------------------------------------------------------------------------
   // DESIGNATED DRIVER
   // --------------------------------------------------------------------------
-
   Future<void> toggleDesignatedDriver(String nightId, String userId, bool isDriver) async {
     final nightRef = _firestore.collection(AppConstants.nightsCollection).doc(nightId);
     await _firestore.runTransaction((transaction) async {
@@ -215,7 +241,6 @@ class NightService {
   // --------------------------------------------------------------------------
   // EXPENSES
   // --------------------------------------------------------------------------
-
   Future<void> updateExpenses(String nightId, List<Map<String, dynamic>> expenses) async {
     await _firestore.collection(AppConstants.nightsCollection).doc(nightId).update({
       'expenses': expenses,
@@ -243,15 +268,12 @@ class NightService {
   // --------------------------------------------------------------------------
   // USER ACTIVE NIGHT MANAGEMENT
   // --------------------------------------------------------------------------
-
-  /// Establece la noche activa para un usuario
   Future<void> setActiveNightForUser(String userId, String nightId) async {
     await _firestore.collection(AppConstants.usersCollection).doc(userId).update({
       AppConstants.fieldActiveNightId: nightId,
     });
   }
 
-  /// Limpia la noche activa del usuario
   Future<void> clearActiveNightForUser(String userId) async {
     await _firestore.collection(AppConstants.usersCollection).doc(userId).update({
       AppConstants.fieldActiveNightId: null,

@@ -6,6 +6,7 @@ import '../theme/colors.dart';
 import '../theme/text_theme.dart';
 import '../components/AfterButton.dart';
 import '../components/AfterLife_Avatar.dart';
+import '../utils/image_utils.dart';
 
 class CompleteChallengeScreen extends StatefulWidget {
   final Map<String, dynamic> challenge;
@@ -26,29 +27,26 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
   Uint8List? _imageBytes;
   bool _uploadingMedia = false;
 
-  // ✅ ÚNICA MODIFICACIÓN: compresión de la imagen
   Future<void> _pickMedia(ImageSource source) async {
     setState(() => _uploadingMedia = true);
     final picker = ImagePicker();
 
     try {
-      final XFile? pickedFile = await picker.pickImage(
-        source: source,
-        imageQuality: 60,        // reducido de 80 a 60
-        maxWidth: 800,           // añadido
-        maxHeight: 800,          // añadido
-      );
+      final XFile? pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return;
 
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        setState(() {
-          _imageBytes = bytes;
-        });
-      }
+      final raw = await pickedFile.readAsBytes();
+      final compressed = await ImageUtils.compressForFirestore(raw);
+
+      if (!mounted) return;
+      setState(() => _imageBytes = compressed);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        SnackBar(
+          content: Text('Error al procesar imagen: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     } finally {
       if (mounted) setState(() => _uploadingMedia = false);
