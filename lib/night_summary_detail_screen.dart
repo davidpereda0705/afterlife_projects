@@ -18,16 +18,16 @@ class NightSummaryDetailScreen extends StatelessWidget {
       ..sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
     final mvp = players.first;
 
-    // Challenge proof images (still stored as bytes in Firestore)
+    // Challenge proof images (stored as bytes in Firestore)
     final proofPhotos = entry.challenges
         .where((c) => c['proofBytes'] != null)
         .map((c) => c['proofBytes'] as Uint8List)
         .toList();
 
-    // Night photos are now Firebase Storage URL strings
-    final nightPhotoUrls = entry.nightPhotos;
+    // Night photos (stored as Uint8List bytes in Firestore)
+    final nightPhotoBytes = entry.nightPhotos;
 
-    final hasAnyPhotos = proofPhotos.isNotEmpty || nightPhotoUrls.isNotEmpty;
+    final hasAnyPhotos = proofPhotos.isNotEmpty || nightPhotoBytes.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,20 +126,14 @@ class NightSummaryDetailScreen extends StatelessWidget {
                         mainAxisSpacing: 8,
                         childAspectRatio: 1,
                         children: [
-                          // Fotos de noche (URLs de Firebase Storage)
-                          ...nightPhotoUrls.map((url) => GestureDetector(
-                            onTap: () => _showFullscreenUrl(context, url as String),
+                          // Fotos de la noche (bytes guardados en Firestore)
+                          ...nightPhotoBytes.map((bytes) => GestureDetector(
+                            onTap: () => _showFullscreenBytes(context, bytes),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                url as String,
+                              child: Image.memory(
+                                bytes,
                                 fit: BoxFit.cover,
-                                loadingBuilder: (_, child, progress) => progress == null
-                                    ? child
-                                    : Container(
-                                        color: AfterlifeColors.cyanBlue.withValues(alpha: 0.08),
-                                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                      ),
                                 errorBuilder: (_, __, ___) => Container(
                                   color: Theme.of(context).colorScheme.surface,
                                   child: const Icon(Icons.broken_image_outlined),
@@ -172,36 +166,6 @@ class NightSummaryDetailScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _showFullscreenUrl(BuildContext context, String url) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.black87,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Stack(
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  child: Image.network(url, fit: BoxFit.contain),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                right: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

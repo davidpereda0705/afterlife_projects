@@ -99,7 +99,7 @@ class _RankingScreenState extends State<RankingScreen>
         headerSliverBuilder: (context, _) => [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 110,
+            expandedHeight: MediaQuery.of(context).padding.top + 80,
             automaticallyImplyLeading: false,
             backgroundColor: Colors.transparent,
             flexibleSpace: FlexibleSpaceBar(
