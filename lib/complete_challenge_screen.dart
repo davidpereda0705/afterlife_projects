@@ -6,6 +6,7 @@ import '../theme/colors.dart';
 import '../theme/text_theme.dart';
 import '../components/AfterButton.dart';
 import '../components/AfterLife_Avatar.dart';
+import '../utils/image_utils.dart';
 
 class CompleteChallengeScreen extends StatefulWidget {
   final Map<String, dynamic> challenge;
@@ -31,21 +32,21 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
     final picker = ImagePicker();
 
     try {
-      final XFile? pickedFile = await picker.pickImage(
-        source: source,
-        imageQuality: 80,
-      );
+      final XFile? pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return;
 
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        setState(() {
-          _imageBytes = bytes;
-        });
-      }
+      final raw = await pickedFile.readAsBytes();
+      final compressed = await ImageUtils.compressForFirestore(raw);
+
+      if (!mounted) return;
+      setState(() => _imageBytes = compressed);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        SnackBar(
+          content: Text('Error al procesar imagen: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     } finally {
       if (mounted) setState(() => _uploadingMedia = false);
@@ -107,7 +108,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
               children: [
                 Text(
                   challenge['name'] ?? 'Reto',
-         style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -118,7 +119,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                   ),
                   child: Text(
                     '${challenge['points'] ?? 0} pts',
-          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -149,10 +150,10 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
             ),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedPlayer,
-       hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+              hint: Text('Selecciona un jugador', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
               dropdownColor: Theme.of(context).colorScheme.surface,
               icon: const Icon(Icons.arrow_drop_down, color: AfterlifeColors.electricLilac),
-       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: const InputDecoration(border: InputBorder.none),
               items: widget.players.map<DropdownMenuItem<String>>((player) {
                 return DropdownMenuItem<String>(
@@ -237,7 +238,7 @@ class _CompleteChallengeScreenState extends State<CompleteChallengeScreen> {
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                           shape: BoxShape.circle,
                         ),
-            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),
+                        child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 18),
                       ),
                       onPressed: () => setState(() => _imageBytes = null),
                     ),

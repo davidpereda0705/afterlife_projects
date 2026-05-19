@@ -75,12 +75,23 @@ class OnboardingWrapper extends StatefulWidget {
 class _OnboardingWrapperState extends State<OnboardingWrapper> {
   bool _isLoading = true;
   bool _hasSeenTutorial = false;
+  String? _lastCheckedUid;
 
   @override
   void initState() {
     super.initState();
-    _checkTutorial();
     _handleDeepLink();
+    _initAuth();
+  }
+
+  Future<void> _initAuth() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _lastCheckedUid = user.uid;
+      await _checkTutorial(user.uid);
+    } else {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _handleDeepLink() {
@@ -102,9 +113,9 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
     }
   }
 
-  Future<void> _checkTutorial() async {
+  Future<void> _checkTutorial(String uid) async {
     final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getBool('has_seen_tutorial') ?? false;
+    final seen = prefs.getBool('has_seen_tutorial_$uid') ?? false;
     if (mounted) {
       setState(() {
         _hasSeenTutorial = seen;
@@ -114,8 +125,10 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
   }
 
   Future<void> _completeTutorial() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_tutorial', true);
+    await prefs.setBool('has_seen_tutorial_$uid', true);
     if (mounted) setState(() => _hasSeenTutorial = true);
   }
 
@@ -135,12 +148,22 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> {
         final user = snapshot.data;
 
         if (user != null) {
+          // Si el usuario cambió (nuevo registro o login), re-verificar tutorial
+          if (_lastCheckedUid != user.uid) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _lastCheckedUid != user.uid) {
+                _lastCheckedUid = user.uid;
+                _checkTutorial(user.uid);
+              }
+            });
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+
           return Consumer<UserProvider>(
             builder: (context, userProvider, child) {
               if (userProvider.isLoading && userProvider.userData == null) {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
-              // Tutorial interactivo la primera vez que entras
               if (!_hasSeenTutorial) {
                 return TutorialScreen(onDone: _completeTutorial);
               }

@@ -9,7 +9,7 @@ class NightSummary {
   final String groupName;
   final List<Map<String, dynamic>> players;
   final List<Map<String, dynamic>> challenges;
-  final List<Uint8List> nightPhotos;
+  final List<Uint8List> nightPhotos; // ✅ ahora es List<Uint8List>
   final DateTime timestamp;
 
   NightSummary({
@@ -40,7 +40,7 @@ class NightSummary {
         }
         return copy;
       }).toList(),
-      'nightPhotos': nightPhotos.map((b) => List<int>.from(b)).toList(),
+      'nightPhotos': nightPhotos.map((b) => {'bytes': b.toList()}).toList(),
       'timestamp': timestamp.toIso8601String(),
     };
   }
@@ -60,8 +60,12 @@ class NightSummary {
         }
         return challenge;
       }).toList(),
-      nightPhotos: (json['nightPhotos'] as List? ?? []).map((b) => Uint8List.fromList(b)).toList(),
-      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
+      nightPhotos: (json['nightPhotos'] as List? ?? [])
+          .map((b) => Uint8List.fromList(b))
+          .toList(),
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : DateTime.now(),
     );
   }
 
@@ -76,36 +80,50 @@ class NightSummary {
       'players': players,
       'challenges': challenges.map((c) {
         final copy = Map<String, dynamic>.from(c);
-        if (copy['proofBytes'] != null) {
-          // Convertir Uint8List a List<int> para Firestore
-          if (copy['proofBytes'] is Uint8List) {
-            copy['proofBytes'] = (copy['proofBytes'] as Uint8List).toList();
-          } else if (copy['proofBytes'] is List<int>) {
-            copy['proofBytes'] = copy['proofBytes'] as List<int>;
-          }
+        // proofBytes: si ya es Uint8List, Firestore lo guarda como blob (eficiente)
+        if (copy['proofBytes'] != null && copy['proofBytes'] is! Uint8List) {
+          copy['proofBytes'] = Uint8List.fromList(List<int>.from(copy['proofBytes']));
         }
         return copy;
       }).toList(),
-      'nightPhotos': nightPhotos.map((b) => b.toList()).toList(),
+      'nightPhotos': nightPhotos.map((b) => {'data': b}).toList(),
       'timestamp': Timestamp.fromDate(timestamp),
     };
   }
 
-  factory NightSummary.fromFirestoreMap(Map<String, dynamic> map, String docId) {
-    final players = (map['players'] as List?)?.map((p) => Map<String, dynamic>.from(p)).toList() ?? [];
-    final challenges = (map['challenges'] as List?)?.map((c) {
-      final challenge = Map<String, dynamic>.from(c);
-      if (challenge['proofBytes'] != null && challenge['proofBytes'] is List) {
-        challenge['proofBytes'] = Uint8List.fromList(List<int>.from(challenge['proofBytes']));
-      }
-      return challenge;
-    }).toList() ?? [];
-    final nightPhotos = (map['nightPhotos'] as List?)?.map((p) {
-      if (p is List) {
-        return Uint8List.fromList(List<int>.from(p));
-      }
-      return Uint8List(0);
-    }).toList() ?? [];
+  factory NightSummary.fromFirestoreMap(
+    Map<String, dynamic> map,
+    String docId,
+  ) {
+    final players =
+        (map['players'] as List?)
+            ?.map((p) => Map<String, dynamic>.from(p))
+            .toList() ??
+        [];
+    final challenges =
+        (map['challenges'] as List?)?.map((c) {
+          final challenge = Map<String, dynamic>.from(c);
+          if (challenge['proofBytes'] != null &&
+              challenge['proofBytes'] is List) {
+            challenge['proofBytes'] = Uint8List.fromList(
+              List<int>.from(challenge['proofBytes']),
+            );
+          }
+          return challenge;
+        }).toList() ??
+        [];
+    final nightPhotos =
+        (map['nightPhotos'] as List?)?.map((p) {
+          if (p is Uint8List) return p;
+          if (p is Map) {
+            final raw = p['data'] ?? p['bytes'];
+            if (raw is Uint8List) return raw;
+            if (raw is List) return Uint8List.fromList(List<int>.from(raw));
+          }
+          if (p is List) return Uint8List.fromList(List<int>.from(p));
+          return Uint8List(0);
+        }).where((b) => b.isNotEmpty).toList() ??
+        [];
 
     return NightSummary(
       id: docId,

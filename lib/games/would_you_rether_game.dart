@@ -190,18 +190,6 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
     _getRandomDilemma();
   }
 
-  // Reiniciar juego
-  void _resetGame() {
-    setState(() {
-      _gameStarted = false;
-      _votingInProgress = false;
-      _showResults = false;
-      _resetVotingState();
-      _currentOptionA = 'Toca un botón';
-      _currentOptionB = 'para empezar';
-    });
-  }
-
   String _getCurrentVoter() {
     if (_currentVoterIndex < _players.length) {
       return _players[_currentVoterIndex];
