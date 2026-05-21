@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:typed_data';
-import '../core/enums.dart';
-import '../core/app_constants.dart';
+import 'package:afterlife_projects/core/enums.dart';
+import 'package:afterlife_projects/core/app_constants.dart';
 
 class NightService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

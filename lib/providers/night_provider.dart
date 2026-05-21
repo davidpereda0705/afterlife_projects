@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
-import '../services/night_service.dart';
+import 'package:afterlife_projects/services/night_service.dart';
 
 class NightProvider extends ChangeNotifier {
   final NightService _nightService = NightService();

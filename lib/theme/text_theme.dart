@@ -1,6 +1,6 @@
 // lib/core/themes/text_theme.dart
 import 'package:flutter/material.dart';
-import 'colors.dart'; // Importa colors para usar los colores
+import 'package:afterlife_projects/theme/colors.dart'; // Importa colors para usar los colores
 
 class AfterlifeTextTheme {
   static const String fontFamily = 'Syne';

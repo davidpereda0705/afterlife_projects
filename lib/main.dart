@@ -1,21 +1,21 @@
-import 'package:afterlife_projects/components/backgrounds/disco_background.dart';
-import 'package:afterlife_projects/components/login_page.dart';
-import 'package:afterlife_projects/main_screen.dart';
-import 'package:afterlife_projects/night_game_screen.dart';
+import 'package:afterlife_projects/widgets/effects/disco_background.dart';
+import 'package:afterlife_projects/screens/auth/login_screen.dart';
+import 'package:afterlife_projects/screens/main/main_screen.dart';
+import 'package:afterlife_projects/screens/nights/night_game_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:afterlife_projects/theme/AfterlifeTheme.dart';
+import 'package:afterlife_projects/theme/afterlife_theme.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/providers/settings_provider.dart';
 import 'package:afterlife_projects/services/achievement_service.dart';
-import 'package:afterlife_projects/edit_profile.dart';
-import 'package:afterlife_projects/screens/settings_screen.dart';
+import 'package:afterlife_projects/screens/settings/edit_profile_screen.dart';
+import 'package:afterlife_projects/screens/settings/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/tutorial_screen.dart';
-import 'firebase_options.dart';
+import 'package:afterlife_projects/screens/settings/tutorial_screen.dart';
+import 'package:afterlife_projects/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

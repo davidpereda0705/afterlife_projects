@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-import '../core/level_calculator.dart';
-import '../models/achievement.dart';
-import '../core/app_constants.dart';
+import 'package:afterlife_projects/core/level_calculator.dart';
+import 'package:afterlife_projects/models/achievement.dart';
+import 'package:afterlife_projects/core/app_constants.dart';
 
 class AchievementService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
