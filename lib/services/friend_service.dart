@@ -1,7 +1,7 @@
 // lib/services/friend_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../core/app_constants.dart';
+import 'package:afterlife_projects/core/app_constants.dart';
 
 class FriendService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

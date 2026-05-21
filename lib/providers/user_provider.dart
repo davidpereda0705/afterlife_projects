@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 
-import '../core/level_calculator.dart';
-import '../services/offline_service.dart';
+import 'package:afterlife_projects/core/level_calculator.dart';
+import 'package:afterlife_projects/services/offline_service.dart';
 
 class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? _userData;

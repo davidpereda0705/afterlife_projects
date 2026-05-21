@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../core/app_constants.dart';
+import 'package:afterlife_projects/core/app_constants.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;

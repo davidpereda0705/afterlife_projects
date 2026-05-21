@@ -1,5 +1,5 @@
 // lib/services/journal_service.dart
-import 'package:afterlife_projects/night_summary.dart';
+import 'package:afterlife_projects/models/night_summary.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

@@ -8,7 +8,7 @@ class MomentsService {
   String? get _currentUid => _auth.currentUser?.uid;
 
   /// Crea un momento efímero (24h) para una noche.
-  /// La imagen se guarda directamente como bytes (List<int>) en Firestore.
+  /// La imagen se guarda directamente como bytes (`List<int>`) en Firestore.
   Future<void> createMoment({
     required String nightId,
     required String nightName,
