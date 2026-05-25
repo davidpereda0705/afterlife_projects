@@ -1,5 +1,7 @@
-// lib/screens/edit_profile_screen.dart
+// Pantalla para editar el perfil del usuario: nombre, handle, foto de perfil
+// y cambio de contraseña. La foto se comprime y guarda como bytes en Firestore.
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:afterlife_projects/widgets/common/afterlife_avatar.dart';
@@ -263,6 +265,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  /// Convierte el campo avatarBytes de Firestore a Uint8List
+  Uint8List? _toBytes(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Uint8List) return raw;
+    if (raw is List) return Uint8List.fromList(raw.cast<int>());
+    return null;
+  }
+
   void _showSnackbar(String message, Color color) {
     ScaffoldMessenger.of(
       context,
@@ -369,9 +379,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   )
                                 else
                                   AfterlifeAvatar(
-                                    imageUrl:
-                                        _avatarImage?.path ??
-                                        userData?['avatarUrl'],
+                                    // Previsualización local si hay imagen nueva, si no los bytes guardados
+                                    imageUrl: _avatarImage?.path,
+                                    imageBytes: _toBytes(userData?['avatarBytes']),
                                     initials: _nameController.text.isNotEmpty
                                         ? _nameController.text[0].toUpperCase()
                                         : 'U',

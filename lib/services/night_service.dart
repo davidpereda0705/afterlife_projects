@@ -1,3 +1,5 @@
+// Servicio para crear, unirse, actualizar y finalizar noches.
+// Gestiona los documentos de noche en Firestore, los retos y las fotos de la noche.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:typed_data';
 import 'package:afterlife_projects/core/enums.dart';
@@ -91,6 +93,12 @@ class NightService {
 
   // --------------------------------------------------------------------------
   // JOIN NIGHT
+  //
+  // Aquí SÍ usamos transacción porque no hay bytes pesados involucrados:
+  // solo metadatos de jugadores (nombres, puntos). El documento es pequeño.
+  // La transacción garantiza que la comprobación de plazas disponibles y
+  // la escritura sean atómicas (evita que dos jugadores entren a la vez
+  // en la última plaza).
   // --------------------------------------------------------------------------
 
   Future<void> joinNight(String nightId, String userId, String userName, String userInitials) async {
@@ -118,6 +126,13 @@ class NightService {
 
   // --------------------------------------------------------------------------
   // COMPLETE CHALLENGE (sin transacción, límite de 150KB)
+  //
+  // POR QUÉ no usamos una transacción de Firestore aquí (a diferencia de joinNight):
+  //   - En una transacción, Firestore ESCRIBE el documento completo atomicamente.
+  //   - Si el documento de noche incluye bytes de imágenes (proofBytes de retos anteriores),
+  //     el tamaño total puede superar fácilmente 1MB, límite de Firestore por escritura.
+  //   - Usamos retries manuales (3 intentos) como alternativa pragmática para manejar
+  //     condiciones de carrera poco frecuentes (dos jugadores completando al mismo tiempo).
   // --------------------------------------------------------------------------
   Future<void> completeChallenge(String nightId, int challengeIndex, String playerName, Uint8List? proofBytes) async {
     const maxRetries = 3;
@@ -172,6 +187,7 @@ class NightService {
         return;
       } catch (e) {
         if (attempt == maxRetries - 1) rethrow;
+        // Backoff exponencial simple: 500ms, 1000ms, 1500ms
         await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
     }

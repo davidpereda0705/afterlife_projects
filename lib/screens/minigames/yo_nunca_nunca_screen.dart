@@ -1,3 +1,4 @@
+// Pantalla del minijuego Yo Nunca: muestra frases y registra las respuestas de cada jugador.
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
@@ -119,7 +120,20 @@ class _YoNuncaGameState extends State<YoNuncaGame> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: Text('YO NUNCA', style: AfterlifeTextTheme.headlineMedium),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.neonPink, AfterlifeColors.electricPurple],
+          ).createShader(bounds),
+          child: const Text(
+            'YO NUNCA',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ),
         centerTitle: true,
       ),
       body: Container(

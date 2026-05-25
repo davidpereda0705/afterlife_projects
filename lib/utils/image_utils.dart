@@ -1,3 +1,4 @@
+// Utilidades de compresión de imágenes: reduce fotos a menos de 120KB para guardarlas en Firestore.
 import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 

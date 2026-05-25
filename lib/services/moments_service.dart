@@ -1,3 +1,4 @@
+// Servicio para subir, cargar y eliminar fotos de momentos de una noche en Firestore.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

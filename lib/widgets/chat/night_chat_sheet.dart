@@ -1,3 +1,4 @@
+// Panel deslizable de chat grupal durante una noche activa: mensajes en tiempo real vía Firestore stream.
 import 'dart:async';
 
 import 'package:afterlife_projects/services/night_chat_service.dart';

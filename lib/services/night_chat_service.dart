@@ -1,3 +1,4 @@
+// Servicio de chat en tiempo real dentro de una noche: envío y escucha de mensajes via Firestore streams.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

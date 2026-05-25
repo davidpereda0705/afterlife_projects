@@ -1,3 +1,5 @@
+// Pantalla para crear una nueva noche. Permite elegir nombre, fecha, hora,
+// número de jugadores y añadir retos personalizados antes de lanzar la noche.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -94,11 +96,18 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Crear Noche',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 22,
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+          ).createShader(bounds),
+          child: const Text(
+            'CREAR NOCHE',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
       ),
@@ -245,10 +254,18 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _selectedDate == null
-                          ? 'Selecciona fecha'
-                          : DateFormat('EEEE, d MMMM').format(_selectedDate!),
+                    Flexible(
+                      child: Text(
+                        _selectedDate == null
+                            ? 'Selecciona fecha'
+                            : DateFormat('EEE, d MMM').format(_selectedDate!),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ],
                 ),

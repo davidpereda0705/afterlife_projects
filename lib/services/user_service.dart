@@ -1,4 +1,5 @@
-// lib/services/user_service.dart
+// Servicio para operaciones de usuario en Firestore: amigos, solicitudes,
+// búsqueda de usuarios y gestión de relaciones sociales.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:afterlife_projects/core/app_constants.dart';

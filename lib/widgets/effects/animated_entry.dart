@@ -1,3 +1,4 @@
+// Efecto de entrada animada: desliza y desvanece cualquier widget al aparecer en pantalla.
 import 'dart:math';
 import 'package:flutter/material.dart';
 

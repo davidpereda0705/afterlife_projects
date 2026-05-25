@@ -208,10 +208,18 @@ class _WouldYouRatherGameState extends State<WouldYouRatherGame> {
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          '¿Qué prefieres?',
-          style: AfterlifeTextTheme.headlineMedium.copyWith(
-            fontWeight: FontWeight.bold,
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.acidGreen, AfterlifeColors.cyanBlue],
+          ).createShader(bounds),
+          child: const Text(
+            '¿QUÉ PREFIERES?',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
       ),

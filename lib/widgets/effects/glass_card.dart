@@ -1,3 +1,4 @@
+// Tarjeta con efecto cristal (glassmorphism): fondo borroso y semi-transparente con blur configurable.
 import 'dart:ui';
 import 'package:flutter/material.dart';
 

@@ -1,4 +1,5 @@
-// lib/screens/night_game_screen.dart
+// Pantalla principal de una noche activa: muestra retos, temporizador,
+// jugadores, permite añadir fotos/momentos y finalizar la noche con resumen.
 import 'dart:async';
 import 'package:afterlife_projects/widgets/moments/moments_viewer.dart';
 import 'package:afterlife_projects/widgets/chat/night_chat_sheet.dart';

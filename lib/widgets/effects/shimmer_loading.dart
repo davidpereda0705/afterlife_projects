@@ -1,3 +1,4 @@
+// Efecto shimmer (brillo deslizante) para mostrar esqueletos de carga mientras se esperan datos.
 import 'package:flutter/material.dart';
 
 class ShimmerLoading extends StatefulWidget {

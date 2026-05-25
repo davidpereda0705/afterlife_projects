@@ -1,7 +1,7 @@
+// Pantalla de perfil público de un amigo: muestra sus estadísticas, logros y opción de reportar.
 import 'package:afterlife_projects/widgets/cards/achievement_badge.dart';
 import 'package:afterlife_projects/widgets/cards/afterlife_card.dart';
 import 'package:afterlife_projects/widgets/common/afterlife_avatar.dart';
-import 'package:afterlife_projects/services/report_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -57,9 +57,6 @@ class FriendProfileScreen extends StatelessWidget {
        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              _buildReportMenu(context),
-            ],
           ),
           body: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -239,100 +236,4 @@ class FriendProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReportMenu(BuildContext context) {
-    final reportService = ReportService();
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
-      onSelected: (value) async {
-        if (value == 'report') {
-          final reason = await _showReportDialog(context);
-          if (reason != null && reason.isNotEmpty) {
-            try {
-              await reportService.reportUser(
-                reportedUserId: uid,
-                reason: reason,
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Usuario reportado. Lo revisaremos.'), backgroundColor: AfterlifeColors.acidGreen),
-                );
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-                );
-              }
-            }
-          }
-        } else if (value == 'block') {
-          try {
-            await reportService.blockUser(uid);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Usuario bloqueado'), backgroundColor: AfterlifeColors.neonOrange),
-              );
-              Navigator.pop(context);
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-              );
-            }
-          }
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: 'report', child: Row(children: [Icon(Icons.flag_outlined), SizedBox(width: 8), Text('Reportar')])),
-        const PopupMenuItem(value: 'block', child: Row(children: [Icon(Icons.block, color: Colors.redAccent), SizedBox(width: 8), Text('Bloquear', style: TextStyle(color: Colors.redAccent))])),
-      ],
-    );
-  }
-
-  Future<String?> _showReportDialog(BuildContext context) async {
-    String selected = 'Comportamiento inapropiado';
-    final detailsController = TextEditingController();
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reportar usuario'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: selected,
-              items: const [
-                DropdownMenuItem(value: 'Comportamiento inapropiado', child: Text('Comportamiento inapropiado')),
-                DropdownMenuItem(value: 'Spam', child: Text('Spam')),
-                DropdownMenuItem(value: 'Perfil falso', child: Text('Perfil falso')),
-                DropdownMenuItem(value: 'Otro', child: Text('Otro')),
-              ],
-              onChanged: (v) => selected = v ?? selected,
-              decoration: const InputDecoration(labelText: 'Motivo'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: detailsController,
-              decoration: const InputDecoration(labelText: 'Detalles (opcional)', hintText: 'Describe lo ocurrido'),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCELAR')),
-          ElevatedButton(
-            onPressed: () {
-              result = selected;
-              Navigator.pop(ctx);
-            },
-            child: const Text('REPORTAR'),
-          ),
-        ],
-      ),
-    );
-    detailsController.dispose();
-    return result;
-  }
 }

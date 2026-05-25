@@ -1,3 +1,5 @@
+// Punto de entrada de la app. Inicializa Firebase, crea los providers globales
+// (UserProvider, SettingsProvider) y decide si mostrar tutorial, login o pantalla principal.
 import 'package:afterlife_projects/widgets/effects/disco_background.dart';
 import 'package:afterlife_projects/screens/auth/login_screen.dart';
 import 'package:afterlife_projects/screens/main/main_screen.dart';

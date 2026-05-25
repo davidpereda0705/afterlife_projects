@@ -1,3 +1,4 @@
+// Pantalla de chat general: lista de conversaciones y acceso a chats individuales con amigos.
 import 'dart:async';
 
 import 'package:afterlife_projects/widgets/cards/afterlife_card.dart';

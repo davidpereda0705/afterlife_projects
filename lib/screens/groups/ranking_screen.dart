@@ -1,3 +1,4 @@
+// Pantalla de ranking de amigos: muestra el podio y la lista ordenada por puntos, noches o creadas.
 import 'package:afterlife_projects/widgets/effects/animated_entry.dart';
 import 'package:afterlife_projects/widgets/effects/glass_card.dart';
 import 'package:afterlife_projects/services/ranking_service.dart';
@@ -12,17 +13,14 @@ class RankingScreen extends StatefulWidget {
   State<RankingScreen> createState() => _RankingScreenState();
 }
 
-class _RankingScreenState extends State<RankingScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RankingScreenState extends State<RankingScreen> {
   final RankingService _rankingService = RankingService();
   final String? _currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
   String _sortBy = 'points';
-  List<UserRankData> _worldData = [];
   List<UserRankData> _friendsData = [];
-  bool _worldLoading = true;
   bool _friendsLoading = true;
+  String? _friendsError;
 
   static const _sortOptions = [
     ('points', 'Puntos', Icons.star_rounded),
@@ -33,51 +31,29 @@ class _RankingScreenState extends State<RankingScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {}));
-    _loadAll();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadAll() async {
-    _loadWorld();
     _loadFriends();
-  }
-
-  Future<void> _loadWorld() async {
-    setState(() => _worldLoading = true);
-    try {
-      final data = await _rankingService.getWorldRanking(sortBy: _sortBy);
-      if (mounted) setState(() { _worldData = data; _worldLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _worldLoading = false);
-    }
   }
 
   Future<void> _loadFriends() async {
     final userId = _currentUserId;
     if (userId == null) return;
-    setState(() => _friendsLoading = true);
+    setState(() { _friendsLoading = true; _friendsError = null; });
     try {
       final data = await _rankingService.getFriendsRanking(
         userId: userId,
         sortBy: _sortBy,
       );
       if (mounted) setState(() { _friendsData = data; _friendsLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _friendsLoading = false);
+    } catch (e) {
+      debugPrint('Error cargando ranking de amigos: $e');
+      if (mounted) setState(() { _friendsLoading = false; _friendsError = e.toString(); });
     }
   }
 
   void _changeSortBy(String newSort) {
     if (_sortBy == newSort) return;
     setState(() => _sortBy = newSort);
-    _loadAll();
+    _loadFriends();
   }
 
   String _sortLabel(String sortBy) {
@@ -90,9 +66,6 @@ class _RankingScreenState extends State<RankingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AfterlifeColors.isDark(context);
-    final textSecondary = AfterlifeColors.textSecondaryAdaptive(context);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: NestedScrollView(
@@ -125,12 +98,12 @@ class _RankingScreenState extends State<RankingScreen>
                             colors: [Color(0xFFA855F7), Color(0xFFEC4899), Color(0xFF06B6D4)],
                           ).createShader(b),
                           child: const Text(
-                            'RANKING',
+                            'RANKING AMIGOS',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 4,
+                              letterSpacing: 3,
                             ),
                           ),
                         ),
@@ -140,37 +113,13 @@ class _RankingScreenState extends State<RankingScreen>
                 ),
               ),
             ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48),
-              child: Container(
-                color: isDark ? const Color(0xFF0D0D1A) : Colors.white.withValues(alpha: 0.7),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: AfterlifeColors.electricPurple,
-                  unselectedLabelColor: textSecondary,
-                  indicatorColor: AfterlifeColors.electricPurple,
-                  indicatorWeight: 2,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 1.5),
-                  tabs: const [
-                    Tab(text: 'AMIGOS'),
-                    Tab(text: 'MUNDIAL'),
-                  ],
-                ),
-              ),
-            ),
           ),
         ],
         body: Column(
           children: [
             _buildFilterChips(),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildRankingTab(_friendsData, _friendsLoading, isFriends: true),
-                  _buildRankingTab(_worldData, _worldLoading, isFriends: false),
-                ],
-              ),
+              child: _buildRankingTab(_friendsData, _friendsLoading, isFriends: true),
             ),
           ],
         ),
@@ -246,19 +195,43 @@ class _RankingScreenState extends State<RankingScreen>
       );
     }
 
+    // Error de red o Firestore
+    if (_friendsError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.wifi_off_rounded, color: textSecondary.withValues(alpha: 0.4), size: 56),
+            const SizedBox(height: 16),
+            Text(
+              'Error al cargar el ranking.\nPull para reintentar.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textSecondary, fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: _loadFriends,
+              icon: const Icon(Icons.refresh_rounded, color: AfterlifeColors.electricPurple),
+              label: const Text('Reintentar', style: TextStyle(color: AfterlifeColors.electricPurple)),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (data.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isFriends ? Icons.group_outlined : Icons.public_outlined,
+              Icons.group_outlined,
               color: textSecondary.withValues(alpha: 0.4),
               size: 56,
             ),
             const SizedBox(height: 16),
             Text(
-              isFriends ? 'Añade amigos para ver\nel ranking de amigos' : 'Sin datos disponibles',
+              'Añade amigos para ver\nel ranking de amigos',
               textAlign: TextAlign.center,
               style: TextStyle(color: textSecondary, fontSize: 16),
             ),
@@ -267,19 +240,24 @@ class _RankingScreenState extends State<RankingScreen>
       );
     }
 
+    // Con menos de 3 entradas no hay pódium: muestra lista simple desde la posición 1
+    final hasPodium = data.length >= 3;
+    final podiumCount = hasPodium ? 3 : 0;
+
     return RefreshIndicator(
-      onRefresh: _loadAll,
+      onRefresh: _loadFriends,
       color: AfterlifeColors.electricPurple,
       backgroundColor: isDark ? const Color(0xFF1A0533) : Colors.white,
       child: ListView(
         padding: const EdgeInsets.only(bottom: 20),
         children: [
-          if (data.length >= 3) AnimatedEntry(child: _buildPodium(data.take(3).toList())),
+          if (hasPodium) AnimatedEntry(child: _buildPodium(data.take(3).toList())),
           const SizedBox(height: 8),
-          ...List.generate(data.length > 3 ? data.length - 3 : 0, (i) {
+          // Sin pódium: todos en lista. Con pódium: solo a partir del 4º
+          ...List.generate(data.length - podiumCount, (i) {
             return AnimatedEntry(
               delay: Duration(milliseconds: i * 60),
-              child: _buildListItem(data[i + 3], i + 4),
+              child: _buildListItem(data[i + podiumCount], i + podiumCount + 1),
             );
           }),
         ],

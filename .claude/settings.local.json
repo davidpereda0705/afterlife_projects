@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Bash(flutter build *)",
+      "Bash(open *)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Servicio para subir, cargar y eliminar fotos de momentos de una noche en Firestore.\\\\n/' /Users/unai/afterlife_final/lib/services/moments_service.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Servicio de chat en tiempo real dentro de una noche: envío y escucha de mensajes via Firestore streams.\\\\n/' /Users/unai/afterlife_final/lib/services/night_chat_service.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Servicio de caché offline: guarda y recupera datos del usuario en SharedPreferences para uso sin conexión.\\\\n/' /Users/unai/afterlife_final/lib/services/offline_service.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Servicio que consulta la API Overpass \\(OpenStreetMap\\) para buscar clubs y bares cerca de una ubicación.\\\\n/' /Users/unai/afterlife_final/lib/services/overpass_service.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Servicio de ranking: obtiene y ordena los datos de puntuación de amigos desde Firestore.\\\\n/' /Users/unai/afterlife_final/lib/services/ranking_service.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Widget de insignia de logro: muestra icono, título y barra de progreso de un achievement.\\\\n/' /Users/unai/afterlife_final/lib/widgets/cards/achievement_badge.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Tarjeta base de la app con fondo semi-transparente, bordes redondeados y soporte de tema claro\\\\/oscuro.\\\\n/' /Users/unai/afterlife_final/lib/widgets/cards/afterlife_card.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Widget de tarjeta para mostrar un reto individual: título, puntos y estado \\(completado o pendiente\\).\\\\n/' /Users/unai/afterlife_final/lib/widgets/cards/challenge_card.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Panel deslizable de chat grupal durante una noche activa: mensajes en tiempo real vía Firestore stream.\\\\n/' /Users/unai/afterlife_final/lib/widgets/chat/night_chat_sheet.dart)",
+      "Bash(sed -i '' '1s/^/\\\\/\\\\/ Botón principal de la app con gradiente púrpura-rosa, estilo consistente en toda la interfaz.\\\\n/' /Users/unai/afterlife_final/lib/widgets/common/after_button.dart)",
+      "Bash(python3 *)"
+    ]
+  }
+}

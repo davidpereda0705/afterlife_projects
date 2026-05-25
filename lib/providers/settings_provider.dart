@@ -1,3 +1,5 @@
+// Proveedor de ajustes de la app: tema (oscuro/claro/sistema), tamaño de fuente,
+// efectos de fondo y otras preferencias persistidas con SharedPreferences.
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

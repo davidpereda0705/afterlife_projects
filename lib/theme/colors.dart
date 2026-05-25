@@ -1,3 +1,4 @@
+// Paleta de colores, gradientes y utilidades de tema para toda la app.
 import 'package:flutter/material.dart';
 
 class AfterlifeColors {

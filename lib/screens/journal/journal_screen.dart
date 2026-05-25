@@ -1,4 +1,5 @@
-
+// Diario de noches: historial de todas las noches completadas por el usuario,
+// con resumen de puntos, retos completados y fotos de cada noche.
 import 'package:afterlife_projects/models/night_summary.dart';
 import 'package:afterlife_projects/services/journal_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';

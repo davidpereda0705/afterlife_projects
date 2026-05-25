@@ -1,3 +1,5 @@
+// Servicio de logros: inicializa los logros por defecto en Firestore,
+// comprueba si el usuario ha desbloqueado nuevos logros y los registra.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 

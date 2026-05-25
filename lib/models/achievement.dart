@@ -1,12 +1,20 @@
-// lib/models/achievement.dart
+// Modelo de logro. Se carga desde la colección 'achievements' de Firestore.
+//
+// Por qué el icono se guarda como String ('Icons.people') y no como IconData:
+//   - Firestore solo puede guardar tipos primitivos (String, int, bool...).
+//   - IconData no es serializable, así que se guarda el nombre y se convierte
+//     en el getter 'icon' con un switch.
 import 'package:flutter/material.dart';
 
 class Achievement {
   final String id;
   final String title;
+  // Nombre del icono como string (ej. 'Icons.people') — ver getter 'icon'
   final String iconName;
   final String description;
-  final String category; // 'nights', 'challenges', 'level', 'friends', 'photos', 'custom'
+  // Categoría que determina qué contador del usuario se usa para el progreso:
+  // 'nights', 'challenges', 'level', 'friends', 'photos', 'custom', 'nights_created'
+  final String category;
   final int requirement;
   final int points;
   final bool active;
@@ -22,6 +30,9 @@ class Achievement {
     required this.active,
   });
 
+  // Convierte el string guardado en Firestore al IconData de Flutter.
+  // Si se añade un nuevo logro en Firestore con un icono no listado aquí,
+  // el default es Icons.emoji_events para que no falle silenciosamente.
   IconData get icon {
     switch (iconName) {
       case 'Icons.people':

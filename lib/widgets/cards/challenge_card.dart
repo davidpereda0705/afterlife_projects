@@ -1,3 +1,4 @@
+// Widget de tarjeta para mostrar un reto individual: título, puntos y estado (completado o pendiente).
 import 'package:flutter/material.dart';
 
 class ChallengeCard extends StatelessWidget {

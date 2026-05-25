@@ -1,3 +1,4 @@
+// Wrapper de confetti: lanza partículas de celebración sobre cualquier pantalla.
 import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';

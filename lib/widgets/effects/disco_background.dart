@@ -1,3 +1,4 @@
+// Fondo animado estilo discoteca: puntos de luz de colores que se mueven aleatoriamente.
 import 'dart:math';
 import 'package:flutter/material.dart';
 

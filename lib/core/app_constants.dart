@@ -1,7 +1,12 @@
-// lib/core/app_constants.dart
-
+// Constantes globales de la app: nombres de colecciones de Firestore,
+// límites, configuraciones fijas y otros valores inmutables.
+//
+// Por qué usar esta clase:
+//   - Evita tener "magic strings" (cadenas literales) dispersas por el código.
+//   - Un solo cambio aquí actualiza todos los usos en la app.
+//   - Mejora la detección de errores tipográficos en tiempo de compilación.
 class AppConstants {
-  const AppConstants._();
+  const AppConstants._(); // Constructor privado: clase no instanciable
 
   // Colecciones de Firestore
   static const String usersCollection = 'users';

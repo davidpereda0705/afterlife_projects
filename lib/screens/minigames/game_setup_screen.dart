@@ -1,4 +1,5 @@
-// lib/screens/game_setup_screen.dart
+// Pantalla de configuración previa a cualquier minijuego.
+// Permite añadir los jugadores por nombre antes de empezar la partida.
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:afterlife_projects/theme/text_theme.dart';
@@ -76,7 +77,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
   String get _gameTitle {
     switch (widget.gameRoute) {
       case 'truth_or_drink':
-        return 'VERDAD O RETO';
+        return 'VERDAD O BEBIDA';
       case 'yo_nunca':
         return 'YO NUNCA';
       case 'would_you_rather':
@@ -97,9 +98,19 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          _gameTitle,
-          style: AfterlifeTextTheme.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+          ).createShader(bounds),
+          child: Text(
+            _gameTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
       body: Padding(

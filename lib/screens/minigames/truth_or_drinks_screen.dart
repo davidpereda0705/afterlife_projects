@@ -1,3 +1,5 @@
+// Minijuego "Verdad o Bebida": cada turno un jugador responde una pregunta
+// picante o bebe. Las bebidas se acumulan si sigue negándose a responder.
 import 'package:afterlife_projects/widgets/cards/afterlife_card.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -208,9 +210,19 @@ final List<String> _spicyQuestions = [
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          "Verdad o Bebida 🔥",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.electricPurple, AfterlifeColors.neonPink],
+          ).createShader(bounds),
+          child: const Text(
+            'VERDAD O BEBIDA 🔥',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
       body: ListView(

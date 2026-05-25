@@ -1,3 +1,5 @@
+// Menú de minijuegos: lista los 4 juegos disponibles (Verdad o Bebida, Yo Nunca,
+// Reto Rápido, ¿Qué Prefieres?) y navega a la pantalla de configuración de cada uno.
 import 'package:afterlife_projects/screens/minigames/game_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
@@ -109,7 +111,7 @@ class MinigamesScreen extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.1,
+              childAspectRatio: 0.82,
             ),
             itemCount: _games.length,
             itemBuilder: (context, index) {
@@ -166,55 +168,60 @@ class MinigamesScreen extends StatelessWidget {
     required bool isAvailable,
   }) {
     return AfterlifeCard(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 8),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleSmall!.copyWith(
+            style: TextStyle(
               color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 0.5,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-                    
-          // Indicador de disponibilidad - ¡AHORA TODOS DISPONIBLES!
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
             ),
             child: Text(
               'DISPONIBLE',
               style: TextStyle(
                 color: color,
-                fontSize: 8,
+                fontSize: 7,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
           ),
-
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             description,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 10),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+              fontSize: 10,
+            ),
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ],

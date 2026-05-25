@@ -1,3 +1,12 @@
+// Modelo de resumen de noche finalizada: puntos ganados, retos completados,
+// fotos de la noche y metadatos. Se usa en el diario y el historial.
+//
+// Tiene DOS estrategias de serialización con propósitos distintos:
+//   - toJson / fromJson → SharedPreferences (caché local en JSON, sin Timestamp)
+//   - toFirestoreMap / fromFirestoreMap → Firestore (usa Timestamp, blobs Uint8List)
+//
+// Las fotos se almacenan como List<Uint8List> (bytes en memoria), NO como URLs,
+// para evitar depender de Firebase Storage y sus reglas de seguridad.
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -25,6 +34,8 @@ class NightSummary {
   });
 
   // ----- MÉTODOS PARA SHARED_PREFERENCES (JSON) -----
+  // SharedPreferences no entiende Timestamp ni Uint8List directamente;
+  // hay que convertirlos a tipos JSON básicos (String, List<int>).
   Map<String, dynamic> toJson() {
     return {
       'id': id,

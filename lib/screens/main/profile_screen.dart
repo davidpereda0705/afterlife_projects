@@ -1,4 +1,7 @@
-// lib/screens/profile_screen.dart
+// Pantalla de perfil del usuario: muestra avatar, nivel, estadísticas,
+// logros desbloqueados y acceso a editar perfil y ajustes.
+import 'dart:typed_data';
+import 'package:afterlife_projects/widgets/common/afterlife_avatar.dart' as avatar_widget;
 import 'package:afterlife_projects/widgets/effects/animated_entry.dart';
 import 'package:afterlife_projects/widgets/effects/glass_card.dart';
 import 'package:afterlife_projects/screens/settings/edit_profile_screen.dart';
@@ -27,6 +30,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loadingAchievements = true;
   bool _achievementsLoadedOnce = false;
 
+  // Firestore devuelve los bytes como List<dynamic>; este cast es necesario
+  // para convertirlos a Uint8List y poder mostrarlo con MemoryImage en el avatar.
+  Uint8List? _toBytes(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Uint8List) return raw;
+    if (raw is List) return Uint8List.fromList(raw.cast<int>());
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadRecentAchievements() async {
+    // listen: false porque solo necesitamos leer el valor una vez, no suscribirnos a cambios
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final unlockedRaw = userProvider.unlockedAchievements;
     if (unlockedRaw.isEmpty) {
@@ -150,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           body: ListView(
             padding: EdgeInsets.zero,
             children: [
-              _buildGradientHeader(userName, userHandle, userLevel, totalPoints),
+              _buildGradientHeader(userName, userHandle, userLevel, totalPoints, _toBytes(userData?['avatarBytes'])),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -186,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildGradientHeader(String userName, String userHandle, int userLevel, int totalPoints) {
+  Widget _buildGradientHeader(String userName, String userHandle, int userLevel, int totalPoints, Uint8List? avatarBytes) {
     final isDark = AfterlifeColors.isDark(context);
     final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
 
@@ -223,8 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const SizedBox(height: 32),
                   Container(
-                    width: 88,
-                    height: 88,
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
@@ -240,24 +252,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1A0533) : Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                            style: TextStyle(
-                              color: textPrimary,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
+                    child: avatar_widget.AfterlifeAvatar(
+                      imageBytes: avatarBytes,
+                      initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                      size: 88,
+                      showStatusIndicator: false,
+                      backgroundColor: isDark ? const Color(0xFF1A0533) : Colors.white,
+                      borderColor: Colors.transparent,
                     ),
                   ),
                   const SizedBox(height: 14),

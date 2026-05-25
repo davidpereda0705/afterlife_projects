@@ -1,3 +1,4 @@
+// Borde de neón animado con gradiente giratorio, usado para destacar elementos clave.
 import 'dart:math';
 import 'package:flutter/material.dart';
 

@@ -1,3 +1,4 @@
+// Página de chat individual con un usuario específico (usada dentro del sistema de mensajes).
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget { // Cambiado a StatefulWidget

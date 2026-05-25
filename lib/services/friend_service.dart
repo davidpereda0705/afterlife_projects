@@ -1,4 +1,5 @@
-// lib/services/friend_service.dart
+// Gestión de amigos: enviar/aceptar/rechazar solicitudes de amistad,
+// listar amigos, y eliminar amistades existentes.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:afterlife_projects/core/app_constants.dart';
@@ -17,12 +18,17 @@ class FriendService {
     return doc.data()?[AppConstants.fieldUsername] ?? 'Usuario';
   }
 
-  // Buscar usuarios por nombre
+  // Buscar usuarios por nombre (b\u00fasqueda de prefijo)
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     if (query.isEmpty) return [];
     final uid = currentUserId;
     if (uid == null) return [];
 
+    // Firestore no tiene b\u00fasqueda de texto completo nativa.
+    // Este truco de rango ("query" a "query\uf8ff") simula un "STARTS WITH":
+    // \uf8ff es el car\u00e1cter Unicode m\u00e1s alto en el rango de caracteres privados,
+    // por lo que 'query\uf8ff' es mayor que cualquier string que empiece por 'query'.
+    // Resultado: devuelve todos los documentos cuyo username empieza por 'query'.
     final results = await _firestore
         .collection(AppConstants.usersCollection)
         .where(AppConstants.fieldUsername, isGreaterThanOrEqualTo: query)

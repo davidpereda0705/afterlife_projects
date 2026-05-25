@@ -1,3 +1,5 @@
+// Menú de noches: opciones para crear una nueva noche o unirse a una existente
+// mediante código, y acceso al historial de noches pasadas.
 import 'package:afterlife_projects/screens/nights/create_night_screen.dart';
 import 'package:afterlife_projects/screens/nights/join_night_screen.dart';
 import 'package:flutter/material.dart';

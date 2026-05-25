@@ -1,3 +1,4 @@
+// Barra de progreso animada con gradiente, usada para mostrar avance en logros y retos.
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 

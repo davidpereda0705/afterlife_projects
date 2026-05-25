@@ -1,3 +1,4 @@
+// Pantalla de detalle del resumen de una noche terminada: fotos, retos completados y estadísticas.
 import 'package:afterlife_projects/models/night_summary.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';

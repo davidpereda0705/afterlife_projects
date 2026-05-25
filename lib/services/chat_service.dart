@@ -1,4 +1,5 @@
-// lib/services/chat_service.dart
+// Chat entre amigos: enviar mensajes, escuchar mensajes en tiempo real
+// y gestionar conversaciones privadas entre dos usuarios.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -169,8 +170,10 @@ class ChatService {
   Future<List<Map<String, dynamic>>> searchMessages(String chatId, String query) async {
     if (query.isEmpty) return [];
 
-    // Nota: Firestore requiere un índice compuesto si mezclas range filters en 'text'
-    // con orderBy en 'timestamp'. Para evitar depender de índices, ordenamos en Dart.
+    // Por qué no usamos orderBy('timestamp') aquí en la query:
+    //   Firestore no permite combinar un range filter (.where('text', isGreaterThanOrEqualTo: ...))
+    //   con un orderBy de un campo DISTINTO ('timestamp') sin un índice compuesto en la consola.
+    //   Para evitar esa dependencia de configuración, filtramos en Firestore y ordenamos en Dart.
     final results = await _firestore
         .collection('chats')
         .doc(chatId)
@@ -207,7 +210,10 @@ class ChatService {
     return messages;
   }
 
-  // Eliminar mensaje (soft delete)
+  // "Soft delete" (borrado lógico): marcamos el mensaje como eliminado en lugar de borrarlo.
+  // Razón: si borrásemos el documento, el otro usuario vería el chat roto o con huecos.
+  // Al marcar 'deleted: true' y filtrarlo en el stream, el mensaje simplemente desaparece
+  // visualmente pero el historial de Firestore permanece intacto y ordenado.
   Future<void> deleteMessage(String chatId, String messageId) async {
     await _firestore
         .collection('chats')
@@ -260,6 +266,9 @@ class ChatService {
         });
   }
 
+  // Genera siempre el mismo ID para el mismo par de usuarios, sin importar el orden.
+  // Al ordenar los UIDs alfabéticamente, 'A_B' y 'B_A' producen el mismo ID.
+  // Esto evita crear dos documentos de chat duplicados para la misma conversación.
   String _getChatId(String uid1, String uid2) {
     return uid1.compareTo(uid2) < 0 ? '${uid1}_$uid2' : '${uid2}_$uid1';
   }

@@ -1,3 +1,5 @@
+// Pantalla de inicio de sesión y registro. Permite al usuario autenticarse
+// con email/contraseña o crear una cuenta nueva.
 import 'dart:ui';
 import 'package:afterlife_projects/widgets/common/after_button.dart';
 import 'package:afterlife_projects/services/auth_services.dart';
@@ -64,10 +66,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     await prefs.setBool('has_seen_onboarding', true);
   }
 
+  // Borra el flag del tutorial para que aparezca siempre tras un login exitoso
+  Future<void> _resetTutorialFlag() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_tutorial_$uid', false);
+  }
+
   void _intentarAcceder() async {
     // Si no es login, validamos el formulario normalmente
     if (!isLogin && !(_formKey.currentState?.validate() ?? false)) return;
-    
+
     // Si es login, solo comprobamos que no estén vacíos
     if (isLogin && (_userController.text.trim().isEmpty || _passController.text.trim().isEmpty)) {
       _showError('Introduce tus datos');
@@ -98,6 +108,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         );
       }
       await _markOnboardingAsSeen();
+      // Resetea el flag para que el tutorial aparezca siempre al iniciar sesión
+      await _resetTutorialFlag();
     } on FirebaseAuthException catch (e) {
       if (isLogin) {
         _showError('Nombre / contraseña incorrecto, inténtalo de nuevo');

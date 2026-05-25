@@ -1,3 +1,4 @@
+// Pantalla de ajustes: modo oscuro, modo compacto, preferencias de notificaciones y cuenta.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';

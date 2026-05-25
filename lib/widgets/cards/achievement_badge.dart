@@ -1,3 +1,4 @@
+// Widget de insignia de logro: muestra icono, título y barra de progreso de un achievement.
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 

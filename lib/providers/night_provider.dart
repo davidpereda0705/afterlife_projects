@@ -1,4 +1,5 @@
-// lib/providers/night_provider.dart
+// Proveedor del estado de la noche activa en tiempo real.
+// Escucha cambios en Firestore y notifica a los widgets del estado de la noche actual.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -1,4 +1,5 @@
-// lib/screens/group_page.dart (mueve este archivo a screens/ si está en components/)
+// Pantalla de amigos: lista de contactos, solicitudes pendientes, búsqueda de
+// usuarios y acceso a los chats individuales.
 import 'package:afterlife_projects/screens/chat/chat_screen.dart';
 import 'package:afterlife_projects/providers/user_provider.dart';
 import 'package:afterlife_projects/services/chat_service.dart';

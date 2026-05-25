@@ -1,3 +1,4 @@
+// Tarjeta base de la app con fondo semi-transparente, bordes redondeados y soporte de tema claro/oscuro.
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:flutter/material.dart';
 

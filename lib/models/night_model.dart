@@ -1,4 +1,5 @@
-// lib/models/night_model.dart
+// Modelo de datos de una noche: contiene nombre, anfitrión, jugadores,
+// retos, fotos y estado. Se serializa/deserializa desde Firestore.
 import 'package:afterlife_projects/core/enums.dart';
 
 class NightModel {
@@ -34,7 +35,9 @@ class NightModel {
     this.status = NightStatus.waiting,
   });
 
-  // 🔧 Método fromMap para crear desde Firestore
+  // Crea un NightModel desde el mapa de Firestore.
+  // Se pasa el [id] aparte porque Firestore lo devuelve en el DocumentSnapshot,
+  // no dentro del map de datos del documento.
   factory NightModel.fromMap(Map<String, dynamic> map, String id) {
     return NightModel(
       id: id,
@@ -54,11 +57,15 @@ class NightModel {
     );
   }
 
+  // Convierte cualquier tipo de fecha de Firestore a DateTime.
+  // Firestore puede devolver: Timestamp (caso normal), DateTime (en algunos entornos/tests),
+  // int (milisegundos, cuando se guardó así en versiones antiguas) o null.
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();
     if (value is DateTime) return value;
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
     try {
+      // Timestamp de Firestore: tiene método .toDate()
       return value.toDate() as DateTime;
     } catch (_) {
       return DateTime.now();

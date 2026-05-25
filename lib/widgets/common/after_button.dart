@@ -1,3 +1,4 @@
+// Botón principal de la app con gradiente púrpura-rosa, estilo consistente en toda la interfaz.
 import 'package:flutter/material.dart';
 
 class AfterButton extends StatelessWidget {

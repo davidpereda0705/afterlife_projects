@@ -1,4 +1,5 @@
-// lib/core/enums.dart
+// Enums compartidos entre modelos, servicios y providers.
+// Se definen aquí para no crear dependencias circulares entre archivos.
 
 /// Estados posibles de una noche en la app.
 enum NightStatus {
@@ -17,6 +18,8 @@ enum NightStatus {
     }
   }
 
+  /// Convierte el string de Firestore al enum.
+  /// El default es 'waiting' para que documentos sin campo 'status' sean tratados como pendientes.
   static NightStatus fromString(String? status) {
     switch (status) {
       case 'in_progress':

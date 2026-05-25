@@ -1,4 +1,6 @@
-// lib/features/home/home_screen.dart
+// Pantalla de inicio: muestra el saludo al usuario, acceso rápido a noches,
+// logros recientes, estadísticas y accesos directos a las principales funciones.
+import 'dart:typed_data';
 import 'package:afterlife_projects/widgets/common/afterlife_avatar.dart' as avatar;
 import 'package:afterlife_projects/widgets/effects/animated_entry.dart';
 import 'package:afterlife_projects/widgets/effects/glass_card.dart';
@@ -40,9 +42,22 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingAchievements = true;
   bool _achievementsLoadedOnce = false;
 
+  // IMPORTANTE: el Future se guarda en una variable de estado, NO se crea dentro del build().
+  // Si se crease dentro del build(), FutureBuilder lanzaría una nueva petición HTTP
+  // en CADA rebuild del widget (ej. al cambiar de pestaña, al hacer scroll, etc.).
+  // Guardándolo aquí, el Future solo se crea una vez en initState.
   Future<List<UserRankData>>? _rankingFuture;
 
   late ConfettiController _confettiController;
+
+  // Firestore deserializa los bytes guardados como List<dynamic>, no como Uint8List.
+  // Este helper hace el cast necesario para poder pasarlo a MemoryImage.
+  Uint8List? _toBytes(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Uint8List) return raw;
+    if (raw is List) return Uint8List.fromList(raw.cast<int>());
+    return null;
+  }
 
   @override
   void initState() {
@@ -64,6 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Se usa didChangeDependencies en lugar de initState porque Provider
+    // no está disponible en initState (el contexto aún no tiene los providers montados).
+    // El flag _achievementsLoadedOnce evita recargar en cada rebuild.
     if (_achievementsLoadedOnce) return;
     final userProvider = Provider.of<UserProvider>(context);
     if (!userProvider.isLoading) {
@@ -265,6 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       nightsCompleted,
                       challengesCompleted,
                       groupsCount,
+                      _toBytes(userData?['avatarBytes']),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -306,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
     int nightsCompleted,
     int challengesCompleted,
     int groupsCount,
+    Uint8List? avatarBytes,
   ) {
     final isDark = AfterlifeColors.isDark(context);
     final textPrimary = AfterlifeColors.textPrimaryAdaptive(context);
@@ -346,6 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   child: avatar.AfterlifeAvatar(
+                    imageBytes: avatarBytes,
                     initials: userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                     status: avatar.AvatarStatus.online,
                     size: 66,

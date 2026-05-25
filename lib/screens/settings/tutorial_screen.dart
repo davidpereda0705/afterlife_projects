@@ -1,3 +1,4 @@
+// Tutorial interactivo con pasos animados que guía al usuario nuevo por las funciones de la app.
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:afterlife_projects/theme/colors.dart';

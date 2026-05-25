@@ -1,3 +1,5 @@
+// Pantalla principal con la barra de navegación inferior. Gestiona las 5 secciones:
+// Inicio, Amigos, Noches, Ranking y Perfil usando un PageView con PageController.
 import 'package:afterlife_projects/screens/main/home_screen.dart';
 import 'package:afterlife_projects/screens/main/menu_noches_screen.dart';
 import 'package:afterlife_projects/screens/groups/group_screen.dart';

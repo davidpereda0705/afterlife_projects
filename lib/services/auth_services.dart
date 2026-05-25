@@ -1,4 +1,5 @@
-// lib/services/auth_service.dart
+// Servicio de autenticación: registro, login, logout y cambio de contraseña
+// usando Firebase Auth. También crea el documento de usuario en Firestore al registrarse.
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

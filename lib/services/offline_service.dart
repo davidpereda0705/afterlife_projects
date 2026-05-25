@@ -1,3 +1,4 @@
+// Servicio de caché offline: guarda y recupera datos del usuario en SharedPreferences para uso sin conexión.
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';

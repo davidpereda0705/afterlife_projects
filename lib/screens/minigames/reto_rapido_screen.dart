@@ -206,7 +206,20 @@ class _RetoRapidoGameState extends State<RetoRapidoGame> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: Text('RETO RÁPIDO', style: AfterlifeTextTheme.headlineMedium.copyWith(fontSize: 20)),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AfterlifeColors.cyanBlue, AfterlifeColors.neonOrange],
+          ).createShader(bounds),
+          child: const Text(
+            'RETO RÁPIDO',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ),
         centerTitle: true,
       ),
       body: Container(

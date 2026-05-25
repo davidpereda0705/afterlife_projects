@@ -1,3 +1,4 @@
+// Tarjeta con efecto parallax: se inclina levemente según el movimiento del giroscopio del dispositivo.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';

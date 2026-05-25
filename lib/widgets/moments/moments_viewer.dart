@@ -1,3 +1,4 @@
+// Visor de fotos de momentos de una noche: galería deslizable con opción de eliminar imágenes.
 import 'package:afterlife_projects/services/moments_service.dart';
 import 'package:afterlife_projects/theme/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

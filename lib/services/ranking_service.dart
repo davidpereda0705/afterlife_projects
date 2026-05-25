@@ -1,3 +1,6 @@
+// Servicio de ranking: obtiene y ordena los datos de puntuación de amigos desde Firestore.
+// Nota: el ranking mundial lee directamente de Firestore con orderBy (requiere índice),
+// mientras que el ranking de amigos se ordena en Dart para evitar índices compuestos.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserRankData {
@@ -23,6 +26,9 @@ class UserRankData {
     this.isCurrentUser = false,
   });
 
+  // Devuelve el valor del campo por el que se ordena.
+  // Se usa en la pantalla de ranking para permitir cambiar el criterio de ordenación
+  // (puntos, noches completadas, noches creadas) sin cambiar la lógica de ordenación.
   int getValueFor(String sortBy) {
     switch (sortBy) {
       case 'nightsCompleted': return nightsCompleted;
@@ -93,7 +99,9 @@ class RankingService {
       ));
     }
 
-    // Fetch friends in batches of 10
+    // Firestore limita la cláusula 'whereIn' a 10 valores por consulta.
+    // Si tenemos más de 10 amigos, hay que dividir en grupos de 10
+    // y hacer una consulta por grupo (N consultas para N*10 amigos).
     for (int i = 0; i < friendIds.length; i += 10) {
       final batch = friendIds.skip(i).take(10).toList();
       if (batch.isEmpty) continue;
