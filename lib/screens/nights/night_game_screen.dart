@@ -80,11 +80,11 @@ class _NightGameScreenState extends State<NightGameScreen> {
     return "$hours:$minutes:$seconds";
   }
 
-  Future<void> _addNightPhoto(String nightId) async {
+  Future<void> _addNightPhoto(String nightId, ImageSource source) async {
     HapticFeedback.mediumImpact();
     final picker = ImagePicker();
     try {
-      final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
 
       final raw = await pickedFile.readAsBytes();
@@ -106,6 +106,40 @@ class _NightGameScreenState extends State<NightGameScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+    }
+  }
+
+  Future<void> _selectNightPhotoSource(String nightId) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AfterlifeColors.cyanBlue),
+                title: const Text('Cámara'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AfterlifeColors.neonPink),
+                title: const Text('Galería'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source != null) {
+      await _addNightPhoto(nightId, source);
     }
   }
 
@@ -490,7 +524,7 @@ class _NightGameScreenState extends State<NightGameScreen> {
               Icons.add_a_photo,
               color: Theme.of(context).colorScheme.onSurface,
             ),
-            onPressed: () => _addNightPhoto(widget.nightId),
+            onPressed: () => _selectNightPhotoSource(widget.nightId),
           ),
           Container(
             margin: const EdgeInsets.only(right: 16),

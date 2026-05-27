@@ -632,11 +632,6 @@ class _CreateNightScreenState extends State<CreateNightScreen> {
         'color': AfterlifeColors.electricLilac,
       },
       {
-        'label': 'Grupal',
-        'type': ChallengeType.group,
-        'color': AfterlifeColors.acidGreen,
-      },
-      {
         'label': 'Individual',
         'type': ChallengeType.individual,
         'color': AfterlifeColors.cyanBlue,

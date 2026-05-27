@@ -134,6 +134,34 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Campo obligatorio';
+    }
+
+    final missing = <String>[];
+
+    if (value.length < 6) {
+      missing.add('mínimo 6 caracteres');
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+      missing.add('una mayúscula');
+    }
+    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) {
+      missing.add('un carácter especial');
+    }
+
+    if (missing.isEmpty) return null;
+
+    if (missing.length == 1) {
+      return 'Falta ${missing.first}';
+    }
+    if (missing.length == 2) {
+      return 'Falta ${missing.join(' y ')}';
+    }
+    return 'Falta ${missing.join(', ')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -230,7 +258,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                     showPassword: showPassword,
                                     togglePassword: () => setState(() => showPassword = !showPassword),
                                     controller: _passController,
-                                    validator: isLogin ? null : (v) => (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
+                                    validator: isLogin ? null : _validatePassword,
                                   ),
 
                                   if (!isLogin) ...[
